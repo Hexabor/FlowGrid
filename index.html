@@ -271,14 +271,35 @@
               </label>
 
               <div id="shared-fields" class="shared-fields" hidden>
-                <label>
-                  <span>Con quien</span>
-                  <input id="shared-with" name="sharedWith" type="text" autocomplete="off">
+                <label class="shared-person-field">
+                  <span>Persona</span>
+                  <div class="shared-person-control">
+                    <select id="shared-person" name="sharedPersonId"></select>
+                    <button id="shared-person-add" class="icon-button" type="button" title="Crear persona" aria-label="Crear persona">+</button>
+                  </div>
                 </label>
-                <label>
-                  <span>Parte que debe</span>
-                  <input id="shared-ratio" name="sharedRatio" type="number" inputmode="decimal" min="1" max="100" step="1" value="50">
+                <label class="shared-mode-field">
+                  <span>Modo</span>
+                  <select id="shared-mode" name="sharedMode">
+                    <option value="me-equal">Tu pagaste, partes iguales</option>
+                    <option value="me-uneven">Tu pagaste, partes desiguales</option>
+                    <option value="me-full">Se te debe la cantidad total</option>
+                    <option value="them-equal">Persona pago, partes iguales</option>
+                    <option value="them-uneven">Persona pago, partes desiguales</option>
+                    <option value="them-full">A persona le debes la cantidad total</option>
+                  </select>
                 </label>
+                <div id="shared-uneven" class="shared-uneven" hidden>
+                  <label>
+                    <span>Tu parte</span>
+                    <input id="shared-my-share" name="myShare" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+                  </label>
+                  <label>
+                    <span id="shared-their-share-label">Su parte</span>
+                    <input id="shared-their-share" name="theirShare" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+                  </label>
+                  <p id="shared-uneven-feedback" class="shared-uneven-feedback"></p>
+                </div>
               </div>
 
               <button class="primary-action" type="submit">Anadir movimiento</button>
@@ -386,50 +407,75 @@
 
           <section class="panel">
             <div class="section-heading">
-              <h2>Deudas generadas</h2>
-              <span id="shared-status">Local</span>
+              <h2>Saldos</h2>
+              <span id="shared-people-count"></span>
             </div>
-            <p class="empty-state">Los gastos compartidos se crean desde Movimientos activando "Gasto compartido".</p>
-            <form id="shared-form" class="movement-form" hidden>
+            <div id="shared-balances" class="balance-grid"></div>
+          </section>
+
+          <section class="panel">
+            <div class="section-heading">
+              <h2>Movimientos compartidos</h2>
+            </div>
+
+            <div class="shared-toolbar">
               <label>
-                <span>Concepto</span>
-                <input id="shared-concept" name="concept" type="text" required>
+                <span>Persona</span>
+                <select id="shared-person-filter">
+                  <option value="all">Todas</option>
+                </select>
+              </label>
+              <div class="shared-tabs" role="tablist">
+                <button class="shared-tab is-active" type="button" data-shared-tab="pending">Pendientes</button>
+                <button class="shared-tab" type="button" data-shared-tab="archive">Archivo</button>
+              </div>
+            </div>
+
+            <div id="shared-actions" class="shared-actions" hidden>
+              <button id="shared-pay-button" class="primary-action" type="button">Registrar pago</button>
+              <button id="shared-settle-button" class="primary-action" type="button">Liquidar saldo</button>
+            </div>
+
+            <div id="shared-entries" class="shared-entries"></div>
+          </section>
+        </section>
+
+        <div id="payment-modal" class="modal" hidden>
+          <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+            <div class="section-heading">
+              <h2 id="payment-title">Registrar pago</h2>
+              <button id="close-payment-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
+              <p id="payment-feedback" role="status" aria-live="polite"></p>
+            </div>
+
+            <form id="payment-form" class="movement-form">
+              <label>
+                <span>Persona</span>
+                <select id="payment-person" name="personId" required></select>
               </label>
               <label>
                 <span>Importe</span>
-                <input id="shared-amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" required>
+                <input id="payment-amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" required>
               </label>
               <label>
-                <span>Pagado por</span>
-                <input id="shared-paid-by" name="paidBy" type="text" required>
+                <span>Direccion</span>
+                <select id="payment-direction" name="direction" required>
+                  <option value="me-pays">Yo pago</option>
+                  <option value="them-pays">Me pagan</option>
+                </select>
               </label>
               <label>
-                <span>Participantes</span>
-                <input id="shared-participants" name="participants" type="text" placeholder="Raquel, Dani" required>
+                <span>Fecha</span>
+                <input id="payment-date" name="date" type="date" required>
               </label>
               <label class="field-wide">
                 <span>Nota</span>
-                <textarea id="shared-note" name="note" rows="2"></textarea>
+                <input id="payment-note" name="note" type="text" autocomplete="off">
               </label>
-              <button class="primary-action" type="submit">Añadir gasto</button>
+              <button class="primary-action" type="submit">Registrar pago</button>
             </form>
-          </section>
-
-          <section class="panel">
-            <div class="section-heading">
-              <h2>Balance compartido</h2>
-              <span id="shared-count"></span>
-            </div>
-            <div id="shared-summary" class="breakdown-list"></div>
-          </section>
-
-          <section class="panel">
-            <div class="section-heading">
-              <h2>Deudas</h2>
-            </div>
-            <div id="shared-list" class="movement-list shared-list"></div>
-          </section>
-        </section>
+          </div>
+        </div>
 
         <section class="view" id="settings-view" data-view="settings" aria-labelledby="settings-title">
           <header class="topbar">
@@ -441,6 +487,7 @@
 
           <div class="settings-tabs" aria-label="Secciones de configuracion">
             <button class="settings-tab is-active" type="button" data-settings-target="concepts">Conceptos y categorias</button>
+            <button class="settings-tab" type="button" data-settings-target="people">Personas</button>
             <button class="settings-tab" type="button" data-settings-target="csv">Importar CSV</button>
             <button class="settings-tab" type="button" data-settings-target="backup">Backup JS</button>
           </div>
@@ -499,6 +546,26 @@
               </form>
 
               <div id="category-list" class="config-list category-list"></div>
+            </section>
+          </section>
+
+          <section class="settings-panel" data-settings-panel="people">
+            <section class="panel">
+              <div class="section-heading">
+                <h2>Personas</h2>
+                <span id="people-count"></span>
+              </div>
+              <p class="empty-state">Las personas se usan para los gastos compartidos. Mas adelante podras invitarlas a colaborar.</p>
+
+              <form id="people-form" class="settings-form">
+                <label>
+                  <span>Nombre</span>
+                  <input id="new-person-name" name="name" type="text" autocomplete="off" required>
+                </label>
+                <button class="primary-action" type="submit">Anadir persona</button>
+              </form>
+
+              <div id="people-list" class="config-list"></div>
             </section>
           </section>
 

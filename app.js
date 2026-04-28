@@ -1,7 +1,17 @@
 const MOVEMENTS_KEY = "flowgrid.movements.v1";
 const SETTINGS_KEY = "flowgrid.settings.v1";
-const SHARED_KEY = "flowgrid.shared.v1";
+const SHARED_KEY = "flowgrid.shared.v2";
+const PEOPLE_KEY = "flowgrid.people.v1";
 const APP_LOCALE = "es-ES";
+
+const SHARED_MODES = {
+  "me-equal": { paidBy: "me", split: "equal", label: "Tu pagaste, partes iguales" },
+  "me-uneven": { paidBy: "me", split: "uneven", label: "Tu pagaste, partes desiguales" },
+  "me-full": { paidBy: "me", split: "full", label: "Se te debe la cantidad total" },
+  "them-equal": { paidBy: "them", split: "equal", label: "{name} pago, partes iguales" },
+  "them-uneven": { paidBy: "them", split: "uneven", label: "{name} pago, partes desiguales" },
+  "them-full": { paidBy: "them", split: "full", label: "A {name} le debes la cantidad total" },
+};
 
 const defaultCategories = [
   { value: "supervivencia", label: "Supervivencia", color: "#b9ddf2", text: "#005f99" },
@@ -135,8 +145,14 @@ const elements = {
   note: document.querySelector("#note"),
   isShared: document.querySelector("#is-shared"),
   sharedFields: document.querySelector("#shared-fields"),
-  sharedWith: document.querySelector("#shared-with"),
-  sharedRatio: document.querySelector("#shared-ratio"),
+  sharedPerson: document.querySelector("#shared-person"),
+  sharedPersonAdd: document.querySelector("#shared-person-add"),
+  sharedMode: document.querySelector("#shared-mode"),
+  sharedUneven: document.querySelector("#shared-uneven"),
+  sharedMyShare: document.querySelector("#shared-my-share"),
+  sharedTheirShare: document.querySelector("#shared-their-share"),
+  sharedTheirShareLabel: document.querySelector("#shared-their-share-label"),
+  sharedUnevenFeedback: document.querySelector("#shared-uneven-feedback"),
   feedback: document.querySelector("#form-feedback"),
   submitButton: document.querySelector("#movement-form .primary-action"),
   categoryFilter: document.querySelector("#category-filter"),
@@ -158,10 +174,28 @@ const elements = {
   yearBalanceTotal: document.querySelector("#year-balance-total"),
   yearConceptBreakdown: document.querySelector("#year-concept-breakdown"),
   yearCategoryBreakdown: document.querySelector("#year-category-breakdown"),
-  sharedForm: document.querySelector("#shared-form"),
-  sharedSummary: document.querySelector("#shared-summary"),
-  sharedList: document.querySelector("#shared-list"),
-  sharedCount: document.querySelector("#shared-count"),
+  sharedBalances: document.querySelector("#shared-balances"),
+  sharedPeopleCount: document.querySelector("#shared-people-count"),
+  sharedPersonFilter: document.querySelector("#shared-person-filter"),
+  sharedTabs: document.querySelectorAll(".shared-tab"),
+  sharedActions: document.querySelector("#shared-actions"),
+  sharedPayButton: document.querySelector("#shared-pay-button"),
+  sharedSettleButton: document.querySelector("#shared-settle-button"),
+  sharedEntries: document.querySelector("#shared-entries"),
+  paymentModal: document.querySelector("#payment-modal"),
+  closePaymentModal: document.querySelector("#close-payment-modal"),
+  paymentForm: document.querySelector("#payment-form"),
+  paymentTitle: document.querySelector("#payment-title"),
+  paymentPerson: document.querySelector("#payment-person"),
+  paymentAmount: document.querySelector("#payment-amount"),
+  paymentDirection: document.querySelector("#payment-direction"),
+  paymentDate: document.querySelector("#payment-date"),
+  paymentNote: document.querySelector("#payment-note"),
+  paymentFeedback: document.querySelector("#payment-feedback"),
+  peopleForm: document.querySelector("#people-form"),
+  newPersonName: document.querySelector("#new-person-name"),
+  peopleList: document.querySelector("#people-list"),
+  peopleCount: document.querySelector("#people-count"),
   conceptForm: document.querySelector("#concept-form"),
   categoryForm: document.querySelector("#category-form"),
   newConcept: document.querySelector("#new-concept"),
@@ -189,13 +223,16 @@ const elements = {
 
 let movements = loadMovements();
 let settings = loadSettings();
-let sharedExpenses = loadSharedExpenses();
+let people = loadPeople();
+let sharedEntries = loadSharedEntries();
 let datePickerMonth = new Date();
 let editingMovementId = null;
 let pendingCsvMovements = [];
 let pendingBackup = null;
 let monthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let yearCursor = new Date(new Date().getFullYear(), 0, 1);
+let sharedFilterPersonId = "all";
+let sharedTab = "pending";
 
 function createSlug(value) {
   return value
@@ -254,7 +291,7 @@ function saveSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
-function loadSharedExpenses() {
+function loadSharedEntries() {
   const stored = localStorage.getItem(SHARED_KEY);
 
   if (!stored) {
@@ -269,8 +306,53 @@ function loadSharedExpenses() {
   }
 }
 
-function saveSharedExpenses() {
-  localStorage.setItem(SHARED_KEY, JSON.stringify(sharedExpenses));
+function saveSharedEntries() {
+  localStorage.setItem(SHARED_KEY, JSON.stringify(sharedEntries));
+}
+
+function loadPeople() {
+  const stored = localStorage.getItem(PEOPLE_KEY);
+
+  if (!stored) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePeople() {
+  localStorage.setItem(PEOPLE_KEY, JSON.stringify(people));
+}
+
+function getPerson(id) {
+  return people.find((person) => person.id === id);
+}
+
+function getPersonName(id) {
+  return getPerson(id)?.name ?? "Persona";
+}
+
+function personHasEntries(id) {
+  return sharedEntries.some((entry) => entry.personId === id);
+}
+
+function getSharedBalance(personId) {
+  return sharedEntries
+    .filter((entry) => entry.personId === personId && entry.status === "pending")
+    .reduce((balance, entry) => {
+      if (entry.type === "expense") {
+        return balance + (entry.paidBy === "me" ? entry.theirShare : -entry.myShare);
+      }
+      if (entry.type === "payment") {
+        return balance + (entry.paidBy === "me" ? entry.total : -entry.total);
+      }
+      return balance;
+    }, 0);
 }
 
 function formatMoney(value) {
@@ -380,13 +462,84 @@ function closeMovementModal() {
 }
 
 function syncSharedFields() {
-  const enabled = elements.isShared.checked && elements.type.value === "expense";
-  elements.sharedFields.hidden = !enabled;
-  elements.sharedWith.required = enabled;
-  elements.sharedRatio.required = enabled;
-
   if (elements.type.value !== "expense") {
     elements.isShared.checked = false;
+  }
+
+  const enabled = elements.isShared.checked && elements.type.value === "expense";
+  elements.sharedFields.hidden = !enabled;
+  elements.sharedPerson.required = enabled;
+  elements.sharedMode.required = enabled;
+
+  if (!enabled) {
+    elements.sharedUneven.hidden = true;
+    elements.sharedMyShare.required = false;
+    elements.sharedTheirShare.required = false;
+    return;
+  }
+
+  syncSharedPersonOptions();
+  syncSharedModeLabels();
+  syncSharedUnevenVisibility();
+  syncSharedTotalHint();
+}
+
+function syncSharedPersonOptions() {
+  const selected = elements.sharedPerson.value;
+  elements.sharedPerson.innerHTML = people.length
+    ? people.map((person) => `<option value="${person.id}">${person.name}</option>`).join("")
+    : '<option value="">Sin personas creadas</option>';
+
+  if (selected && people.some((person) => person.id === selected)) {
+    elements.sharedPerson.value = selected;
+  }
+}
+
+function syncSharedModeLabels() {
+  const name = getPersonName(elements.sharedPerson.value) || "Persona";
+  Object.entries(SHARED_MODES).forEach(([key, mode]) => {
+    const option = elements.sharedMode.querySelector(`option[value="${key}"]`);
+    if (option) {
+      option.textContent = mode.label.replace("{name}", name);
+    }
+  });
+}
+
+function syncSharedUnevenVisibility() {
+  const mode = SHARED_MODES[elements.sharedMode.value];
+  const isUneven = mode?.split === "uneven";
+  elements.sharedUneven.hidden = !isUneven;
+  elements.sharedMyShare.required = isUneven;
+  elements.sharedTheirShare.required = isUneven;
+  elements.sharedTheirShareLabel.textContent = `Parte de ${getPersonName(elements.sharedPerson.value) || "la otra persona"}`;
+}
+
+function syncSharedTotalHint() {
+  const total = Number(elements.amount.value) || 0;
+  const mode = SHARED_MODES[elements.sharedMode.value];
+
+  if (!mode || mode.split !== "uneven") {
+    elements.sharedUnevenFeedback.textContent = "";
+    return;
+  }
+
+  const my = Number(elements.sharedMyShare.value) || 0;
+  const their = Number(elements.sharedTheirShare.value) || 0;
+  const sum = my + their;
+  const diff = Math.round((total - sum) * 100) / 100;
+
+  if (!total) {
+    elements.sharedUnevenFeedback.textContent = "Introduce primero el importe total.";
+    elements.sharedUnevenFeedback.dataset.state = "warn";
+  } else if (Math.abs(diff) < 0.005) {
+    elements.sharedUnevenFeedback.textContent = `Total ${formatMoney(total)} — coincide.`;
+    elements.sharedUnevenFeedback.dataset.state = "ok";
+  } else if (diff > 0) {
+    elements.sharedUnevenFeedback.textContent = `Total ${formatMoney(total)} — faltan ${formatMoney(diff)}.`;
+    elements.sharedUnevenFeedback.dataset.state = "warn";
+  } else {
+    elements.sharedUnevenFeedback.textContent = `Total ${formatMoney(total)} — sobran ${formatMoney(-diff)}.`;
+    elements.sharedUnevenFeedback.dataset.state = "warn";
   }
 }
 
@@ -526,7 +679,7 @@ function createMovementCard(movement, compact = false) {
   card.querySelector(".date").textContent = formatDate(movement.date);
   card.querySelector(".party").textContent = movement.party || "Sin emisor";
   card.querySelector(".recurrence").textContent = recurrence[0].toUpperCase() + recurrence.slice(1);
-  card.querySelector(".shared-cell").textContent = movement.sharedWith ? movement.sharedWith : "";
+  card.querySelector(".shared-cell").textContent = getMovementSharedLabel(movement);
 
   if (compact) {
     card.querySelector(".delete-action").remove();
@@ -699,78 +852,309 @@ function renderAnalysis() {
   renderPeriodAnalysis("year");
 }
 
-function renderShared() {
-  elements.sharedCount.textContent = `${sharedExpenses.length} deudas`;
-  elements.sharedList.innerHTML = "";
-  elements.sharedSummary.innerHTML = "";
+function getMovementSharedLabel(movement) {
+  if (!movement.sharedEntryId) {
+    return "";
+  }
+  const entry = sharedEntries.find((candidate) => candidate.id === movement.sharedEntryId);
+  if (!entry) {
+    return "";
+  }
+  return getPersonName(entry.personId);
+}
 
-  if (!sharedExpenses.length) {
-    elements.sharedList.innerHTML = '<p class="empty-state">No hay deudas compartidas.</p>';
-    elements.sharedSummary.innerHTML = '<p class="empty-state">Sin balances pendientes.</p>';
+function renderSharedView() {
+  renderSharedBalances();
+  renderSharedFilterOptions();
+  renderSharedEntries();
+}
+
+function renderSharedBalances() {
+  const peopleWithActivity = people.filter(
+    (person) => personHasEntries(person.id)
+  );
+
+  elements.sharedPeopleCount.textContent = `${peopleWithActivity.length} personas activas`;
+  elements.sharedBalances.innerHTML = "";
+
+  if (!people.length) {
+    elements.sharedBalances.innerHTML =
+      '<p class="empty-state">Crea personas en Configuracion para empezar a registrar gastos compartidos.</p>';
     return;
   }
 
-  const balances = new Map();
-  const listFragment = document.createDocumentFragment();
+  if (!peopleWithActivity.length) {
+    elements.sharedBalances.innerHTML =
+      '<p class="empty-state">Sin actividad. Anade un gasto compartido desde Movimientos.</p>';
+    return;
+  }
 
-  sharedExpenses.forEach((debt) => {
-    if (!debt.settled) {
-      balances.set(debt.debtor, (balances.get(debt.debtor) ?? 0) + debt.amount);
-    }
+  const fragment = document.createDocumentFragment();
 
-    const row = document.createElement("article");
-    const date = document.createElement("span");
-    const debtor = document.createElement("strong");
-    const amount = document.createElement("span");
-    const concept = document.createElement("strong");
-    const party = document.createElement("span");
-    const note = document.createElement("span");
-    const status = document.createElement("button");
-    const deleteButton = document.createElement("button");
-
-    row.className = "shared-row";
-    row.dataset.id = debt.id;
-    row.classList.toggle("is-settled", debt.settled);
-    date.textContent = formatDate(debt.date);
-    debtor.textContent = debt.debtor;
-    amount.textContent = formatMoney(debt.amount);
-    amount.className = "amount income";
-    concept.textContent = debt.concept;
-    party.textContent = debt.party || "Sin receptor";
-    note.textContent = debt.note || "Sin nota";
-    status.type = "button";
-    status.className = "settle-action";
-    status.textContent = debt.settled ? "Satisfecha" : "Pendiente";
-    deleteButton.type = "button";
-    deleteButton.className = "delete-action";
-    deleteButton.setAttribute("aria-label", `Eliminar deuda de ${debt.debtor}`);
-    deleteButton.title = "Eliminar";
-    deleteButton.textContent = "x";
-    row.append(date, debtor, amount, concept, party, note, status, deleteButton);
-    listFragment.append(row);
-  });
-
-  const summaryFragment = document.createDocumentFragment();
-
-  [...balances.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([person, balance]) => {
-      const row = document.createElement("article");
+  peopleWithActivity
+    .map((person) => ({ person, balance: getSharedBalance(person.id) }))
+    .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+    .forEach(({ person, balance }) => {
+      const card = document.createElement("article");
       const name = document.createElement("strong");
-      const spacerA = document.createElement("span");
-      const spacerB = document.createElement("span");
       const value = document.createElement("span");
+      const hint = document.createElement("span");
 
-      row.className = "breakdown-row";
-      name.textContent = person;
-      value.className = "amount income";
-      value.textContent = formatMoney(balance);
-      row.append(name, spacerA, spacerB, value);
-      summaryFragment.append(row);
+      card.className = "balance-card";
+      card.dataset.personId = person.id;
+      card.classList.toggle("is-positive", balance > 0.005);
+      card.classList.toggle("is-negative", balance < -0.005);
+      card.classList.toggle("is-zero", Math.abs(balance) < 0.005);
+
+      name.textContent = person.name;
+      value.className = "balance-amount";
+      value.textContent = formatMoney(Math.abs(balance));
+      hint.className = "balance-hint";
+
+      if (Math.abs(balance) < 0.005) {
+        hint.textContent = "Saldado";
+      } else if (balance > 0) {
+        hint.textContent = "te debe";
+      } else {
+        hint.textContent = "le debes";
+      }
+
+      card.append(name, hint, value);
+      fragment.append(card);
     });
 
-  elements.sharedList.append(listFragment);
-  elements.sharedSummary.append(summaryFragment);
+  elements.sharedBalances.append(fragment);
+}
+
+function renderSharedFilterOptions() {
+  const selected = sharedFilterPersonId;
+  const options = ['<option value="all">Todas</option>'].concat(
+    people.map((person) => `<option value="${person.id}">${person.name}</option>`)
+  );
+  elements.sharedPersonFilter.innerHTML = options.join("");
+  elements.sharedPersonFilter.value = people.some((person) => person.id === selected) ? selected : "all";
+  sharedFilterPersonId = elements.sharedPersonFilter.value;
+}
+
+function renderSharedEntries() {
+  const personId = sharedFilterPersonId;
+  const tab = sharedTab;
+  const wantsPending = tab === "pending";
+
+  elements.sharedActions.hidden = !(personId !== "all" && wantsPending);
+
+  if (personId !== "all") {
+    const person = getPerson(personId);
+    elements.sharedSettleButton.textContent = person ? `Liquidar saldo con ${person.name}` : "Liquidar saldo";
+    elements.sharedPayButton.textContent = person ? `Registrar pago con ${person.name}` : "Registrar pago";
+  }
+
+  let entries = sharedEntries.filter((entry) =>
+    wantsPending ? entry.status === "pending" : entry.status === "settled"
+  );
+
+  if (personId !== "all") {
+    entries = entries.filter((entry) => entry.personId === personId);
+  }
+
+  entries.sort((a, b) => (b.date + b.createdAt).localeCompare(a.date + a.createdAt));
+
+  elements.sharedEntries.innerHTML = "";
+
+  if (!entries.length) {
+    elements.sharedEntries.innerHTML = `<p class="empty-state">${
+      wantsPending ? "Sin entradas pendientes." : "Sin liquidaciones archivadas."
+    }</p>`;
+    return;
+  }
+
+  if (wantsPending) {
+    renderPendingEntries(entries);
+  } else {
+    renderArchiveEntries(entries);
+  }
+}
+
+function entryBalanceImpact(entry) {
+  if (entry.type === "expense") {
+    return entry.paidBy === "me" ? entry.theirShare : -entry.myShare;
+  }
+  return entry.paidBy === "me" ? entry.total : -entry.total;
+}
+
+function entryDescription(entry) {
+  const personName = getPersonName(entry.personId);
+  if (entry.type === "settlement") {
+    return `Liquidacion con ${personName}`;
+  }
+  if (entry.type === "payment") {
+    return entry.paidBy === "me"
+      ? `Pago a cuenta a ${personName}`
+      : `Pago a cuenta de ${personName}`;
+  }
+  const mode = entry.splitMode === "full"
+    ? entry.paidBy === "me" ? `Prestado a ${personName}` : `Cubierto por ${personName}`
+    : entry.paidBy === "me" ? `Pagaste tu` : `Pago ${personName}`;
+  return `${entry.concept} — ${mode}`;
+}
+
+function renderPendingEntries(entries) {
+  const fragment = document.createDocumentFragment();
+
+  entries.forEach((entry) => {
+    fragment.append(buildSharedEntryRow(entry, false));
+  });
+
+  elements.sharedEntries.append(fragment);
+}
+
+function renderArchiveEntries(entries) {
+  const groups = new Map();
+  entries.forEach((entry) => {
+    const key = entry.settlementId || `solo-${entry.id}`;
+    const bucket = groups.get(key) ?? [];
+    bucket.push(entry);
+    groups.set(key, bucket);
+  });
+
+  const sortedGroups = [...groups.values()].sort((a, b) => {
+    const aDate = a[0]?.settledAt || a[0]?.date || "";
+    const bDate = b[0]?.settledAt || b[0]?.date || "";
+    return bDate.localeCompare(aDate);
+  });
+
+  const fragment = document.createDocumentFragment();
+
+  sortedGroups.forEach((bucket) => {
+    const settlement = bucket.find((entry) => entry.type === "settlement");
+    const header = document.createElement("div");
+    header.className = "archive-group";
+
+    if (settlement) {
+      const title = document.createElement("strong");
+      title.textContent = `Liquidacion del ${formatDate(settlement.date)} — ${getPersonName(settlement.personId)}`;
+      const subtitle = document.createElement("span");
+      const direction = settlement.paidBy === "me" ? "tu pagaste" : "te pagaron";
+      subtitle.textContent = `${formatMoney(settlement.total)} (${direction})`;
+      header.append(title, subtitle);
+    } else {
+      const title = document.createElement("strong");
+      title.textContent = `Entrada cerrada — ${getPersonName(bucket[0].personId)}`;
+      header.append(title);
+    }
+
+    fragment.append(header);
+
+    bucket
+      .filter((entry) => entry.type !== "settlement")
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .forEach((entry) => {
+        fragment.append(buildSharedEntryRow(entry, true));
+      });
+  });
+
+  elements.sharedEntries.append(fragment);
+}
+
+function buildSharedEntryRow(entry, archived) {
+  const row = document.createElement("article");
+  row.className = "shared-entry";
+  row.dataset.id = entry.id;
+  row.classList.toggle("is-settled", archived);
+
+  const date = document.createElement("span");
+  date.className = "shared-entry-date";
+  date.textContent = formatDate(entry.date);
+
+  const main = document.createElement("div");
+  main.className = "shared-entry-main";
+  const description = document.createElement("strong");
+  description.textContent = entryDescription(entry);
+  main.append(description);
+
+  if (entry.note) {
+    const note = document.createElement("span");
+    note.className = "shared-entry-note";
+    note.textContent = entry.note;
+    main.append(note);
+  }
+
+  if (entry.type === "expense" && entry.splitMode !== "full") {
+    const breakdown = document.createElement("span");
+    breakdown.className = "shared-entry-breakdown";
+    const personName = getPersonName(entry.personId);
+    breakdown.textContent = `Total ${formatMoney(entry.total)} — tu ${formatMoney(entry.myShare)} · ${personName} ${formatMoney(entry.theirShare)}`;
+    main.append(breakdown);
+  }
+
+  const impact = entryBalanceImpact(entry);
+  const amount = document.createElement("span");
+  amount.className = "shared-entry-amount";
+  if (impact > 0.005) {
+    amount.classList.add("income");
+    amount.textContent = `+${formatMoney(impact)}`;
+  } else if (impact < -0.005) {
+    amount.classList.add("expense");
+    amount.textContent = `-${formatMoney(-impact)}`;
+  } else {
+    amount.textContent = formatMoney(0);
+  }
+
+  row.append(date, main, amount);
+
+  if (!archived) {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-action";
+    deleteButton.dataset.action = "delete-shared";
+    deleteButton.title = "Eliminar";
+    deleteButton.textContent = "x";
+    row.append(deleteButton);
+  }
+
+  return row;
+}
+
+function renderPeople() {
+  elements.peopleCount.textContent = `${people.length} personas`;
+  elements.peopleList.innerHTML = "";
+
+  if (!people.length) {
+    elements.peopleList.innerHTML = '<p class="empty-state">Aun no hay personas. Anade la primera arriba.</p>';
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  people.forEach((person) => {
+    const item = document.createElement("article");
+    const name = document.createElement("input");
+    const saveButton = document.createElement("button");
+    const deleteButton = document.createElement("button");
+
+    item.className = "config-item";
+    item.dataset.personId = person.id;
+    name.value = person.name;
+    name.setAttribute("aria-label", "Nombre de la persona");
+    saveButton.type = "button";
+    saveButton.className = "save-action";
+    saveButton.dataset.action = "save-person";
+    saveButton.title = "Guardar";
+    saveButton.textContent = "OK";
+    deleteButton.type = "button";
+    deleteButton.className = "delete-action";
+    deleteButton.dataset.action = "delete-person";
+    deleteButton.title = personHasEntries(person.id)
+      ? "No se puede eliminar (tiene entradas)"
+      : "Eliminar";
+    deleteButton.textContent = "x";
+    deleteButton.disabled = personHasEntries(person.id);
+
+    item.append(name, saveButton, deleteButton);
+    fragment.append(item);
+  });
+
+  elements.peopleList.append(fragment);
 }
 
 function renderConcepts() {
@@ -919,7 +1303,8 @@ function getSortedConcepts() {
 function render() {
   renderMovements();
   renderAnalysis();
-  renderShared();
+  renderSharedView();
+  renderPeople();
   renderConcepts();
   renderCategories();
   renderChangelog();
@@ -939,21 +1324,72 @@ function createMovement(formData) {
   };
 }
 
-function createSharedDebt(movement, totalAmount, ratio) {
-  const owedAmount = totalAmount * ratio;
+function buildSharedExpenseEntry({ personId, total, modeKey, myShare, theirShare, date, concept, note, sourceMovementId }) {
+  const mode = SHARED_MODES[modeKey];
 
   return {
     id: createId(),
-    sourceMovementId: movement.id,
-    debtor: elements.sharedWith.value.trim(),
-    amount: owedAmount,
-    date: movement.date,
-    concept: movement.concept,
-    party: movement.party,
-    note: movement.note,
-    settled: false,
+    type: "expense",
+    personId,
+    date,
+    concept,
+    note: note || "",
+    total,
+    paidBy: mode.paidBy,
+    splitMode: mode.split,
+    myShare,
+    theirShare,
+    sourceMovementId: sourceMovementId || null,
+    status: "pending",
+    settledAt: null,
+    settlementId: null,
     createdAt: new Date().toISOString(),
   };
+}
+
+function buildSharedPaymentEntry({ personId, total, paidBy, date, note, isSettlement = false, settlementId = null }) {
+  return {
+    id: createId(),
+    type: isSettlement ? "settlement" : "payment",
+    personId,
+    date,
+    concept: isSettlement ? "Liquidacion" : "Pago a cuenta",
+    note: note || "",
+    total,
+    paidBy,
+    splitMode: "payment",
+    myShare: 0,
+    theirShare: 0,
+    sourceMovementId: null,
+    status: isSettlement ? "settled" : "pending",
+    settledAt: isSettlement ? new Date().toISOString() : null,
+    settlementId,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function computeSharedShares(total, modeKey, rawMyShare, rawTheirShare) {
+  const mode = SHARED_MODES[modeKey];
+
+  if (!mode) {
+    throw new Error("Modo compartido invalido");
+  }
+
+  if (mode.split === "equal") {
+    const half = Math.round((total / 2) * 100) / 100;
+    return { myShare: half, theirShare: total - half };
+  }
+
+  if (mode.split === "full") {
+    if (mode.paidBy === "me") {
+      return { myShare: 0, theirShare: total };
+    }
+    return { myShare: total, theirShare: 0 };
+  }
+
+  const myShare = Math.round((Number(rawMyShare) || 0) * 100) / 100;
+  const theirShare = Math.round((Number(rawTheirShare) || 0) * 100) / 100;
+  return { myShare, theirShare };
 }
 
 function resetMovementForm(movement) {
@@ -962,6 +1398,10 @@ function resetMovementForm(movement) {
   setSelectedDate(movement ? new Date(`${movement.date}T00:00:00`) : new Date());
   elements.isShared.checked = false;
   elements.sharedFields.hidden = true;
+  elements.sharedUneven.hidden = true;
+  elements.sharedMyShare.value = "";
+  elements.sharedTheirShare.value = "";
+  elements.sharedUnevenFeedback.textContent = "";
   elements.submitButton.textContent = "Anadir movimiento";
   editingMovementId = null;
   syncMovementSelects();
@@ -1108,10 +1548,11 @@ function renderCsvPreview(items) {
 function exportBackup() {
   const backup = {
     exportedAt: new Date().toISOString(),
-    version: 1,
+    version: 2,
     movements,
     settings,
-    sharedExpenses,
+    people,
+    sharedEntries,
   };
   const content = `window.FlowGridBackup = ${JSON.stringify(backup, null, 2)};\n`;
   const blob = new Blob([content], { type: "text/javascript" });
@@ -1132,7 +1573,8 @@ function parseBackup(text) {
     throw new Error("Backup invalido");
   }
 
-  parsed.sharedExpenses = Array.isArray(parsed.sharedExpenses) ? parsed.sharedExpenses : [];
+  parsed.people = Array.isArray(parsed.people) ? parsed.people : [];
+  parsed.sharedEntries = Array.isArray(parsed.sharedEntries) ? parsed.sharedEntries : [];
 
   return parsed;
 }
@@ -1213,43 +1655,170 @@ elements.csvFile.addEventListener("change", async () => {
   renderCsvPreview(pendingCsvMovements);
 });
 
-elements.sharedList.addEventListener("click", (event) => {
-  const settleButton = event.target.closest(".settle-action");
-  const deleteButton = event.target.closest(".delete-action");
+elements.sharedEntries.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action='delete-shared']");
 
-  if (!settleButton && !deleteButton) {
+  if (!button) {
     return;
   }
 
   const row = event.target.closest("[data-id]");
-  const debt = sharedExpenses.find((candidate) => candidate.id === row.dataset.id);
+  const entry = sharedEntries.find((candidate) => candidate.id === row.dataset.id);
 
-  if (!debt) {
+  if (!entry || entry.status !== "pending") {
     return;
   }
 
-  if (deleteButton) {
-    if (!confirm(`Eliminar deuda de ${debt.debtor} por ${formatMoney(debt.amount)}?`)) {
-      return;
-    }
-
-    sharedExpenses = sharedExpenses.filter((candidate) => candidate.id !== debt.id);
-    saveSharedExpenses();
-    renderShared();
+  if (!confirm(`Eliminar entrada "${entry.concept}" con ${getPersonName(entry.personId)}?`)) {
     return;
   }
 
-  sharedExpenses = sharedExpenses.map((debt) =>
-    debt.id === row.dataset.id
-      ? {
-          ...debt,
-          settled: !debt.settled,
-          settledAt: debt.settled ? "" : new Date().toISOString(),
-        }
-      : debt
+  sharedEntries = sharedEntries.filter((candidate) => candidate.id !== entry.id);
+  if (entry.sourceMovementId) {
+    movements = movements.map((movement) =>
+      movement.id === entry.sourceMovementId ? { ...movement, sharedEntryId: null } : movement
+    );
+    saveMovements();
+  }
+  saveSharedEntries();
+  renderSharedView();
+  renderMovements();
+});
+
+elements.sharedPersonFilter.addEventListener("change", () => {
+  sharedFilterPersonId = elements.sharedPersonFilter.value;
+  renderSharedEntries();
+});
+
+elements.sharedTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    sharedTab = tab.dataset.sharedTab;
+    elements.sharedTabs.forEach((other) => {
+      other.classList.toggle("is-active", other === tab);
+    });
+    renderSharedEntries();
+  });
+});
+
+elements.sharedBalances.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-person-id]");
+  if (!card) {
+    return;
+  }
+  sharedFilterPersonId = card.dataset.personId;
+  sharedTab = "pending";
+  elements.sharedTabs.forEach((tab) => {
+    tab.classList.toggle("is-active", tab.dataset.sharedTab === "pending");
+  });
+  elements.sharedPersonFilter.value = sharedFilterPersonId;
+  renderSharedEntries();
+});
+
+elements.sharedPayButton.addEventListener("click", () => {
+  if (sharedFilterPersonId === "all") {
+    return;
+  }
+  openPaymentModal(sharedFilterPersonId);
+});
+
+elements.sharedSettleButton.addEventListener("click", () => {
+  if (sharedFilterPersonId === "all") {
+    return;
+  }
+  settleBalance(sharedFilterPersonId);
+});
+
+function openPaymentModal(personId) {
+  elements.paymentModal.hidden = false;
+  elements.paymentForm.reset();
+  elements.paymentFeedback.textContent = "";
+  elements.paymentPerson.innerHTML = people
+    .map((person) => `<option value="${person.id}">${person.name}</option>`)
+    .join("");
+  elements.paymentPerson.value = personId;
+  elements.paymentDate.value = toIsoDate(new Date());
+  elements.paymentTitle.textContent = `Registrar pago con ${getPersonName(personId)}`;
+  elements.paymentAmount.focus();
+}
+
+function closePaymentModal() {
+  elements.paymentModal.hidden = true;
+}
+
+function settleBalance(personId) {
+  const balance = getSharedBalance(personId);
+  const personName = getPersonName(personId);
+
+  if (Math.abs(balance) < 0.005) {
+    alert(`No hay saldo pendiente con ${personName}.`);
+    return;
+  }
+
+  const direction = balance > 0 ? `${personName} te paga ${formatMoney(balance)}` : `tu pagas ${formatMoney(-balance)} a ${personName}`;
+  if (!confirm(`Liquidar saldo con ${personName}: ${direction}. Las entradas pasaran al archivo.`)) {
+    return;
+  }
+
+  const settlementId = createId();
+  const today = toIsoDate(new Date());
+  const settledAt = new Date().toISOString();
+  const settlement = buildSharedPaymentEntry({
+    personId,
+    total: Math.abs(balance),
+    paidBy: balance > 0 ? "them" : "me",
+    date: today,
+    isSettlement: true,
+    settlementId,
+  });
+
+  sharedEntries = sharedEntries.map((entry) =>
+    entry.personId === personId && entry.status === "pending"
+      ? { ...entry, status: "settled", settledAt, settlementId }
+      : entry
   );
-  saveSharedExpenses();
-  renderShared();
+  sharedEntries = [settlement, ...sharedEntries];
+  saveSharedEntries();
+  sharedTab = "archive";
+  elements.sharedTabs.forEach((tab) => {
+    tab.classList.toggle("is-active", tab.dataset.sharedTab === "archive");
+  });
+  renderSharedView();
+}
+
+elements.closePaymentModal.addEventListener("click", closePaymentModal);
+
+elements.paymentModal.addEventListener("click", (event) => {
+  if (event.target === elements.paymentModal) {
+    closePaymentModal();
+  }
+});
+
+elements.paymentForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const personId = elements.paymentPerson.value;
+  const amount = Number(elements.paymentAmount.value);
+  const direction = elements.paymentDirection.value;
+  const date = elements.paymentDate.value;
+  const note = elements.paymentNote.value.trim();
+
+  if (!personId || !Number.isFinite(amount) || amount <= 0 || !date) {
+    elements.paymentFeedback.textContent = "Completa persona, importe y fecha.";
+    return;
+  }
+
+  const entry = buildSharedPaymentEntry({
+    personId,
+    total: amount,
+    paidBy: direction === "me-pays" ? "me" : "them",
+    date,
+    note,
+  });
+
+  sharedEntries = [entry, ...sharedEntries];
+  saveSharedEntries();
+  closePaymentModal();
+  renderSharedView();
 });
 
 elements.csvImportButton.addEventListener("click", () => {
@@ -1309,10 +1878,12 @@ elements.backupImport.addEventListener("click", () => {
 
   movements = pendingBackup.movements;
   settings = pendingBackup.settings;
-  sharedExpenses = pendingBackup.sharedExpenses;
+  people = pendingBackup.people;
+  sharedEntries = pendingBackup.sharedEntries;
   saveMovements();
   saveSettings();
-  saveSharedExpenses();
+  savePeople();
+  saveSharedEntries();
   pendingBackup = null;
   elements.backupFile.value = "";
   elements.backupImport.disabled = true;
@@ -1326,35 +1897,79 @@ elements.form.addEventListener("submit", (event) => {
 
   const formData = new FormData(elements.form);
   const totalAmount = Number(formData.get("amount"));
-  const shouldShare = elements.isShared.checked && formData.get("type") === "expense";
-  const sharedRatio = Number(elements.sharedRatio.value) / 100;
+  const isEditing = !!editingMovementId;
+  const shouldShare = !isEditing && elements.isShared.checked && formData.get("type") === "expense";
   const movement = createMovement(formData);
 
+  let sharedEntry = null;
+
   if (shouldShare) {
-    if (!elements.sharedWith.value.trim() || !Number.isFinite(sharedRatio) || sharedRatio <= 0 || sharedRatio >= 1) {
-      elements.feedback.textContent = "Completa con quien compartes y una proporcion entre 1 y 99.";
+    const personId = elements.sharedPerson.value;
+    const modeKey = elements.sharedMode.value;
+    const mode = SHARED_MODES[modeKey];
+
+    if (!personId || !mode) {
+      elements.feedback.textContent = "Selecciona persona y modo del gasto compartido.";
       return;
     }
 
-    movement.amount = totalAmount * (1 - sharedRatio);
-    movement.shared = true;
-    movement.sharedWith = elements.sharedWith.value.trim();
+    const { myShare, theirShare } = computeSharedShares(
+      totalAmount,
+      modeKey,
+      elements.sharedMyShare.value,
+      elements.sharedTheirShare.value
+    );
+
+    if (mode.split === "uneven") {
+      const sum = Math.round((myShare + theirShare) * 100) / 100;
+      if (Math.abs(sum - totalAmount) >= 0.005) {
+        elements.feedback.textContent = `Las partes (${formatMoney(sum)}) no coinciden con el total (${formatMoney(totalAmount)}).`;
+        return;
+      }
+    }
+
+    sharedEntry = buildSharedExpenseEntry({
+      personId,
+      total: totalAmount,
+      modeKey,
+      myShare,
+      theirShare,
+      date: movement.date,
+      concept: movement.concept,
+      note: movement.note,
+      sourceMovementId: movement.id,
+    });
+
+    movement.amount = myShare;
+    movement.sharedEntryId = sharedEntry.id;
   }
 
-  if (editingMovementId) {
-    movements = movements.map((currentMovement) =>
-      currentMovement.id === editingMovementId ? { ...movement, id: editingMovementId } : currentMovement
+  const skipMovement = shouldShare && SHARED_MODES[elements.sharedMode.value].paidBy === "me" && SHARED_MODES[elements.sharedMode.value].split === "full";
+
+  if (isEditing) {
+    const existing = movements.find((current) => current.id === editingMovementId);
+    movements = movements.map((current) =>
+      current.id === editingMovementId
+        ? { ...movement, id: editingMovementId, sharedEntryId: existing?.sharedEntryId ?? null }
+        : current
     );
     editingMovementId = null;
     elements.submitButton.textContent = "Anadir movimiento";
     elements.feedback.textContent = "Movimiento actualizado.";
   } else {
-    movements = [movement, ...movements];
-    if (shouldShare) {
-      sharedExpenses = [createSharedDebt(movement, totalAmount, sharedRatio), ...sharedExpenses];
-      saveSharedExpenses();
+    if (!skipMovement) {
+      movements = [movement, ...movements];
     }
-    elements.feedback.textContent = "Movimiento anadido.";
+    if (sharedEntry) {
+      if (skipMovement) {
+        sharedEntry.sourceMovementId = null;
+      }
+      sharedEntries = [sharedEntry, ...sharedEntries];
+      saveSharedEntries();
+    }
+    elements.feedback.textContent = skipMovement
+      ? "Prestamo registrado en Compartidos."
+      : "Movimiento anadido.";
   }
 
   saveMovements();
@@ -1414,11 +2029,22 @@ elements.list.addEventListener("click", (event) => {
     return;
   }
 
+  const linkedEntry = movement.sharedEntryId
+    ? sharedEntries.find((entry) => entry.id === movement.sharedEntryId)
+    : null;
+
+  if (linkedEntry && linkedEntry.status === "settled") {
+    alert(`No puedes borrar este movimiento: su entrada compartida con ${getPersonName(linkedEntry.personId)} ya esta liquidada.`);
+    return;
+  }
+
   if (confirm(`Eliminar "${movement.concept}" del ${formatDate(movement.date)}?`)) {
     movements = movements.filter((candidate) => candidate.id !== movement.id);
-    sharedExpenses = sharedExpenses.filter((debt) => debt.sourceMovementId !== movement.id);
+    if (linkedEntry) {
+      sharedEntries = sharedEntries.filter((entry) => entry.id !== linkedEntry.id);
+      saveSharedEntries();
+    }
     saveMovements();
-    saveSharedExpenses();
     render();
   }
 });
@@ -1504,6 +2130,74 @@ elements.conceptList.addEventListener("click", (event) => {
   control.addEventListener("input", renderMovements);
 });
 
+elements.peopleForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const name = elements.newPersonName.value.trim();
+
+  if (!name) {
+    return;
+  }
+
+  const existing = people.find((person) => person.name.toLowerCase() === name.toLowerCase());
+  if (existing) {
+    elements.peopleForm.reset();
+    return;
+  }
+
+  people = [
+    ...people,
+    { id: createId(), name, email: "", invitedAt: null, createdAt: new Date().toISOString() },
+  ];
+  savePeople();
+  elements.peopleForm.reset();
+  renderPeople();
+  renderSharedView();
+});
+
+elements.peopleList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action]");
+
+  if (!button) {
+    return;
+  }
+
+  const item = button.closest("[data-person-id]");
+  const person = people.find((candidate) => candidate.id === item.dataset.personId);
+
+  if (!person) {
+    return;
+  }
+
+  if (button.dataset.action === "save-person") {
+    const nextName = item.querySelector("input").value.trim();
+    if (!nextName || nextName === person.name) {
+      return;
+    }
+    person.name = nextName;
+    savePeople();
+    renderPeople();
+    renderSharedView();
+    syncSharedPersonOptions();
+    syncSharedModeLabels();
+    return;
+  }
+
+  if (button.dataset.action === "delete-person") {
+    if (personHasEntries(person.id)) {
+      alert(`No puedes borrar a ${person.name}: tiene entradas en Compartidos.`);
+      return;
+    }
+    if (!confirm(`Eliminar a ${person.name}?`)) {
+      return;
+    }
+    people = people.filter((candidate) => candidate.id !== person.id);
+    savePeople();
+    renderPeople();
+    renderSharedView();
+    syncSharedPersonOptions();
+  }
+});
+
 elements.categoryList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-action='save-category']");
 
@@ -1535,6 +2229,39 @@ elements.concept.addEventListener("change", syncCategoryFromConcept);
 elements.isShared.addEventListener("change", () => {
   syncSharedFields();
 });
+elements.sharedPerson.addEventListener("change", () => {
+  syncSharedModeLabels();
+  syncSharedUnevenVisibility();
+});
+elements.sharedMode.addEventListener("change", () => {
+  syncSharedUnevenVisibility();
+  syncSharedTotalHint();
+});
+elements.sharedMyShare.addEventListener("input", syncSharedTotalHint);
+elements.sharedTheirShare.addEventListener("input", syncSharedTotalHint);
+elements.amount.addEventListener("input", syncSharedTotalHint);
+elements.sharedPersonAdd.addEventListener("click", () => {
+  const name = prompt("Nombre de la persona:");
+  if (!name?.trim()) {
+    return;
+  }
+  const trimmed = name.trim();
+  const existing = people.find((person) => person.name.toLowerCase() === trimmed.toLowerCase());
+  let personId;
+  if (existing) {
+    personId = existing.id;
+  } else {
+    const created = { id: createId(), name: trimmed, email: "", invitedAt: null, createdAt: new Date().toISOString() };
+    people = [...people, created];
+    savePeople();
+    personId = created.id;
+  }
+  syncSharedPersonOptions();
+  elements.sharedPerson.value = personId;
+  syncSharedModeLabels();
+  syncSharedUnevenVisibility();
+  renderPeople();
+});
 elements.dateTrigger.addEventListener("click", () => toggleDatePicker());
 elements.prevMonth.addEventListener("click", () => moveDatePickerMonth(-1));
 elements.nextMonth.addEventListener("click", () => moveDatePickerMonth(1));
@@ -1565,6 +2292,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     toggleDatePicker(false);
     closeMovementModal();
+    closePaymentModal();
   }
 });
 
