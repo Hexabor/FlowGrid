@@ -1353,10 +1353,9 @@ textarea {
 .movement-header,
 .movement-card {
   display: grid;
-  grid-template-columns: 82px minmax(120px, 1fr) 92px minmax(160px, 1.4fr) minmax(130px, 1fr) 112px 88px minmax(90px, 0.7fr) 54px 54px 28px;
+  grid-template-columns: 78px minmax(100px, 1fr) 84px minmax(120px, 1.3fr) minmax(100px, 0.9fr) minmax(80px, 96px) 76px minmax(70px, 0.6fr) 50px 50px 28px;
   gap: 6px;
   align-items: center;
-  min-width: 1160px;
 }
 
 .movement-actions {
