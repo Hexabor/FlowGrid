@@ -929,29 +929,6 @@ dt {
   flex: 0 0 220px;
 }
 
-.shared-tabs {
-  display: flex;
-  gap: 6px;
-  margin-left: auto;
-}
-
-.shared-tab {
-  min-height: 32px;
-  padding: 0 12px;
-  color: var(--muted);
-  background: #fbfcfd;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.shared-tab.is-active {
-  color: #ffffff;
-  background: var(--nav);
-  border-color: var(--nav);
-}
-
 .shared-entries {
   display: grid;
   gap: 6px;
@@ -959,7 +936,7 @@ dt {
 
 .shared-entry {
   display: grid;
-  grid-template-columns: 82px minmax(0, 1fr) auto auto;
+  grid-template-columns: 82px minmax(0, 1fr) auto auto auto;
   gap: 10px;
   align-items: center;
   padding: 8px 10px;
@@ -968,9 +945,9 @@ dt {
   border-radius: 8px;
 }
 
-.shared-entry.is-settled {
-  background: #f3f5f7;
-  opacity: 0.85;
+.shared-entry[data-type="payment"] {
+  background: #eef5fb;
+  border-color: #cfdfeb;
 }
 
 .shared-entry-date {
@@ -1009,26 +986,19 @@ dt {
   color: var(--red);
 }
 
-.archive-group {
-  display: grid;
-  gap: 2px;
+.month-group {
   margin-top: 12px;
-  padding: 8px 10px;
-  background: #eef2f4;
-  border-radius: 8px;
-}
-
-.archive-group:first-child {
-  margin-top: 0;
-}
-
-.archive-group strong {
-  font-size: 0.88rem;
-}
-
-.archive-group span {
+  padding: 6px 4px 4px;
   color: var(--muted);
   font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+
+.month-group:first-child {
+  margin-top: 0;
 }
 
 .shared-person-control {
@@ -1638,17 +1608,19 @@ dt {
     flex: 1 1 auto;
   }
 
-  .shared-tabs {
-    margin-left: 0;
-  }
-
   .shared-entry {
     grid-template-columns: 1fr auto;
     grid-template-areas:
       "date     amount"
       "main     main"
-      "delete   delete";
+      "actions  actions";
     align-items: start;
+  }
+
+  .shared-entry .edit-action,
+  .shared-entry .delete-action {
+    grid-area: actions;
+    justify-self: end;
   }
 
   .shared-entry-date {
@@ -1662,11 +1634,6 @@ dt {
 
   .shared-entry-main {
     grid-area: main;
-  }
-
-  .shared-entry .delete-action {
-    grid-area: delete;
-    justify-self: end;
   }
 
   .movement-list {

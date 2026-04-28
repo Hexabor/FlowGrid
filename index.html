@@ -425,10 +425,6 @@
                   <option value="all">Todas</option>
                 </select>
               </label>
-              <div class="shared-tabs" role="tablist">
-                <button class="shared-tab is-active" type="button" data-shared-tab="pending">Pendientes</button>
-                <button class="shared-tab" type="button" data-shared-tab="archive">Archivo</button>
-              </div>
             </div>
 
             <div id="shared-entries" class="shared-entries"></div>
@@ -438,7 +434,7 @@
         <div id="payment-modal" class="modal" hidden>
           <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-title">
             <div class="section-heading">
-              <h2 id="payment-title">Registrar pago</h2>
+              <h2 id="payment-title">Liquidar saldo</h2>
               <button id="close-payment-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
               <p id="payment-feedback" role="status" aria-live="polite"></p>
             </div>
@@ -453,13 +449,6 @@
                 <input id="payment-amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" required>
               </label>
               <label>
-                <span>Direccion</span>
-                <select id="payment-direction" name="direction" required>
-                  <option value="me-pays">Yo pago</option>
-                  <option value="them-pays">Me pagan</option>
-                </select>
-              </label>
-              <label>
                 <span>Fecha</span>
                 <input id="payment-date" name="date" type="date" required>
               </label>
@@ -467,7 +456,7 @@
                 <span>Nota</span>
                 <input id="payment-note" name="note" type="text" autocomplete="off">
               </label>
-              <button class="primary-action" type="submit">Registrar pago</button>
+              <button class="primary-action" type="submit">Liquidar</button>
             </form>
           </div>
         </div>

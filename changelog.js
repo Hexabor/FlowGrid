@@ -89,4 +89,18 @@ window.FlowGridChangelog = [
       "Render quirurgico: las acciones ya no rebuilcen toda la app (movimientos+analisis+compartidos+conceptos+categorias+changelog) en cada interaccion. Solo se actualiza lo afectado por cada cambio.",
     ],
   },
+  {
+    date: "2026-04-29",
+    commit: "dev@HEAD",
+    title: "Compartidos simplificado, edicion y separadores de mes",
+    changes: [
+      "Modelo simplificado: olvidamos el archivo y las pestañas Pendientes/Archivo. Toda liquidacion se registra como una entrada de tipo pago que afecta al saldo. Una sola lista por persona.",
+      "Un unico boton Liquidar saldo en cada tarjeta. Abre modal con importe pre-rellenado al saldo y direccion inferida (paga quien debe).",
+      "Edicion de entradas compartidas: nuevo boton Editar en cada entrada de gasto. Reabre el modal de movimiento con el bloque shared pre-rellenado (persona, modo, partes).",
+      "La edicion mantiene la coherencia movimiento ↔ entrada compartida: al guardar se borran los registros antiguos y se recrean con los datos nuevos. Si cambias el modo (ej. de partes iguales a se te debe total), se ajusta automaticamente si hay movimiento o no.",
+      "Tambien al editar un movimiento desde Movimientos: si tenia entrada compartida asociada, el bloque shared aparece pre-rellenado y los cambios afectan a ambas piezas.",
+      "Separador de mes en el listado de Movimientos y de Compartidos. En Movimientos se mantiene ademas el separador diario en movil.",
+      "Las entradas de tipo pago se distinguen visualmente (fondo azul claro).",
+    ],
+  },
 ];
