@@ -185,6 +185,7 @@ const elements = {
   paymentPerson: document.querySelector("#payment-person"),
   paymentAmount: document.querySelector("#payment-amount"),
   paymentDate: document.querySelector("#payment-date"),
+  paymentDateTrigger: document.querySelector("#payment-date-trigger"),
   paymentNote: document.querySelector("#payment-note"),
   paymentFeedback: document.querySelector("#payment-feedback"),
   peopleForm: document.querySelector("#people-form"),
@@ -542,25 +543,55 @@ function getMondayFirstOffset(date) {
   return (date.getDay() + 6) % 7;
 }
 
+let activeDateTarget = null;
+
+function getActiveDateTarget() {
+  return activeDateTarget ?? { input: elements.date, trigger: elements.dateTrigger };
+}
+
+function writeDateToTarget(target, date) {
+  target.input.value = toIsoDate(date);
+  target.trigger.textContent = formatDate(target.input.value);
+}
+
 function setSelectedDate(date) {
-  elements.date.value = toIsoDate(date);
-  elements.dateTrigger.textContent = formatDate(elements.date.value);
+  writeDateToTarget(getActiveDateTarget(), date);
   datePickerMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-  renderDatePicker();
+  if (!elements.datePicker.hidden) {
+    renderDatePicker();
+  }
+}
+
+function setMovementDate(date) {
+  writeDateToTarget({ input: elements.date, trigger: elements.dateTrigger }, date);
+}
+
+function setPaymentDate(date) {
+  writeDateToTarget({ input: elements.paymentDate, trigger: elements.paymentDateTrigger }, date);
 }
 
 function setInitialDate() {
-  setSelectedDate(new Date());
+  setMovementDate(new Date());
   elements.currentPeriod.textContent = new Intl.DateTimeFormat(APP_LOCALE, {
     month: "long",
     year: "numeric",
   }).format(new Date());
 }
 
+function openDatePickerFor(target) {
+  activeDateTarget = target;
+  const currentValue = target.input.value;
+  if (currentValue) {
+    const [y, m] = currentValue.split("-").map(Number);
+    datePickerMonth = new Date(y, m - 1, 1);
+  }
+  toggleDatePicker(true);
+}
+
 function toggleDatePicker(forceOpen) {
   const shouldOpen = forceOpen ?? elements.datePicker.hidden;
   elements.datePicker.hidden = !shouldOpen;
-  elements.dateTrigger.setAttribute("aria-expanded", String(shouldOpen));
+  getActiveDateTarget().trigger.setAttribute("aria-expanded", String(shouldOpen));
 
   if (shouldOpen) {
     renderDatePicker();
@@ -569,7 +600,7 @@ function toggleDatePicker(forceOpen) {
 }
 
 function positionDatePicker() {
-  const triggerRect = elements.dateTrigger.getBoundingClientRect();
+  const triggerRect = getActiveDateTarget().trigger.getBoundingClientRect();
   const pickerRect = elements.datePicker.getBoundingClientRect();
   const spacing = 6;
   const viewportPadding = 10;
@@ -588,7 +619,7 @@ function positionDatePicker() {
 }
 
 function renderDatePicker() {
-  const selectedDate = elements.date.value;
+  const selectedDate = getActiveDateTarget().input.value;
   const today = toIsoDate(new Date());
   const year = datePickerMonth.getFullYear();
   const month = datePickerMonth.getMonth();
@@ -1366,7 +1397,7 @@ function computeSharedShares(total, modeKey, rawMyShare, rawTheirShare) {
 function resetMovementForm(movement) {
   elements.form.reset();
   elements.type.value = movement?.type ?? "expense";
-  setSelectedDate(movement ? new Date(`${movement.date}T00:00:00`) : new Date());
+  setMovementDate(movement ? new Date(`${movement.date}T00:00:00`) : new Date());
   elements.isShared.checked = false;
   elements.sharedFields.hidden = true;
   elements.sharedUneven.hidden = true;
@@ -1704,7 +1735,7 @@ function openLiquidateModal(personId) {
     .join("");
   elements.paymentPerson.value = personId;
   elements.paymentAmount.value = Math.abs(balance).toFixed(2);
-  elements.paymentDate.value = toIsoDate(new Date());
+  setPaymentDate(new Date());
 
   const personName = getPersonName(personId);
   const direction = balance > 0 ? `${personName} te paga` : `tu pagas a ${personName}`;
@@ -1964,7 +1995,7 @@ function fillMovementForm(movement) {
   syncMovementSelects();
   elements.concept.value = movement.concept;
   elements.category.value = movement.category;
-  setSelectedDate(new Date(`${movement.date}T00:00:00`));
+  setMovementDate(new Date(`${movement.date}T00:00:00`));
   elements.amount.value = movement.amount;
   elements.party.value = movement.party;
   elements.recurrence.value = movement.recurrence;
@@ -2004,7 +2035,7 @@ function openSharedEntryEdit(entry) {
     const concept = settings.concepts.find((c) => c.label === entry.concept);
     elements.concept.value = entry.concept;
     elements.category.value = concept?.category ?? settings.categories[0]?.value ?? "extra";
-    setSelectedDate(new Date(`${entry.date}T00:00:00`));
+    setMovementDate(new Date(`${entry.date}T00:00:00`));
     elements.party.value = "";
     elements.recurrence.value = "";
     elements.note.value = entry.note || "";
@@ -2288,7 +2319,12 @@ elements.sharedPersonAdd.addEventListener("click", () => {
   syncSharedUnevenVisibility();
   renderPeople();
 });
-elements.dateTrigger.addEventListener("click", () => toggleDatePicker());
+elements.dateTrigger.addEventListener("click", () => {
+  openDatePickerFor({ input: elements.date, trigger: elements.dateTrigger });
+});
+elements.paymentDateTrigger.addEventListener("click", () => {
+  openDatePickerFor({ input: elements.paymentDate, trigger: elements.paymentDateTrigger });
+});
 elements.prevMonth.addEventListener("click", () => moveDatePickerMonth(-1));
 elements.nextMonth.addEventListener("click", () => moveDatePickerMonth(1));
 elements.dateGrid.addEventListener("click", (event) => {
@@ -2306,7 +2342,8 @@ document.addEventListener("click", (event) => {
   if (
     elements.datePicker.hidden ||
     elements.datePicker.contains(event.target) ||
-    elements.dateTrigger.contains(event.target)
+    elements.dateTrigger.contains(event.target) ||
+    elements.paymentDateTrigger.contains(event.target)
   ) {
     return;
   }
