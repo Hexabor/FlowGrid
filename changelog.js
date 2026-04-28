@@ -78,4 +78,15 @@ window.FlowGridChangelog = [
       "Modelo de datos limpio (start clean): claves nuevas flowgrid.people.v1 y flowgrid.shared.v2; los datos de la version anterior dejan de cargarse.",
     ],
   },
+  {
+    date: "2026-04-29",
+    commit: "dev@HEAD",
+    title: "Compartidos: acciones por persona y mejor rendimiento",
+    changes: [
+      "Botones Registrar pago y Liquidar saldo movidos al interior de cada tarjeta de saldo (antes solo aparecian al filtrar por una persona, costaba descubrirlos).",
+      "Cada accion lleva un subtitulo aclaratorio: Registrar pago reduce el saldo sin cerrar entradas (pago a cuenta); Liquidar saldo cierra todas las pendientes con esa persona y las archiva.",
+      "Nuevo boton Ver entradas en la tarjeta para saltar al listado filtrado por esa persona.",
+      "Render quirurgico: las acciones ya no rebuilcen toda la app (movimientos+analisis+compartidos+conceptos+categorias+changelog) en cada interaccion. Solo se actualiza lo afectado por cada cambio.",
+    ],
+  },
 ];

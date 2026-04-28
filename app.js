@@ -178,9 +178,6 @@ const elements = {
   sharedPeopleCount: document.querySelector("#shared-people-count"),
   sharedPersonFilter: document.querySelector("#shared-person-filter"),
   sharedTabs: document.querySelectorAll(".shared-tab"),
-  sharedActions: document.querySelector("#shared-actions"),
-  sharedPayButton: document.querySelector("#shared-pay-button"),
-  sharedSettleButton: document.querySelector("#shared-settle-button"),
   sharedEntries: document.querySelector("#shared-entries"),
   paymentModal: document.querySelector("#payment-modal"),
   closePaymentModal: document.querySelector("#close-payment-modal"),
@@ -896,9 +893,11 @@ function renderSharedBalances() {
     .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
     .forEach(({ person, balance }) => {
       const card = document.createElement("article");
+      const header = document.createElement("div");
       const name = document.createElement("strong");
-      const value = document.createElement("span");
       const hint = document.createElement("span");
+      const value = document.createElement("span");
+      const actions = document.createElement("div");
 
       card.className = "balance-card";
       card.dataset.personId = person.id;
@@ -906,9 +905,8 @@ function renderSharedBalances() {
       card.classList.toggle("is-negative", balance < -0.005);
       card.classList.toggle("is-zero", Math.abs(balance) < 0.005);
 
+      header.className = "balance-header";
       name.textContent = person.name;
-      value.className = "balance-amount";
-      value.textContent = formatMoney(Math.abs(balance));
       hint.className = "balance-hint";
 
       if (Math.abs(balance) < 0.005) {
@@ -919,7 +917,35 @@ function renderSharedBalances() {
         hint.textContent = "le debes";
       }
 
-      card.append(name, hint, value);
+      header.append(name, hint);
+
+      value.className = "balance-amount";
+      value.textContent = formatMoney(Math.abs(balance));
+
+      actions.className = "balance-actions";
+
+      const viewButton = document.createElement("button");
+      viewButton.type = "button";
+      viewButton.className = "balance-action ghost";
+      viewButton.dataset.action = "view";
+      viewButton.textContent = "Ver entradas";
+
+      const payButton = document.createElement("button");
+      payButton.type = "button";
+      payButton.className = "balance-action";
+      payButton.dataset.action = "pay";
+      payButton.innerHTML = `<strong>Registrar pago</strong><small>Reduce el saldo, deja entradas pendientes</small>`;
+
+      const settleButton = document.createElement("button");
+      settleButton.type = "button";
+      settleButton.className = "balance-action settle";
+      settleButton.dataset.action = "settle";
+      settleButton.disabled = Math.abs(balance) < 0.005;
+      settleButton.innerHTML = `<strong>Liquidar saldo</strong><small>Cierra y archiva todas las entradas</small>`;
+
+      actions.append(viewButton, payButton, settleButton);
+
+      card.append(header, value, actions);
       fragment.append(card);
     });
 
@@ -940,14 +966,6 @@ function renderSharedEntries() {
   const personId = sharedFilterPersonId;
   const tab = sharedTab;
   const wantsPending = tab === "pending";
-
-  elements.sharedActions.hidden = !(personId !== "all" && wantsPending);
-
-  if (personId !== "all") {
-    const person = getPerson(personId);
-    elements.sharedSettleButton.textContent = person ? `Liquidar saldo con ${person.name}` : "Liquidar saldo";
-    elements.sharedPayButton.textContent = person ? `Registrar pago con ${person.name}` : "Registrar pago";
-  }
 
   let entries = sharedEntries.filter((entry) =>
     wantsPending ? entry.status === "pending" : entry.status === "settled"
@@ -1701,31 +1719,33 @@ elements.sharedTabs.forEach((tab) => {
 });
 
 elements.sharedBalances.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action]");
   const card = event.target.closest("[data-person-id]");
   if (!card) {
     return;
   }
-  sharedFilterPersonId = card.dataset.personId;
+
+  const personId = card.dataset.personId;
+  const action = button?.dataset.action || "view";
+
+  if (action === "pay") {
+    openPaymentModal(personId);
+    return;
+  }
+
+  if (action === "settle") {
+    settleBalance(personId);
+    return;
+  }
+
+  sharedFilterPersonId = personId;
   sharedTab = "pending";
   elements.sharedTabs.forEach((tab) => {
     tab.classList.toggle("is-active", tab.dataset.sharedTab === "pending");
   });
   elements.sharedPersonFilter.value = sharedFilterPersonId;
   renderSharedEntries();
-});
-
-elements.sharedPayButton.addEventListener("click", () => {
-  if (sharedFilterPersonId === "all") {
-    return;
-  }
-  openPaymentModal(sharedFilterPersonId);
-});
-
-elements.sharedSettleButton.addEventListener("click", () => {
-  if (sharedFilterPersonId === "all") {
-    return;
-  }
-  settleBalance(sharedFilterPersonId);
+  document.querySelector("#shared-entries")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 function openPaymentModal(personId) {
@@ -1848,7 +1868,10 @@ elements.csvImportButton.addEventListener("click", () => {
   elements.csvImportStatus.textContent = `${importedMovements.length} movimientos importados`;
   elements.csvPreview.textContent = "Importacion completada.";
   syncMovementSelects();
-  render();
+  renderMovements();
+  renderAnalysis();
+  renderConcepts();
+  renderCategories();
 });
 
 elements.backupExport.addEventListener("click", exportBackup);
@@ -1973,7 +1996,11 @@ elements.form.addEventListener("submit", (event) => {
   }
 
   saveMovements();
-  render();
+  renderMovements();
+  renderAnalysis();
+  if (sharedEntry || isEditing) {
+    renderSharedView();
+  }
 
   resetMovementForm(movement);
   closeMovementModal();
@@ -2045,7 +2072,11 @@ elements.list.addEventListener("click", (event) => {
       saveSharedEntries();
     }
     saveMovements();
-    render();
+    renderMovements();
+    renderAnalysis();
+    if (linkedEntry) {
+      renderSharedView();
+    }
   }
 });
 
@@ -2065,7 +2096,7 @@ elements.conceptForm.addEventListener("submit", (event) => {
   saveSettings();
   elements.conceptForm.reset();
   syncMovementSelects();
-  render();
+  renderConcepts();
 });
 
 elements.categoryForm.addEventListener("submit", (event) => {
@@ -2081,7 +2112,7 @@ elements.categoryForm.addEventListener("submit", (event) => {
 
   elements.categoryForm.reset();
   syncMovementSelects();
-  render();
+  renderCategories();
 });
 
 elements.conceptList.addEventListener("click", (event) => {
@@ -2123,7 +2154,9 @@ elements.conceptList.addEventListener("click", (event) => {
 
   saveSettings();
   syncMovementSelects();
-  render();
+  renderConcepts();
+  renderMovements();
+  renderAnalysis();
 });
 
 [elements.search, elements.categoryFilter, elements.typeFilter].forEach((control) => {
@@ -2216,7 +2249,9 @@ elements.categoryList.addEventListener("click", (event) => {
   category.label = nextLabel;
   saveSettings();
   syncMovementSelects();
-  render();
+  renderCategories();
+  renderMovements();
+  renderAnalysis();
 });
 
 elements.conceptSort.addEventListener("input", renderConcepts);

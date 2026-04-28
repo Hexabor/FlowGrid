@@ -814,14 +814,71 @@ dt {
 
 .balance-card {
   display: grid;
-  gap: 4px;
+  gap: 8px;
   padding: 12px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-left: 4px solid var(--line);
   border-radius: 8px;
-  cursor: pointer;
   text-align: left;
+}
+
+.balance-header {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.balance-actions {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.balance-action {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-align: left;
+}
+
+.balance-action strong {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.balance-action small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.balance-action.ghost {
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.balance-action.settle {
+  color: #ffffff;
+  background: var(--nav);
+  border-color: var(--nav);
+}
+
+.balance-action.settle small {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.balance-action[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .balance-card.is-positive {
@@ -893,16 +950,6 @@ dt {
   color: #ffffff;
   background: var(--nav);
   border-color: var(--nav);
-}
-
-.shared-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.shared-actions .primary-action {
-  flex: 1 1 auto;
 }
 
 .shared-entries {
@@ -1593,10 +1640,6 @@ dt {
 
   .shared-tabs {
     margin-left: 0;
-  }
-
-  .shared-actions {
-    flex-direction: column;
   }
 
   .shared-entry {
