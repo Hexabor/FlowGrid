@@ -214,7 +214,7 @@ h2 {
 
 .module-groups {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .module-group {
@@ -222,10 +222,9 @@ h2 {
   gap: 8px;
 }
 
-.module-group-title {
-  margin: 0;
-  color: var(--text);
-  font-size: 1rem;
+.module-group + .module-group {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .module-card {
@@ -329,6 +328,7 @@ h2 {
 }
 
 .modal-dialog {
+  position: relative;
   width: min(100%, 940px);
   max-height: calc(100vh - 32px);
   overflow: auto;
@@ -337,6 +337,17 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
+}
+
+#close-movement-modal {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
+.modal-dialog .section-heading {
+  padding-right: 40px;
 }
 
 .section-heading {
@@ -449,7 +460,7 @@ button:focus-visible {
 
 .date-picker {
   position: fixed;
-  z-index: 30;
+  z-index: 50;
   width: min(300px, calc(100vw - 28px));
   padding: 10px;
   background: var(--surface);
@@ -546,6 +557,10 @@ button:focus-visible {
 
 .movement-list {
   gap: 8px;
+}
+
+.date-group {
+  display: none;
 }
 
 .config-list {
@@ -1135,10 +1150,14 @@ textarea {
 .movement-header,
 .movement-card {
   display: grid;
-  grid-template-columns: 82px minmax(120px, 1fr) 92px minmax(160px, 1.4fr) minmax(130px, 1fr) 112px 88px minmax(90px, 0.7fr) 54px 28px;
+  grid-template-columns: 82px minmax(120px, 1fr) 92px minmax(160px, 1.4fr) minmax(130px, 1fr) 112px 88px minmax(90px, 0.7fr) 54px 54px 28px;
   gap: 6px;
   align-items: center;
-  min-width: 1100px;
+  min-width: 1160px;
+}
+
+.movement-actions {
+  display: contents;
 }
 
 .movement-header {
@@ -1238,8 +1257,8 @@ dd {
   white-space: nowrap;
 }
 
-.edit-action {
-  order: 9;
+.edit-action,
+.duplicate-action {
   min-height: 26px;
   padding: 0 7px;
   color: var(--nav);
@@ -1251,12 +1270,20 @@ dd {
   line-height: 1;
 }
 
+.edit-action {
+  order: 9;
+}
+
+.duplicate-action {
+  order: 10;
+}
+
 dt {
   display: none;
 }
 
 .movement-card .delete-action {
-  order: 10;
+  order: 11;
   width: 26px;
   min-width: 26px;
   height: 26px;
@@ -1368,5 +1395,131 @@ dt {
 
   .shared-fields {
     grid-template-columns: 1fr;
+  }
+
+  .movement-list {
+    gap: 8px;
+    overflow-x: visible;
+    background: transparent;
+    border: 0;
+  }
+
+  .movement-header {
+    display: none;
+  }
+
+  .date-group {
+    display: block;
+    margin: 6px 2px 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .date-group:first-child {
+    margin-top: 0;
+  }
+
+  .movement-card {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "concept    recurrence"
+      "note       ."
+      "amount     amount"
+      "shared     actions";
+    gap: 4px 10px;
+    align-items: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+
+  .movement-card .movement-main,
+  .movement-card .movement-side,
+  .movement-card .movement-meta,
+  .movement-card .movement-meta div {
+    display: contents;
+  }
+
+  .movement-card .date,
+  .movement-card .party,
+  .movement-card .tag,
+  .movement-card dt {
+    display: none;
+  }
+
+  .movement-card h3 {
+    grid-area: concept;
+    justify-self: start;
+    font-size: 1rem;
+    font-weight: 800;
+    white-space: normal;
+  }
+
+  .movement-card .movement-note {
+    grid-area: note;
+    color: var(--muted);
+    font-size: 0.85rem;
+    white-space: normal;
+  }
+
+  .movement-card .movement-note:empty {
+    display: none;
+  }
+
+  .movement-card .amount {
+    grid-area: amount;
+    justify-self: center;
+    margin: 4px 0 2px;
+    font-size: 1.45rem;
+  }
+
+  .movement-card .recurrence {
+    grid-area: recurrence;
+    justify-self: end;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+  }
+
+  .movement-card .shared-cell {
+    grid-area: shared;
+    color: var(--muted);
+    font-size: 0.82rem;
+    white-space: normal;
+  }
+
+  .movement-card .shared-cell:not(:empty)::before {
+    content: "Compartido: ";
+    font-weight: 800;
+  }
+
+  .movement-card .movement-actions {
+    grid-area: actions;
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .movement-card .edit-action,
+  .movement-card .duplicate-action {
+    width: auto;
+    min-width: auto;
+    height: auto;
+    padding: 5px 10px;
+  }
+
+  .movement-card .delete-action {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
   }
 }

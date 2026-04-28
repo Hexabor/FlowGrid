@@ -96,7 +96,6 @@
             </div>
             <div class="module-groups">
               <section class="module-group">
-                <h3 class="module-group-title">Dineritos</h3>
                 <div class="module-grid">
                   <button class="module-card" type="button" data-view-target="movements">
                 <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
@@ -146,7 +145,6 @@
                 </div>
               </section>
               <section class="module-group">
-                <h3 class="module-group-title">Sistema</h3>
                 <div class="module-grid">
                   <button class="module-card" type="button" data-view-target="settings">
                     <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
@@ -585,8 +583,11 @@
           </div>
         </dl>
         <span class="shared-cell"></span>
-        <button class="edit-action" type="button" aria-label="Editar movimiento" title="Editar">Editar</button>
-        <button class="delete-action" type="button" aria-label="Eliminar movimiento" title="Eliminar">x</button>
+        <div class="movement-actions">
+          <button class="edit-action" type="button" aria-label="Editar movimiento" title="Editar">Editar</button>
+          <button class="duplicate-action" type="button" aria-label="Copiar movimiento" title="Crear copia">Copiar</button>
+          <button class="delete-action" type="button" aria-label="Eliminar movimiento" title="Eliminar">x</button>
+        </div>
       </article>
     </template>
 

@@ -44,4 +44,18 @@ window.FlowGridChangelog = [
       "Limpieza automatica de deudas compartidas al borrar el movimiento que las origina.",
     ],
   },
+  {
+    date: "2026-04-28",
+    commit: "dev@HEAD",
+    title: "Tarjetas en movil y duplicar movimientos",
+    changes: [
+      "Home: retirados los titulos Dineritos/Sistema, sustituidos por una linea sutil entre grupos.",
+      "Movimientos en movil renderizados como tarjetas agrupadas por fecha, manteniendo la fila tabular en escritorio.",
+      "Cada tarjeta muestra concepto y nota arriba a la izquierda, importe centrado, recurrencia arriba a la derecha y compartido abajo a la izquierda.",
+      "Nuevo boton Copiar en cada movimiento que abre el modal pre-rellenado para crear entradas similares.",
+      "Calendario del selector de fecha por encima del modal (antes quedaba detras y era inusable).",
+      "Cruz de cerrar el modal reposicionada en la esquina superior derecha del dialogo.",
+      "Eliminado el placeholder Sin nota cuando un movimiento no tiene nota.",
+    ],
+  },
 ];

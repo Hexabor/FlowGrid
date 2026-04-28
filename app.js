@@ -520,7 +520,7 @@ function createMovementCard(movement, compact = false) {
   card.classList.toggle("is-compact", compact);
   paintTag(card.querySelector(".tag"), movement.category);
   card.querySelector("h3").textContent = movement.concept;
-  card.querySelector(".movement-note").textContent = movement.note || "Sin nota";
+  card.querySelector(".movement-note").textContent = movement.note || "";
   card.querySelector(".amount").textContent = formatMoney(signedAmount);
   card.querySelector(".amount").classList.add(movement.type);
   card.querySelector(".date").textContent = formatDate(movement.date);
@@ -559,6 +559,7 @@ function renderMovementList(container, items, compact = false) {
       "Compartido",
       "",
       "",
+      "",
     ].forEach((label) => {
       const cell = document.createElement("span");
       cell.textContent = label;
@@ -567,7 +568,17 @@ function renderMovementList(container, items, compact = false) {
     fragment.append(header);
   }
 
-  items.forEach((movement) => fragment.append(createMovementCard(movement, compact)));
+  let lastDate = null;
+  items.forEach((movement) => {
+    if (!compact && movement.date !== lastDate) {
+      const groupHeader = document.createElement("div");
+      groupHeader.className = "date-group";
+      groupHeader.textContent = formatDate(movement.date);
+      fragment.append(groupHeader);
+      lastDate = movement.date;
+    }
+    fragment.append(createMovementCard(movement, compact));
+  });
   container.append(fragment);
 }
 
@@ -1353,11 +1364,26 @@ elements.form.addEventListener("submit", (event) => {
   closeMovementModal();
 });
 
+function fillMovementForm(movement) {
+  elements.type.value = movement.type;
+  syncMovementSelects();
+  elements.concept.value = movement.concept;
+  elements.category.value = movement.category;
+  setSelectedDate(new Date(`${movement.date}T00:00:00`));
+  elements.amount.value = movement.amount;
+  elements.party.value = movement.party;
+  elements.recurrence.value = movement.recurrence;
+  elements.note.value = movement.note;
+  elements.isShared.checked = false;
+  syncSharedFields();
+}
+
 elements.list.addEventListener("click", (event) => {
   const editButton = event.target.closest(".edit-action");
+  const duplicateButton = event.target.closest(".duplicate-action");
   const deleteButton = event.target.closest(".delete-action");
 
-  if (!editButton && !deleteButton) {
+  if (!editButton && !duplicateButton && !deleteButton) {
     return;
   }
 
@@ -1370,19 +1396,19 @@ elements.list.addEventListener("click", (event) => {
 
   if (editButton) {
     editingMovementId = movement.id;
-    elements.type.value = movement.type;
-    syncMovementSelects();
-    elements.concept.value = movement.concept;
-    elements.category.value = movement.category;
-    setSelectedDate(new Date(`${movement.date}T00:00:00`));
-    elements.amount.value = movement.amount;
-    elements.party.value = movement.party;
-    elements.recurrence.value = movement.recurrence;
-    elements.note.value = movement.note;
-    elements.isShared.checked = false;
-    syncSharedFields();
+    fillMovementForm(movement);
     elements.submitButton.textContent = "Guardar cambios";
     elements.feedback.textContent = "Editando movimiento.";
+    openMovementModal();
+    elements.concept.focus();
+    return;
+  }
+
+  if (duplicateButton) {
+    editingMovementId = null;
+    fillMovementForm(movement);
+    elements.submitButton.textContent = "Anadir movimiento";
+    elements.feedback.textContent = "Copia preparada. Ajusta lo que cambie.";
     openMovementModal();
     elements.concept.focus();
     return;
