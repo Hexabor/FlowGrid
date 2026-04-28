@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="es-ES">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FlowGrid</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Navegacion principal">
+        <div class="brand">
+          <span class="brand-mark">FG</span>
+          <div>
+            <strong>FlowGrid</strong>
+            <span>Finanzas personales</span>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-button is-active" type="button" data-view-target="home" aria-label="Home">
+            <span class="nav-icon icon-home" aria-hidden="true"></span>
+          </button>
+          <button class="nav-button" type="button" data-view-target="movements" aria-label="Movimientos">
+            <span class="nav-icon icon-list" aria-hidden="true"></span>
+          </button>
+          <button class="nav-button" type="button" data-view-target="settings" aria-label="Configuracion">
+            <span class="nav-icon icon-settings" aria-hidden="true"></span>
+          </button>
+          <button class="nav-button" type="button" data-view-target="news" aria-label="Novedades">
+            <span class="nav-icon icon-news" aria-hidden="true"></span>
+          </button>
+        </nav>
+      </aside>
+
+      <main class="app">
+        <section class="view is-active" id="home-view" data-view="home" aria-labelledby="home-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">FlowGrid</p>
+              <h1 id="home-title">Home</h1>
+            </div>
+          </header>
+
+          <section class="panel">
+            <div class="section-heading">
+              <h2>Modulos</h2>
+            </div>
+            <div class="module-grid">
+              <button class="module-card" type="button" data-view-target="movements">
+                <span class="nav-icon icon-list" aria-hidden="true"></span>
+                <strong>Movimientos</strong>
+                <small>Ingresos, gastos, filtros y listado.</small>
+              </button>
+              <button class="module-card" type="button" data-view-target="settings">
+                <span class="nav-icon icon-settings" aria-hidden="true"></span>
+                <strong>Configuracion</strong>
+                <small>Conceptos, categorias y estructura base.</small>
+              </button>
+              <button class="module-card" type="button" data-view-target="news">
+                <span class="nav-icon icon-news" aria-hidden="true"></span>
+                <strong>Novedades</strong>
+                <small>Implementaciones y fixes de cada sesion.</small>
+              </button>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="movements-view" data-view="movements" aria-labelledby="movements-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Core</p>
+              <h1 id="movements-title">Movimientos</h1>
+            </div>
+            <p id="current-period" class="period">Mes actual</p>
+          </header>
+
+          <section class="summary" aria-label="Resumen">
+            <article class="metric">
+              <span>Ingresos</span>
+              <strong id="income-total">0,00 EUR</strong>
+            </article>
+            <article class="metric">
+              <span>Gastos</span>
+              <strong id="expense-total">0,00 EUR</strong>
+            </article>
+            <article class="metric metric-balance">
+              <span>Balance</span>
+              <strong id="balance-total">0,00 EUR</strong>
+            </article>
+          </section>
+
+          <section class="panel" aria-labelledby="form-title">
+            <div class="section-heading">
+              <h2 id="form-title">Nuevo movimiento</h2>
+              <p id="form-feedback" role="status" aria-live="polite"></p>
+            </div>
+
+            <form id="movement-form" class="movement-form">
+              <label>
+                <span>Tipo</span>
+                <select id="type" name="type" required>
+                  <option value="expense">Gasto</option>
+                  <option value="income">Ingreso</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Fecha</span>
+                <input id="date" name="date" type="hidden" required>
+                <button id="date-trigger" class="date-trigger" type="button" aria-haspopup="dialog" aria-expanded="false"></button>
+              </label>
+
+              <label>
+                <span>Importe</span>
+                <input id="amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0,00" required>
+              </label>
+
+              <label>
+                <span>Concepto</span>
+                <select id="concept" name="concept" required></select>
+              </label>
+
+              <label>
+                <span>Categoria</span>
+                <select id="category" name="category" required></select>
+              </label>
+
+              <label>
+                <span>Emisor / receptor</span>
+                <input id="party" name="party" type="text" autocomplete="off">
+              </label>
+
+              <label>
+                <span>Recurrencia</span>
+                <select id="recurrence" name="recurrence">
+                  <option value="">Puntual</option>
+                  <option value="mensual">Mensual</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </label>
+
+              <label class="field-wide">
+                <span>Nota</span>
+                <textarea id="note" name="note" rows="2"></textarea>
+              </label>
+
+              <button class="primary-action" type="submit">Anadir movimiento</button>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="ledger-title">
+            <div class="section-heading">
+              <h2 id="ledger-title">Listado</h2>
+              <span id="movement-count"></span>
+            </div>
+
+            <div class="filters" aria-label="Filtros">
+              <label>
+                <span>Buscar</span>
+                <input id="search" type="search" placeholder="Concepto, nota o emisor">
+              </label>
+              <label>
+                <span>Categoria</span>
+                <select id="category-filter">
+                  <option value="all">Todas</option>
+                </select>
+              </label>
+              <label>
+                <span>Tipo</span>
+                <select id="type-filter">
+                  <option value="all">Todos</option>
+                  <option value="expense">Gastos</option>
+                  <option value="income">Ingresos</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="movement-list" class="movement-list"></div>
+          </section>
+        </section>
+
+        <section class="view" id="settings-view" data-view="settings" aria-labelledby="settings-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Infraestructura</p>
+              <h1 id="settings-title">Configuracion</h1>
+            </div>
+          </header>
+
+          <section class="panel">
+            <div class="section-heading">
+              <h2>Conceptos</h2>
+              <span id="concept-count"></span>
+            </div>
+
+            <form id="concept-form" class="settings-form">
+              <label>
+                <span>Concepto</span>
+                <input id="new-concept" name="concept" type="text" required>
+              </label>
+              <label>
+                <span>Categoria</span>
+                <select id="new-concept-category" name="category" required></select>
+              </label>
+              <button class="primary-action" type="submit">Guardar concepto</button>
+            </form>
+
+            <div class="config-toolbar" aria-label="Organizacion de conceptos">
+              <label>
+                <span>Ordenar por</span>
+                <select id="concept-sort">
+                  <option value="name">Nombre</option>
+                  <option value="category">Categoria</option>
+                </select>
+              </label>
+              <label>
+                <span>Agrupar por</span>
+                <select id="concept-group">
+                  <option value="none">Sin agrupar</option>
+                  <option value="category">Categoria</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="concept-list" class="config-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="section-heading">
+              <h2>Categorias</h2>
+              <span id="category-count"></span>
+            </div>
+
+            <form id="category-form" class="settings-form">
+              <label>
+                <span>Nombre</span>
+                <input id="new-category" name="category" type="text" required>
+              </label>
+              <button class="primary-action" type="submit">Guardar categoria</button>
+            </form>
+
+            <div id="category-list" class="config-list category-list"></div>
+          </section>
+        </section>
+
+        <section class="view" id="news-view" data-view="news" aria-labelledby="news-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Registro</p>
+              <h1 id="news-title">Novedades</h1>
+            </div>
+          </header>
+
+          <section class="panel">
+            <div class="section-heading">
+              <h2>Changelog</h2>
+              <span id="changelog-count"></span>
+            </div>
+            <div id="changelog-list" class="changelog-list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <template id="movement-template">
+      <article class="movement-card">
+        <div class="movement-main">
+          <span class="tag"></span>
+          <h3></h3>
+          <p class="movement-note"></p>
+        </div>
+        <div class="movement-side">
+          <strong class="amount"></strong>
+          <span class="date"></span>
+        </div>
+        <dl class="movement-meta">
+          <div>
+            <dt>Emisor / receptor</dt>
+            <dd class="party"></dd>
+          </div>
+          <div>
+            <dt>Recurrencia</dt>
+            <dd class="recurrence"></dd>
+          </div>
+        </dl>
+        <button class="delete-action" type="button" aria-label="Eliminar movimiento" title="Eliminar">x</button>
+      </article>
+    </template>
+
+    <div id="date-picker" class="date-picker" role="dialog" aria-modal="false" aria-label="Seleccionar fecha" hidden>
+      <div class="date-picker-header">
+        <button id="prev-month" class="icon-button" type="button" aria-label="Mes anterior">‹</button>
+        <strong id="date-picker-title"></strong>
+        <button id="next-month" class="icon-button" type="button" aria-label="Mes siguiente">›</button>
+      </div>
+      <div class="date-weekdays" aria-hidden="true">
+        <span>L</span>
+        <span>M</span>
+        <span>X</span>
+        <span>J</span>
+        <span>V</span>
+        <span>S</span>
+        <span>D</span>
+      </div>
+      <div id="date-grid" class="date-grid"></div>
+    </div>
+
+    <script src="changelog.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
