@@ -1,55 +1,31 @@
 window.FlowGridChangelog = [
   {
     date: "2026-04-28",
-    title: "Core inicial",
+    commit: "7f3c479",
+    title: "Core estatico inicial",
     changes: [
-      "Estructura estatica preparada para GitHub Pages.",
-      "Alta, listado, filtros y resumen de movimientos.",
-      "Persistencia local de movimientos y configuracion.",
+      "App estatica preparada para GitHub Pages con navegacion por modulos.",
+      "Core de movimientos con alta, listado, filtros, resumen y persistencia local.",
+      "Panel de configuracion para conceptos y categorias, con edicion inline.",
+      "Modulo Novedades conectado a changelog.js.",
+      "Criterios globales de fecha en es-ES, formato DD/MM/AAAA y hora 24h.",
+      "Selector de fecha propio con semanas empezando en lunes.",
     ],
   },
   {
     date: "2026-04-28",
-    title: "Configuracion operativa",
+    commit: "main@HEAD",
+    title: "Densidad y ajustes visuales",
     changes: [
-      "Panel de conceptos y categorias.",
-      "Ordenacion, agrupacion y edicion inline de conceptos.",
-      "Navegacion lateral compacta con iconos y tooltips.",
-    ],
-  },
-  {
-    date: "2026-04-28",
-    title: "Modulo de novedades",
-    changes: [
-      "Nuevo acceso lateral a Novedades.",
-      "Vista dedicada para mostrar el contenido de changelog.js.",
-    ],
-  },
-  {
-    date: "2026-04-28",
-    title: "Criterio global de fechas",
-    changes: [
-      "Locale de la aplicacion fijado en es-ES.",
-      "Fechas renderizadas como DD/MM/AAAA.",
-      "Funcion de fecha y hora preparada en formato 24h.",
-    ],
-  },
-  {
-    date: "2026-04-28",
-    title: "Selector de fecha propio",
-    changes: [
-      "Sustituido el calendario nativo por un selector simple de FlowGrid.",
-      "La semana del calendario empieza siempre en lunes.",
-      "El campo visible mantiene formato DD/MM/AAAA y el dato interno se guarda como AAAA-MM-DD.",
-      "El selector se abre como popover junto al campo de fecha.",
-    ],
-  },
-  {
-    date: "2026-04-28",
-    title: "Cierre de sesion",
-    changes: [
-      "Preparado el estado actual para commit en la rama dev.",
-      "Documentadas las implementaciones principales de la sesion en Novedades.",
+      "Escala general reducida para aprovechar mejor el espacio disponible.",
+      "Listado de movimientos convertido a filas tabulares de una sola linea.",
+      "Corregida la alineacion entre cabeceras y contenido de movimientos.",
+      "Columnas de movimientos reordenadas y acciones de editar/eliminar separadas.",
+      "El borrado de movimientos solicita confirmacion.",
+      "Iconos sustituidos por SVGs minimalistas inline.",
+      "Paneles centrados en escritorio dentro del espacio disponible.",
+      "Configuracion reorganizada en conceptos/categorias, importacion CSV y backup JS.",
+      "Importacion CSV con previsualizacion y backup JS exportable/importable.",
     ],
   },
 ];

@@ -12,6 +12,7 @@
   --red: #c92a2a;
   --shadow: 0 16px 48px rgba(23, 32, 38, 0.07);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 75%;
 }
 
 * {
@@ -105,93 +106,14 @@ button {
 }
 
 .nav-icon {
-  position: relative;
   display: block;
   width: 20px;
   height: 20px;
-}
-
-.icon-home::before {
-  position: absolute;
-  inset: 7px 4px 3px;
-  border: 2px solid currentColor;
-  border-top: 0;
-  border-radius: 2px;
-  content: "";
-}
-
-.icon-home::after {
-  position: absolute;
-  top: 2px;
-  left: 4px;
-  width: 12px;
-  height: 12px;
-  border-top: 2px solid currentColor;
-  border-left: 2px solid currentColor;
-  content: "";
-  transform: rotate(45deg);
-}
-
-.icon-list::before,
-.icon-list::after {
-  position: absolute;
-  right: 2px;
-  left: 2px;
-  height: 2px;
-  background: currentColor;
-  border-radius: 99px;
-  content: "";
-}
-
-.icon-list::before {
-  top: 5px;
-  box-shadow: 0 5px 0 currentColor, 0 10px 0 currentColor;
-}
-
-.icon-settings {
-  border: 2px solid currentColor;
-  border-radius: 999px;
-}
-
-.icon-settings::before {
-  position: absolute;
-  inset: 5px;
-  border: 2px solid currentColor;
-  border-radius: 999px;
-  content: "";
-}
-
-.icon-settings::after {
-  position: absolute;
-  top: -4px;
-  left: 7px;
-  width: 2px;
-  height: 24px;
-  background: currentColor;
-  border-radius: 99px;
-  box-shadow: 0 0 0 3px var(--surface);
-  content: "";
-  transform: rotate(45deg);
-}
-
-.icon-news::before {
-  position: absolute;
-  inset: 2px 3px;
-  border: 2px solid currentColor;
-  border-radius: 3px;
-  content: "";
-}
-
-.icon-news::after {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  left: 7px;
-  height: 2px;
-  background: currentColor;
-  border-radius: 99px;
-  box-shadow: 0 5px 0 currentColor;
-  content: "";
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .app {
@@ -330,11 +252,26 @@ h2 {
   border-radius: 8px;
 }
 
-.changelog-item time {
+.changelog-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.changelog-item time,
+.changelog-item code {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.changelog-item code {
+  padding: 2px 5px;
+  background: #eef2f4;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  text-transform: none;
 }
 
 .changelog-item h3 {
@@ -725,6 +662,44 @@ dt {
   margin-top: 12px;
 }
 
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 860px;
+  margin: 0 auto 8px;
+}
+
+.settings-tab {
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--muted);
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.settings-tab.is-active {
+  color: #ffffff;
+  background: var(--nav);
+  border-color: var(--nav);
+}
+
+.settings-panel {
+  display: none;
+}
+
+.settings-panel.is-active {
+  display: block;
+}
+
+.import-preview {
+  white-space: pre-line;
+  text-align: left;
+}
+
 .save-action {
   display: grid;
   width: 42px;
@@ -888,5 +863,300 @@ dt {
 
   h1 {
     font-size: 2.6rem;
+  }
+}
+
+/* Dense mode: FlowGrid prioritizes visible data over spacious cards. */
+.sidebar {
+  padding: 6px;
+}
+
+.nav-button {
+  min-height: 34px;
+}
+
+.nav-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.app {
+  padding: 12px 10px 66px;
+}
+
+.topbar {
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 1.65rem;
+}
+
+.summary {
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.metric {
+  min-height: 52px;
+  padding: 10px;
+}
+
+.panel {
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.section-heading {
+  min-height: 22px;
+  margin-bottom: 8px;
+}
+
+.movement-form,
+.filters,
+.settings-form,
+.config-toolbar {
+  gap: 8px;
+}
+
+label {
+  gap: 4px;
+}
+
+input,
+select,
+textarea,
+.date-trigger {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
+textarea {
+  min-height: 52px;
+}
+
+.primary-action {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.module-card {
+  padding: 10px;
+}
+
+.movement-list {
+  gap: 0;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.movement-header,
+.movement-card {
+  display: grid;
+  grid-template-columns: 82px minmax(120px, 1fr) 92px minmax(160px, 1.4fr) minmax(130px, 1fr) 112px 88px 54px 28px;
+  gap: 6px;
+  align-items: center;
+  min-width: 1000px;
+}
+
+.movement-header {
+  min-height: 28px;
+  padding: 5px 8px;
+  color: var(--muted);
+  background: #eef2f4;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.movement-card {
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.movement-card:last-child {
+  border-bottom: 0;
+}
+
+.movement-card.is-compact {
+  grid-template-columns: 82px minmax(120px, 1fr) 92px minmax(160px, 1.4fr) minmax(130px, 1fr) 112px 88px;
+}
+
+.movement-main,
+.movement-side,
+.movement-meta,
+.movement-meta div {
+  display: contents;
+}
+
+.movement-card h3 {
+  order: 2;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movement-note {
+  order: 4;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.84rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movement-main .tag {
+  order: 6;
+  margin: 0;
+}
+
+.tag {
+  min-height: 18px;
+  padding: 0 6px;
+}
+
+.amount {
+  order: 3;
+  justify-self: end;
+  font-size: 0.95rem;
+}
+
+.date,
+dd {
+  overflow: hidden;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date {
+  order: 1;
+}
+
+.party {
+  order: 5;
+}
+
+.recurrence {
+  order: 7;
+}
+
+.edit-action {
+  order: 8;
+  min-height: 26px;
+  padding: 0 7px;
+  color: var(--nav);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+dt {
+  display: none;
+}
+
+.movement-card .delete-action {
+  order: 9;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
+}
+
+.config-item {
+  min-height: 32px;
+  padding: 4px 8px;
+}
+
+.config-item input,
+.config-item select {
+  min-height: 26px;
+  padding: 3px 6px;
+}
+
+.save-action {
+  width: 34px;
+  min-width: 34px;
+  height: 26px;
+  min-height: 26px;
+}
+
+.delete-action {
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
+}
+
+.date-picker {
+  width: min(240px, calc(100vw - 20px));
+  padding: 8px;
+}
+
+@media (min-width: 720px) {
+  .movement-card,
+  .movement-card.is-compact {
+    align-items: center;
+  }
+}
+
+@media (min-width: 980px) {
+  .shell {
+    grid-template-columns: 58px 1fr;
+  }
+
+  .sidebar {
+    padding: 12px 8px;
+  }
+
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .nav-button {
+    width: 34px;
+  }
+
+  .app {
+    margin: 0 auto;
+    padding: 18px 18px 34px;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .topbar,
+  .summary,
+  .panel {
+    max-width: 1040px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  #home-view .panel,
+  #settings-view .panel,
+  #news-view .panel {
+    max-width: 860px;
+  }
+
+  #movements-view .panel[aria-labelledby="form-title"] {
+    max-width: 940px;
+  }
+
+  #movements-view .panel[aria-labelledby="ledger-title"] {
+    max-width: 100%;
   }
 }

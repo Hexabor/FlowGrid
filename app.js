@@ -130,6 +130,7 @@ const elements = {
   recurrence: document.querySelector("#recurrence"),
   note: document.querySelector("#note"),
   feedback: document.querySelector("#form-feedback"),
+  submitButton: document.querySelector("#movement-form .primary-action"),
   categoryFilter: document.querySelector("#category-filter"),
   typeFilter: document.querySelector("#type-filter"),
   search: document.querySelector("#search"),
@@ -151,6 +152,16 @@ const elements = {
   categoryList: document.querySelector("#category-list"),
   conceptCount: document.querySelector("#concept-count"),
   categoryCount: document.querySelector("#category-count"),
+  settingsTabs: document.querySelectorAll(".settings-tab"),
+  settingsPanels: document.querySelectorAll("[data-settings-panel]"),
+  csvFile: document.querySelector("#csv-file"),
+  csvImportButton: document.querySelector("#csv-import-button"),
+  csvImportStatus: document.querySelector("#csv-import-status"),
+  csvPreview: document.querySelector("#csv-preview"),
+  backupExport: document.querySelector("#backup-export"),
+  backupFile: document.querySelector("#backup-file"),
+  backupImport: document.querySelector("#backup-import"),
+  backupStatus: document.querySelector("#backup-status"),
   changelogList: document.querySelector("#changelog-list"),
   changelogCount: document.querySelector("#changelog-count"),
 };
@@ -158,6 +169,9 @@ const elements = {
 let movements = loadMovements();
 let settings = loadSettings();
 let datePickerMonth = new Date();
+let editingMovementId = null;
+let pendingCsvMovements = [];
+let pendingBackup = null;
 
 function createSlug(value) {
   return value
@@ -479,6 +493,20 @@ function renderMovementList(container, items, compact = false) {
   }
 
   const fragment = document.createDocumentFragment();
+
+  if (!compact) {
+    const header = document.createElement("div");
+    header.className = "movement-header";
+    ["Fecha", "Concepto", "Importe", "Nota", "Emisor / receptor", "Categoria", "Recurrencia", "", ""].forEach(
+      (label) => {
+        const cell = document.createElement("span");
+        cell.textContent = label;
+        header.append(cell);
+      }
+    );
+    fragment.append(header);
+  }
+
   items.forEach((movement) => fragment.append(createMovementCard(movement, compact)));
   container.append(fragment);
 }
@@ -587,12 +615,22 @@ function renderChangelog() {
   entries.forEach((entry) => {
     const item = document.createElement("article");
     const date = document.createElement("time");
+    const meta = document.createElement("div");
     const title = document.createElement("h3");
     const list = document.createElement("ul");
 
     item.className = "changelog-item";
+    meta.className = "changelog-meta";
     date.dateTime = entry.date;
     date.textContent = formatDate(entry.date);
+    meta.append(date);
+
+    if (entry.commit) {
+      const commit = document.createElement("code");
+      commit.textContent = entry.commit;
+      meta.append(commit);
+    }
+
     title.textContent = entry.title;
 
     entry.changes.forEach((change) => {
@@ -601,7 +639,7 @@ function renderChangelog() {
       list.append(listItem);
     });
 
-    item.append(date, title, list);
+    item.append(meta, title, list);
     fragment.append(item);
   });
 
@@ -645,6 +683,173 @@ function createMovement(formData) {
   };
 }
 
+function setSettingsPanel(panelName) {
+  elements.settingsTabs.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.settingsTarget === panelName);
+  });
+  elements.settingsPanels.forEach((panel) => {
+    panel.classList.toggle("is-active", panel.dataset.settingsPanel === panelName);
+  });
+}
+
+function parseDelimited(text) {
+  const delimiter = text.includes("\t") ? "\t" : text.includes(";") ? ";" : ",";
+  const rows = [];
+  let row = [];
+  let value = "";
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const nextChar = text[index + 1];
+
+    if (char === '"' && quoted && nextChar === '"') {
+      value += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === delimiter && !quoted) {
+      row.push(value.trim());
+      value = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && nextChar === "\n") {
+        index += 1;
+      }
+      row.push(value.trim());
+      if (row.some(Boolean)) {
+        rows.push(row);
+      }
+      row = [];
+      value = "";
+    } else {
+      value += char;
+    }
+  }
+
+  row.push(value.trim());
+  if (row.some(Boolean)) {
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function normalizeHeader(value) {
+  return createSlug(value.replace("€", "importe"));
+}
+
+function normalizeCategory(value) {
+  const normalized = createSlug(value || "extra");
+  const knownCategory = settings.categories.find((category) => category.value === normalized);
+
+  if (knownCategory) {
+    return knownCategory.value;
+  }
+
+  return normalized;
+}
+
+function labelFromSlug(value) {
+  return value
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function parseSheetDate(value) {
+  const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (!match) {
+    return value;
+  }
+
+  const [, day, month, year] = match;
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function parseEuroAmount(value) {
+  const normalized = value.replace(/\s/g, "").replace("€", "").replace(/\./g, "").replace(",", ".");
+  return Number(normalized);
+}
+
+function readCsvMovements(text) {
+  const rows = parseDelimited(text);
+  const headers = rows.shift()?.map(normalizeHeader) ?? [];
+  const indexOf = (...names) => names.map((name) => headers.indexOf(name)).find((index) => index >= 0);
+  const idIndex = indexOf("id-movimiento", "id");
+  const dateIndex = indexOf("fecha");
+  const conceptIndex = indexOf("concepto");
+  const amountIndex = indexOf("importe", "eur");
+  const noteIndex = indexOf("nota");
+  const partyIndex = indexOf("emisor-receptor", "emisor-receptor");
+  const categoryIndex = indexOf("categoria");
+  const recurrenceIndex = indexOf("recurrencia");
+
+  return rows
+    .map((row) => {
+      const amount = parseEuroAmount(row[amountIndex] ?? "0");
+      const category = normalizeCategory(row[categoryIndex] ?? "extra");
+      const concept = row[conceptIndex] ?? "";
+
+      return {
+        id: row[idIndex] || createId(),
+        type: amount >= 0 || category === "ingreso" ? "income" : "expense",
+        date: parseSheetDate(row[dateIndex] ?? ""),
+        concept,
+        amount: Math.abs(amount),
+        category,
+        party: row[partyIndex] ?? "",
+        recurrence: createSlug(row[recurrenceIndex] ?? ""),
+        note: row[noteIndex] ?? "",
+      };
+    })
+    .filter((movement) => movement.date && movement.concept && Number.isFinite(movement.amount));
+}
+
+function renderCsvPreview(items) {
+  if (!items.length) {
+    elements.csvPreview.textContent = "No se han encontrado movimientos importables.";
+    return;
+  }
+
+  const preview = items
+    .slice(0, 8)
+    .map((movement) => `${formatDate(movement.date)} · ${movement.concept} · ${formatMoney(getSignedAmount(movement))}`)
+    .join("\n");
+
+  elements.csvPreview.textContent = preview;
+}
+
+function exportBackup() {
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    version: 1,
+    movements,
+    settings,
+  };
+  const content = `window.FlowGridBackup = ${JSON.stringify(backup, null, 2)};\n`;
+  const blob = new Blob([content], { type: "text/javascript" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `flowgrid-backup-${toIsoDate(new Date())}.js`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseBackup(text) {
+  const jsonText = text.trim().startsWith("{") ? text : text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
+  const parsed = JSON.parse(jsonText);
+
+  if (!Array.isArray(parsed.movements) || !parsed.settings?.categories || !parsed.settings?.concepts) {
+    throw new Error("Backup invalido");
+  }
+
+  return parsed;
+}
+
 function setView(viewName) {
   elements.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
   elements.navButtons.forEach((button) => {
@@ -675,33 +880,152 @@ elements.navigationTargets.forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.viewTarget));
 });
 
+elements.settingsTabs.forEach((button) => {
+  button.addEventListener("click", () => setSettingsPanel(button.dataset.settingsTarget));
+});
+
+elements.csvFile.addEventListener("change", async () => {
+  const file = elements.csvFile.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  const text = await file.text();
+  pendingCsvMovements = readCsvMovements(text);
+  elements.csvImportButton.disabled = pendingCsvMovements.length === 0;
+  elements.csvImportStatus.textContent = `${pendingCsvMovements.length} movimientos detectados`;
+  renderCsvPreview(pendingCsvMovements);
+});
+
+elements.csvImportButton.addEventListener("click", () => {
+  const existingIds = new Set(movements.map((movement) => movement.id));
+  const importedMovements = pendingCsvMovements.filter((movement) => !existingIds.has(movement.id));
+
+  importedMovements.forEach((movement) => {
+    if (!settings.categories.some((category) => category.value === movement.category)) {
+      settings.categories.push(createCategory(labelFromSlug(movement.category)));
+    }
+
+    if (!settings.concepts.some((concept) => concept.label.toLowerCase() === movement.concept.toLowerCase())) {
+      settings.concepts.push({
+        id: createId(),
+        label: movement.concept,
+        category: movement.category,
+      });
+    }
+  });
+
+  movements = [...importedMovements, ...movements];
+  saveMovements();
+  saveSettings();
+  pendingCsvMovements = [];
+  elements.csvFile.value = "";
+  elements.csvImportButton.disabled = true;
+  elements.csvImportStatus.textContent = `${importedMovements.length} movimientos importados`;
+  elements.csvPreview.textContent = "Importacion completada.";
+  render();
+});
+
+elements.backupExport.addEventListener("click", exportBackup);
+
+elements.backupFile.addEventListener("change", async () => {
+  const file = elements.backupFile.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  try {
+    pendingBackup = parseBackup(await file.text());
+    elements.backupImport.disabled = false;
+    elements.backupStatus.textContent = `${pendingBackup.movements.length} movimientos en backup`;
+  } catch {
+    pendingBackup = null;
+    elements.backupImport.disabled = true;
+    elements.backupStatus.textContent = "Backup no valido";
+  }
+});
+
+elements.backupImport.addEventListener("click", () => {
+  if (!pendingBackup || !confirm("Importar backup y reemplazar los datos locales actuales?")) {
+    return;
+  }
+
+  movements = pendingBackup.movements;
+  settings = pendingBackup.settings;
+  saveMovements();
+  saveSettings();
+  pendingBackup = null;
+  elements.backupFile.value = "";
+  elements.backupImport.disabled = true;
+  elements.backupStatus.textContent = "Backup importado";
+  render();
+});
+
 elements.form.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const movement = createMovement(new FormData(elements.form));
-  movements = [movement, ...movements];
+  if (editingMovementId) {
+    movements = movements.map((currentMovement) =>
+      currentMovement.id === editingMovementId ? { ...movement, id: editingMovementId } : currentMovement
+    );
+    editingMovementId = null;
+    elements.submitButton.textContent = "Anadir movimiento";
+    elements.feedback.textContent = "Movimiento actualizado.";
+  } else {
+    movements = [movement, ...movements];
+    elements.feedback.textContent = "Movimiento anadido.";
+  }
+
   saveMovements();
   render();
 
   elements.form.reset();
   elements.type.value = movement.type;
   setSelectedDate(new Date(`${movement.date}T00:00:00`));
-  elements.feedback.textContent = "Movimiento anadido.";
   syncMovementSelects();
   elements.concept.focus();
 });
 
 elements.list.addEventListener("click", (event) => {
-  const button = event.target.closest(".delete-action");
+  const editButton = event.target.closest(".edit-action");
+  const deleteButton = event.target.closest(".delete-action");
 
-  if (!button) {
+  if (!editButton && !deleteButton) {
     return;
   }
 
-  const card = button.closest(".movement-card");
-  movements = movements.filter((movement) => movement.id !== card.dataset.id);
-  saveMovements();
-  render();
+  const card = event.target.closest(".movement-card");
+  const movement = movements.find((candidate) => candidate.id === card.dataset.id);
+
+  if (!movement) {
+    return;
+  }
+
+  if (editButton) {
+    editingMovementId = movement.id;
+    elements.type.value = movement.type;
+    syncMovementSelects();
+    elements.concept.value = movement.concept;
+    elements.category.value = movement.category;
+    setSelectedDate(new Date(`${movement.date}T00:00:00`));
+    elements.amount.value = movement.amount;
+    elements.party.value = movement.party;
+    elements.recurrence.value = movement.recurrence;
+    elements.note.value = movement.note;
+    elements.submitButton.textContent = "Guardar cambios";
+    elements.feedback.textContent = "Editando movimiento.";
+    elements.concept.focus();
+    return;
+  }
+
+  if (confirm(`Eliminar "${movement.concept}" del ${formatDate(movement.date)}?`)) {
+    movements = movements.filter((candidate) => candidate.id !== movement.id);
+    saveMovements();
+    render();
+  }
 });
 
 elements.conceptForm.addEventListener("submit", (event) => {
