@@ -28,4 +28,20 @@ window.FlowGridChangelog = [
       "Importacion CSV con previsualizacion y backup JS exportable/importable.",
     ],
   },
+  {
+    date: "2026-04-28",
+    commit: "dev@HEAD",
+    title: "Analisis temporal y gastos compartidos",
+    changes: [
+      "Resumen retirado de Movimientos y creados modulos Mes a mes y Año a Año con desglose por concepto/categoria.",
+      "Navegacion separada por bloques y primer modulo Compartidos aislado de movimientos/configuracion.",
+      "Home reorganizado en grupos Dineritos/Sistema y separador lateral tras Home en la barra superior.",
+      "Alta de movimientos movida a modal responsive y categoria derivada automaticamente del concepto.",
+      "Bloque Gasto compartido en el formulario: con quien y parte que debe, solo activable en gastos.",
+      "Los gastos compartidos generan deudas con estado pendiente/satisfecha visibles en Compartidos.",
+      "Anadida columna Compartido en el listado de movimientos para identificar gastos con deuda asociada.",
+      "Borrado directo de deudas desde Compartidos con confirmacion.",
+      "Limpieza automatica de deudas compartidas al borrar el movimiento que las origina.",
+    ],
+  },
 ];

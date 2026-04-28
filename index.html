@@ -25,6 +25,7 @@
               <path d="M9 20v-6h6v6"></path>
             </svg>
           </button>
+          <span class="nav-separator" aria-hidden="true"></span>
           <button class="nav-button" type="button" data-view-target="movements" aria-label="Movimientos">
             <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
               <path d="M8 6h13"></path>
@@ -35,6 +36,34 @@
               <path d="m3 18 .8.8 1.7-1.8"></path>
             </svg>
           </button>
+          <button class="nav-button" type="button" data-view-target="month" aria-label="Mes a mes">
+            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M4 5h16v15H4z"></path>
+              <path d="M8 3v4"></path>
+              <path d="M16 3v4"></path>
+              <path d="M4 10h16"></path>
+              <path d="M8 14h2"></path>
+              <path d="M14 14h2"></path>
+            </svg>
+          </button>
+          <button class="nav-button" type="button" data-view-target="year" aria-label="Año a Año">
+            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M4 19V5"></path>
+              <path d="M4 19h16"></path>
+              <path d="M8 16v-5"></path>
+              <path d="M12 16V8"></path>
+              <path d="M16 16v-3"></path>
+            </svg>
+          </button>
+          <button class="nav-button" type="button" data-view-target="shared" aria-label="Compartidos">
+            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </button>
+          <span class="nav-separator" aria-hidden="true"></span>
           <button class="nav-button" type="button" data-view-target="settings" aria-label="Configuracion">
             <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
               <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
@@ -65,8 +94,11 @@
             <div class="section-heading">
               <h2>Modulos</h2>
             </div>
-            <div class="module-grid">
-              <button class="module-card" type="button" data-view-target="movements">
+            <div class="module-groups">
+              <section class="module-group">
+                <h3 class="module-group-title">Dineritos</h3>
+                <div class="module-grid">
+                  <button class="module-card" type="button" data-view-target="movements">
                 <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M8 6h13"></path>
                   <path d="M8 12h13"></path>
@@ -77,16 +109,54 @@
                 </svg>
                 <strong>Movimientos</strong>
                 <small>Ingresos, gastos, filtros y listado.</small>
-              </button>
-              <button class="module-card" type="button" data-view-target="settings">
+                  </button>
+                  <button class="module-card" type="button" data-view-target="month">
                 <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
-                  <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 0 1-2.97 2.97l-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.66V21a2.1 2.1 0 0 1-4.2 0v-.07a1.8 1.8 0 0 0-1.1-1.66 1.8 1.8 0 0 0-1.98.36l-.05.05a2.1 2.1 0 0 1-2.97-2.97l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.66-1.1H3a2.1 2.1 0 0 1 0-4.2h.07A1.8 1.8 0 0 0 4.73 8.6a1.8 1.8 0 0 0-.36-1.98l-.05-.05A2.1 2.1 0 0 1 7.29 3.6l.05.05a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.42 2.35V2a2.1 2.1 0 0 1 4.2 0v.07a1.8 1.8 0 0 0 1.1 1.66 1.8 1.8 0 0 0 1.98-.36l.05-.05a2.1 2.1 0 0 1 2.97 2.97l-.05.05a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.66 1.1H22a2.1 2.1 0 0 1 0 4.2h-.07A1.8 1.8 0 0 0 19.4 15Z"></path>
+                  <path d="M4 5h16v15H4z"></path>
+                  <path d="M8 3v4"></path>
+                  <path d="M16 3v4"></path>
+                  <path d="M4 10h16"></path>
+                  <path d="M8 14h2"></path>
+                  <path d="M14 14h2"></path>
                 </svg>
-                <strong>Configuracion</strong>
-                <small>Conceptos, categorias y estructura base.</small>
-              </button>
-              <button class="module-card" type="button" data-view-target="news">
+                <strong>Mes a mes</strong>
+                <small>Totales mensuales por concepto y categoria.</small>
+                  </button>
+                  <button class="module-card" type="button" data-view-target="year">
+                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M4 19V5"></path>
+                  <path d="M4 19h16"></path>
+                  <path d="M8 16v-5"></path>
+                  <path d="M12 16V8"></path>
+                  <path d="M16 16v-3"></path>
+                </svg>
+                <strong>A&ntilde;o a A&ntilde;o</strong>
+                <small>Totales anuales por concepto y categoria.</small>
+                  </button>
+                  <button class="module-card" type="button" data-view-target="shared">
+                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <strong>Compartidos</strong>
+                <small>Gastos compartidos separados del espacio personal.</small>
+                  </button>
+                </div>
+              </section>
+              <section class="module-group">
+                <h3 class="module-group-title">Sistema</h3>
+                <div class="module-grid">
+                  <button class="module-card" type="button" data-view-target="settings">
+                    <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                      <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
+                      <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 0 1-2.97 2.97l-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.66V21a2.1 2.1 0 0 1-4.2 0v-.07a1.8 1.8 0 0 0-1.1-1.66 1.8 1.8 0 0 0-1.98.36l-.05.05a2.1 2.1 0 0 1-2.97-2.97l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.66-1.1H3a2.1 2.1 0 0 1 0-4.2h.07A1.8 1.8 0 0 0 4.73 8.6a1.8 1.8 0 0 0-.36-1.98l-.05-.05A2.1 2.1 0 0 1 7.29 3.6l.05.05a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.42 2.35V2a2.1 2.1 0 0 1 4.2 0v.07a1.8 1.8 0 0 0 1.1 1.66 1.8 1.8 0 0 0 1.98-.36l.05-.05a2.1 2.1 0 0 1 2.97 2.97l-.05.05a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.66 1.1H22a2.1 2.1 0 0 1 0 4.2h-.07A1.8 1.8 0 0 0 19.4 15Z"></path>
+                    </svg>
+                    <strong>Configuracion</strong>
+                    <small>Conceptos, categorias y estructura base.</small>
+                  </button>
+                  <button class="module-card" type="button" data-view-target="news">
                 <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M4 5h16v14H4z"></path>
                   <path d="M8 9h8"></path>
@@ -95,7 +165,9 @@
                 </svg>
                 <strong>Novedades</strong>
                 <small>Implementaciones y fixes de cada sesion.</small>
-              </button>
+                  </button>
+                </div>
+              </section>
             </div>
           </section>
         </section>
@@ -109,24 +181,43 @@
             <p id="current-period" class="period">Mes actual</p>
           </header>
 
-          <section class="summary" aria-label="Resumen">
-            <article class="metric">
-              <span>Ingresos</span>
-              <strong id="income-total">0,00 EUR</strong>
-            </article>
-            <article class="metric">
-              <span>Gastos</span>
-              <strong id="expense-total">0,00 EUR</strong>
-            </article>
-            <article class="metric metric-balance">
-              <span>Balance</span>
-              <strong id="balance-total">0,00 EUR</strong>
-            </article>
-          </section>
+          <section class="panel" aria-labelledby="ledger-title">
+            <div class="section-heading">
+              <h2 id="ledger-title">Listado</h2>
+              <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
+              <span id="movement-count"></span>
+            </div>
 
-          <section class="panel" aria-labelledby="form-title">
+            <div class="filters" aria-label="Filtros">
+              <label>
+                <span>Buscar</span>
+                <input id="search" type="search" placeholder="Concepto, nota o emisor">
+              </label>
+              <label>
+                <span>Categoria</span>
+                <select id="category-filter">
+                  <option value="all">Todas</option>
+                </select>
+              </label>
+              <label>
+                <span>Tipo</span>
+                <select id="type-filter">
+                  <option value="all">Todos</option>
+                  <option value="expense">Gastos</option>
+                  <option value="income">Ingresos</option>
+                </select>
+              </label>
+            </div>
+
+            <div id="movement-list" class="movement-list"></div>
+          </section>
+        </section>
+
+        <div id="movement-modal" class="modal" hidden>
+          <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="form-title">
             <div class="section-heading">
               <h2 id="form-title">Nuevo movimiento</h2>
+              <button id="close-movement-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
               <p id="form-feedback" role="status" aria-live="polite"></p>
             </div>
 
@@ -155,10 +246,7 @@
                 <select id="concept" name="concept" required></select>
               </label>
 
-              <label>
-                <span>Categoria</span>
-                <select id="category" name="category" required></select>
-              </label>
+              <input id="category" name="category" type="hidden" required>
 
               <label>
                 <span>Emisor / receptor</span>
@@ -179,38 +267,169 @@
                 <textarea id="note" name="note" rows="2"></textarea>
               </label>
 
+              <label class="toggle-field">
+                <input id="is-shared" name="isShared" type="checkbox">
+                <span>Gasto compartido</span>
+              </label>
+
+              <div id="shared-fields" class="shared-fields" hidden>
+                <label>
+                  <span>Con quien</span>
+                  <input id="shared-with" name="sharedWith" type="text" autocomplete="off">
+                </label>
+                <label>
+                  <span>Parte que debe</span>
+                  <input id="shared-ratio" name="sharedRatio" type="number" inputmode="decimal" min="1" max="100" step="1" value="50">
+                </label>
+              </div>
+
               <button class="primary-action" type="submit">Anadir movimiento</button>
+            </form>
+          </div>
+        </div>
+
+        <section class="view" id="month-view" data-view="month" aria-labelledby="month-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Analisis</p>
+              <h1 id="month-title">Mes a mes</h1>
+            </div>
+          </header>
+
+          <section class="panel analysis-panel">
+            <div class="period-toolbar">
+              <button class="icon-button" type="button" data-period="month" data-step="-1" aria-label="Mes anterior">‹</button>
+              <strong id="month-period-label"></strong>
+              <button class="icon-button" type="button" data-period="month" data-step="1" aria-label="Mes siguiente">›</button>
+            </div>
+            <section class="summary compact-summary" aria-label="Resumen mensual">
+              <article class="metric">
+                <span>Ingresos</span>
+                <strong id="month-income-total">0,00 EUR</strong>
+              </article>
+              <article class="metric">
+                <span>Gastos</span>
+                <strong id="month-expense-total">0,00 EUR</strong>
+              </article>
+              <article class="metric metric-balance">
+                <span>Balance</span>
+                <strong id="month-balance-total">0,00 EUR</strong>
+              </article>
+            </section>
+            <div class="analysis-grid">
+              <section>
+                <div class="section-heading">
+                  <h2>Por concepto</h2>
+                </div>
+                <div id="month-concept-breakdown" class="breakdown-list"></div>
+              </section>
+              <section>
+                <div class="section-heading">
+                  <h2>Por categoria</h2>
+                </div>
+                <div id="month-category-breakdown" class="breakdown-list"></div>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="year-view" data-view="year" aria-labelledby="year-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Analisis</p>
+              <h1 id="year-title">Año a Año</h1>
+            </div>
+          </header>
+
+          <section class="panel analysis-panel">
+            <div class="period-toolbar">
+              <button class="icon-button" type="button" data-period="year" data-step="-1" aria-label="Año anterior">‹</button>
+              <strong id="year-period-label"></strong>
+              <button class="icon-button" type="button" data-period="year" data-step="1" aria-label="Año siguiente">›</button>
+            </div>
+            <section class="summary compact-summary" aria-label="Resumen anual">
+              <article class="metric">
+                <span>Ingresos</span>
+                <strong id="year-income-total">0,00 EUR</strong>
+              </article>
+              <article class="metric">
+                <span>Gastos</span>
+                <strong id="year-expense-total">0,00 EUR</strong>
+              </article>
+              <article class="metric metric-balance">
+                <span>Balance</span>
+                <strong id="year-balance-total">0,00 EUR</strong>
+              </article>
+            </section>
+            <div class="analysis-grid">
+              <section>
+                <div class="section-heading">
+                  <h2>Por concepto</h2>
+                </div>
+                <div id="year-concept-breakdown" class="breakdown-list"></div>
+              </section>
+              <section>
+                <div class="section-heading">
+                  <h2>Por categoria</h2>
+                </div>
+                <div id="year-category-breakdown" class="breakdown-list"></div>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="shared-view" data-view="shared" aria-labelledby="shared-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Espacio aislado</p>
+              <h1 id="shared-title">Compartidos</h1>
+            </div>
+          </header>
+
+          <section class="panel">
+            <div class="section-heading">
+              <h2>Deudas generadas</h2>
+              <span id="shared-status">Local</span>
+            </div>
+            <p class="empty-state">Los gastos compartidos se crean desde Movimientos activando "Gasto compartido".</p>
+            <form id="shared-form" class="movement-form" hidden>
+              <label>
+                <span>Concepto</span>
+                <input id="shared-concept" name="concept" type="text" required>
+              </label>
+              <label>
+                <span>Importe</span>
+                <input id="shared-amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" required>
+              </label>
+              <label>
+                <span>Pagado por</span>
+                <input id="shared-paid-by" name="paidBy" type="text" required>
+              </label>
+              <label>
+                <span>Participantes</span>
+                <input id="shared-participants" name="participants" type="text" placeholder="Raquel, Dani" required>
+              </label>
+              <label class="field-wide">
+                <span>Nota</span>
+                <textarea id="shared-note" name="note" rows="2"></textarea>
+              </label>
+              <button class="primary-action" type="submit">Añadir gasto</button>
             </form>
           </section>
 
-          <section class="panel" aria-labelledby="ledger-title">
+          <section class="panel">
             <div class="section-heading">
-              <h2 id="ledger-title">Listado</h2>
-              <span id="movement-count"></span>
+              <h2>Balance compartido</h2>
+              <span id="shared-count"></span>
             </div>
+            <div id="shared-summary" class="breakdown-list"></div>
+          </section>
 
-            <div class="filters" aria-label="Filtros">
-              <label>
-                <span>Buscar</span>
-                <input id="search" type="search" placeholder="Concepto, nota o emisor">
-              </label>
-              <label>
-                <span>Categoria</span>
-                <select id="category-filter">
-                  <option value="all">Todas</option>
-                </select>
-              </label>
-              <label>
-                <span>Tipo</span>
-                <select id="type-filter">
-                  <option value="all">Todos</option>
-                  <option value="expense">Gastos</option>
-                  <option value="income">Ingresos</option>
-                </select>
-              </label>
+          <section class="panel">
+            <div class="section-heading">
+              <h2>Deudas</h2>
             </div>
-
-            <div id="movement-list" class="movement-list"></div>
+            <div id="shared-list" class="movement-list shared-list"></div>
           </section>
         </section>
 
@@ -365,6 +584,7 @@
             <dd class="recurrence"></dd>
           </div>
         </dl>
+        <span class="shared-cell"></span>
         <button class="edit-action" type="button" aria-label="Editar movimiento" title="Editar">Editar</button>
         <button class="delete-action" type="button" aria-label="Eliminar movimiento" title="Eliminar">x</button>
       </article>

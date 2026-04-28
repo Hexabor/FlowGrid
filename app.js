@@ -1,5 +1,6 @@
 const MOVEMENTS_KEY = "flowgrid.movements.v1";
 const SETTINGS_KEY = "flowgrid.settings.v1";
+const SHARED_KEY = "flowgrid.shared.v1";
 const APP_LOCALE = "es-ES";
 
 const defaultCategories = [
@@ -115,6 +116,9 @@ const elements = {
   navigationTargets: document.querySelectorAll("[data-view-target]"),
   views: document.querySelectorAll(".view"),
   form: document.querySelector("#movement-form"),
+  movementModal: document.querySelector("#movement-modal"),
+  openMovementModal: document.querySelector("#open-movement-modal"),
+  closeMovementModal: document.querySelector("#close-movement-modal"),
   type: document.querySelector("#type"),
   date: document.querySelector("#date"),
   dateTrigger: document.querySelector("#date-trigger"),
@@ -129,6 +133,10 @@ const elements = {
   party: document.querySelector("#party"),
   recurrence: document.querySelector("#recurrence"),
   note: document.querySelector("#note"),
+  isShared: document.querySelector("#is-shared"),
+  sharedFields: document.querySelector("#shared-fields"),
+  sharedWith: document.querySelector("#shared-with"),
+  sharedRatio: document.querySelector("#shared-ratio"),
   feedback: document.querySelector("#form-feedback"),
   submitButton: document.querySelector("#movement-form .primary-action"),
   categoryFilter: document.querySelector("#category-filter"),
@@ -136,11 +144,24 @@ const elements = {
   search: document.querySelector("#search"),
   list: document.querySelector("#movement-list"),
   template: document.querySelector("#movement-template"),
-  incomeTotal: document.querySelector("#income-total"),
-  expenseTotal: document.querySelector("#expense-total"),
-  balanceTotal: document.querySelector("#balance-total"),
   currentPeriod: document.querySelector("#current-period"),
   movementCount: document.querySelector("#movement-count"),
+  monthPeriodLabel: document.querySelector("#month-period-label"),
+  monthIncomeTotal: document.querySelector("#month-income-total"),
+  monthExpenseTotal: document.querySelector("#month-expense-total"),
+  monthBalanceTotal: document.querySelector("#month-balance-total"),
+  monthConceptBreakdown: document.querySelector("#month-concept-breakdown"),
+  monthCategoryBreakdown: document.querySelector("#month-category-breakdown"),
+  yearPeriodLabel: document.querySelector("#year-period-label"),
+  yearIncomeTotal: document.querySelector("#year-income-total"),
+  yearExpenseTotal: document.querySelector("#year-expense-total"),
+  yearBalanceTotal: document.querySelector("#year-balance-total"),
+  yearConceptBreakdown: document.querySelector("#year-concept-breakdown"),
+  yearCategoryBreakdown: document.querySelector("#year-category-breakdown"),
+  sharedForm: document.querySelector("#shared-form"),
+  sharedSummary: document.querySelector("#shared-summary"),
+  sharedList: document.querySelector("#shared-list"),
+  sharedCount: document.querySelector("#shared-count"),
   conceptForm: document.querySelector("#concept-form"),
   categoryForm: document.querySelector("#category-form"),
   newConcept: document.querySelector("#new-concept"),
@@ -168,10 +189,13 @@ const elements = {
 
 let movements = loadMovements();
 let settings = loadSettings();
+let sharedExpenses = loadSharedExpenses();
 let datePickerMonth = new Date();
 let editingMovementId = null;
 let pendingCsvMovements = [];
 let pendingBackup = null;
+let monthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let yearCursor = new Date(new Date().getFullYear(), 0, 1);
 
 function createSlug(value) {
   return value
@@ -228,6 +252,25 @@ function saveMovements() {
 
 function saveSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function loadSharedExpenses() {
+  const stored = localStorage.getItem(SHARED_KEY);
+
+  if (!stored) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSharedExpenses() {
+  localStorage.setItem(SHARED_KEY, JSON.stringify(sharedExpenses));
 }
 
 function formatMoney(value) {
@@ -324,6 +367,26 @@ function syncCategoryFromConcept() {
 
   if (concept) {
     elements.category.value = concept.category;
+  }
+}
+
+function openMovementModal() {
+  elements.movementModal.hidden = false;
+  elements.concept.focus();
+}
+
+function closeMovementModal() {
+  elements.movementModal.hidden = true;
+}
+
+function syncSharedFields() {
+  const enabled = elements.isShared.checked && elements.type.value === "expense";
+  elements.sharedFields.hidden = !enabled;
+  elements.sharedWith.required = enabled;
+  elements.sharedRatio.required = enabled;
+
+  if (elements.type.value !== "expense") {
+    elements.isShared.checked = false;
   }
 }
 
@@ -440,19 +503,6 @@ function getFilteredMovements() {
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function renderSummary() {
-  const income = movements
-    .filter((movement) => movement.type === "income")
-    .reduce((total, movement) => total + movement.amount, 0);
-  const expense = movements
-    .filter((movement) => movement.type === "expense")
-    .reduce((total, movement) => total + movement.amount, 0);
-
-  elements.incomeTotal.textContent = formatMoney(income);
-  elements.expenseTotal.textContent = formatMoney(expense);
-  elements.balanceTotal.textContent = formatMoney(income - expense);
-}
-
 function paintTag(tag, categoryValue) {
   const category = getCategory(categoryValue);
 
@@ -476,6 +526,7 @@ function createMovementCard(movement, compact = false) {
   card.querySelector(".date").textContent = formatDate(movement.date);
   card.querySelector(".party").textContent = movement.party || "Sin emisor";
   card.querySelector(".recurrence").textContent = recurrence[0].toUpperCase() + recurrence.slice(1);
+  card.querySelector(".shared-cell").textContent = movement.sharedWith ? movement.sharedWith : "";
 
   if (compact) {
     card.querySelector(".delete-action").remove();
@@ -497,13 +548,22 @@ function renderMovementList(container, items, compact = false) {
   if (!compact) {
     const header = document.createElement("div");
     header.className = "movement-header";
-    ["Fecha", "Concepto", "Importe", "Nota", "Emisor / receptor", "Categoria", "Recurrencia", "", ""].forEach(
-      (label) => {
-        const cell = document.createElement("span");
-        cell.textContent = label;
-        header.append(cell);
-      }
-    );
+    [
+      "Fecha",
+      "Concepto",
+      "Importe",
+      "Nota",
+      "Emisor / receptor",
+      "Categoria",
+      "Recurrencia",
+      "Compartido",
+      "",
+      "",
+    ].forEach((label) => {
+      const cell = document.createElement("span");
+      cell.textContent = label;
+      header.append(cell);
+    });
     fragment.append(header);
   }
 
@@ -515,6 +575,191 @@ function renderMovements() {
   const filteredMovements = getFilteredMovements();
   elements.movementCount.textContent = `${filteredMovements.length} movimientos`;
   renderMovementList(elements.list, filteredMovements);
+}
+
+function getPeriodRange(type) {
+  if (type === "month") {
+    const start = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
+    const end = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
+    return { start, end };
+  }
+
+  const start = new Date(yearCursor.getFullYear(), 0, 1);
+  const end = new Date(yearCursor.getFullYear() + 1, 0, 1);
+  return { start, end };
+}
+
+function getMovementsInRange(type) {
+  const { start, end } = getPeriodRange(type);
+
+  return movements.filter((movement) => {
+    const date = new Date(`${movement.date}T00:00:00`);
+    return date >= start && date < end;
+  });
+}
+
+function getTotals(items) {
+  return items.reduce(
+    (totals, movement) => {
+      if (movement.type === "income") {
+        totals.income += movement.amount;
+      } else {
+        totals.expense += movement.amount;
+      }
+
+      return totals;
+    },
+    { income: 0, expense: 0 }
+  );
+}
+
+function groupTotals(items, keyGetter) {
+  const groups = new Map();
+
+  items.forEach((movement) => {
+    const key = keyGetter(movement);
+    const current = groups.get(key) ?? { label: key, income: 0, expense: 0 };
+
+    if (movement.type === "income") {
+      current.income += movement.amount;
+    } else {
+      current.expense += movement.amount;
+    }
+
+    groups.set(key, current);
+  });
+
+  return [...groups.values()].sort((a, b) => b.income - b.expense - (a.income - a.expense));
+}
+
+function renderBreakdown(container, rows) {
+  container.innerHTML = "";
+
+  if (!rows.length) {
+    container.innerHTML = '<p class="empty-state">No hay movimientos en este periodo.</p>';
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  rows.forEach((row) => {
+    const item = document.createElement("article");
+    const label = document.createElement("strong");
+    const income = document.createElement("span");
+    const expense = document.createElement("span");
+    const balance = document.createElement("span");
+
+    item.className = "breakdown-row";
+    label.textContent = row.label;
+    income.textContent = formatMoney(row.income);
+    expense.textContent = formatMoney(row.expense);
+    balance.textContent = formatMoney(row.income - row.expense);
+    balance.className = row.income - row.expense >= 0 ? "amount income" : "amount expense";
+
+    item.append(label, income, expense, balance);
+    fragment.append(item);
+  });
+
+  container.append(fragment);
+}
+
+function renderPeriodAnalysis(type) {
+  const items = getMovementsInRange(type);
+  const totals = getTotals(items);
+  const prefix = type === "month" ? "month" : "year";
+  const label =
+    type === "month"
+      ? new Intl.DateTimeFormat(APP_LOCALE, { month: "long", year: "numeric" }).format(monthCursor)
+      : String(yearCursor.getFullYear());
+
+  elements[`${prefix}PeriodLabel`].textContent = label;
+  elements[`${prefix}IncomeTotal`].textContent = formatMoney(totals.income);
+  elements[`${prefix}ExpenseTotal`].textContent = formatMoney(totals.expense);
+  elements[`${prefix}BalanceTotal`].textContent = formatMoney(totals.income - totals.expense);
+  renderBreakdown(elements[`${prefix}ConceptBreakdown`], groupTotals(items, (movement) => movement.concept));
+  renderBreakdown(
+    elements[`${prefix}CategoryBreakdown`],
+    groupTotals(items, (movement) => getCategoryLabel(movement.category))
+  );
+}
+
+function renderAnalysis() {
+  renderPeriodAnalysis("month");
+  renderPeriodAnalysis("year");
+}
+
+function renderShared() {
+  elements.sharedCount.textContent = `${sharedExpenses.length} deudas`;
+  elements.sharedList.innerHTML = "";
+  elements.sharedSummary.innerHTML = "";
+
+  if (!sharedExpenses.length) {
+    elements.sharedList.innerHTML = '<p class="empty-state">No hay deudas compartidas.</p>';
+    elements.sharedSummary.innerHTML = '<p class="empty-state">Sin balances pendientes.</p>';
+    return;
+  }
+
+  const balances = new Map();
+  const listFragment = document.createDocumentFragment();
+
+  sharedExpenses.forEach((debt) => {
+    if (!debt.settled) {
+      balances.set(debt.debtor, (balances.get(debt.debtor) ?? 0) + debt.amount);
+    }
+
+    const row = document.createElement("article");
+    const date = document.createElement("span");
+    const debtor = document.createElement("strong");
+    const amount = document.createElement("span");
+    const concept = document.createElement("strong");
+    const party = document.createElement("span");
+    const note = document.createElement("span");
+    const status = document.createElement("button");
+    const deleteButton = document.createElement("button");
+
+    row.className = "shared-row";
+    row.dataset.id = debt.id;
+    row.classList.toggle("is-settled", debt.settled);
+    date.textContent = formatDate(debt.date);
+    debtor.textContent = debt.debtor;
+    amount.textContent = formatMoney(debt.amount);
+    amount.className = "amount income";
+    concept.textContent = debt.concept;
+    party.textContent = debt.party || "Sin receptor";
+    note.textContent = debt.note || "Sin nota";
+    status.type = "button";
+    status.className = "settle-action";
+    status.textContent = debt.settled ? "Satisfecha" : "Pendiente";
+    deleteButton.type = "button";
+    deleteButton.className = "delete-action";
+    deleteButton.setAttribute("aria-label", `Eliminar deuda de ${debt.debtor}`);
+    deleteButton.title = "Eliminar";
+    deleteButton.textContent = "x";
+    row.append(date, debtor, amount, concept, party, note, status, deleteButton);
+    listFragment.append(row);
+  });
+
+  const summaryFragment = document.createDocumentFragment();
+
+  [...balances.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([person, balance]) => {
+      const row = document.createElement("article");
+      const name = document.createElement("strong");
+      const spacerA = document.createElement("span");
+      const spacerB = document.createElement("span");
+      const value = document.createElement("span");
+
+      row.className = "breakdown-row";
+      name.textContent = person;
+      value.className = "amount income";
+      value.textContent = formatMoney(balance);
+      row.append(name, spacerA, spacerB, value);
+      summaryFragment.append(row);
+    });
+
+  elements.sharedList.append(listFragment);
+  elements.sharedSummary.append(summaryFragment);
 }
 
 function renderConcepts() {
@@ -661,9 +906,9 @@ function getSortedConcepts() {
 }
 
 function render() {
-  syncMovementSelects();
-  renderSummary();
   renderMovements();
+  renderAnalysis();
+  renderShared();
   renderConcepts();
   renderCategories();
   renderChangelog();
@@ -681,6 +926,34 @@ function createMovement(formData) {
     recurrence: formData.get("recurrence"),
     note: formData.get("note").trim(),
   };
+}
+
+function createSharedDebt(movement, totalAmount, ratio) {
+  const owedAmount = totalAmount * ratio;
+
+  return {
+    id: createId(),
+    sourceMovementId: movement.id,
+    debtor: elements.sharedWith.value.trim(),
+    amount: owedAmount,
+    date: movement.date,
+    concept: movement.concept,
+    party: movement.party,
+    note: movement.note,
+    settled: false,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function resetMovementForm(movement) {
+  elements.form.reset();
+  elements.type.value = movement?.type ?? "expense";
+  setSelectedDate(movement ? new Date(`${movement.date}T00:00:00`) : new Date());
+  elements.isShared.checked = false;
+  elements.sharedFields.hidden = true;
+  elements.submitButton.textContent = "Anadir movimiento";
+  editingMovementId = null;
+  syncMovementSelects();
 }
 
 function setSettingsPanel(panelName) {
@@ -827,6 +1100,7 @@ function exportBackup() {
     version: 1,
     movements,
     settings,
+    sharedExpenses,
   };
   const content = `window.FlowGridBackup = ${JSON.stringify(backup, null, 2)};\n`;
   const blob = new Blob([content], { type: "text/javascript" });
@@ -846,6 +1120,8 @@ function parseBackup(text) {
   if (!Array.isArray(parsed.movements) || !parsed.settings?.categories || !parsed.settings?.concepts) {
     throw new Error("Backup invalido");
   }
+
+  parsed.sharedExpenses = Array.isArray(parsed.sharedExpenses) ? parsed.sharedExpenses : [];
 
   return parsed;
 }
@@ -880,8 +1156,36 @@ elements.navigationTargets.forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.viewTarget));
 });
 
+elements.openMovementModal.addEventListener("click", () => {
+  resetMovementForm();
+  elements.feedback.textContent = "";
+  openMovementModal();
+});
+
+elements.closeMovementModal.addEventListener("click", closeMovementModal);
+
+elements.movementModal.addEventListener("click", (event) => {
+  if (event.target === elements.movementModal) {
+    closeMovementModal();
+  }
+});
+
 elements.settingsTabs.forEach((button) => {
   button.addEventListener("click", () => setSettingsPanel(button.dataset.settingsTarget));
+});
+
+document.querySelectorAll("[data-period]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const step = Number(button.dataset.step);
+
+    if (button.dataset.period === "month") {
+      monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + step, 1);
+    } else {
+      yearCursor = new Date(yearCursor.getFullYear() + step, 0, 1);
+    }
+
+    renderAnalysis();
+  });
 });
 
 elements.csvFile.addEventListener("change", async () => {
@@ -896,6 +1200,45 @@ elements.csvFile.addEventListener("change", async () => {
   elements.csvImportButton.disabled = pendingCsvMovements.length === 0;
   elements.csvImportStatus.textContent = `${pendingCsvMovements.length} movimientos detectados`;
   renderCsvPreview(pendingCsvMovements);
+});
+
+elements.sharedList.addEventListener("click", (event) => {
+  const settleButton = event.target.closest(".settle-action");
+  const deleteButton = event.target.closest(".delete-action");
+
+  if (!settleButton && !deleteButton) {
+    return;
+  }
+
+  const row = event.target.closest("[data-id]");
+  const debt = sharedExpenses.find((candidate) => candidate.id === row.dataset.id);
+
+  if (!debt) {
+    return;
+  }
+
+  if (deleteButton) {
+    if (!confirm(`Eliminar deuda de ${debt.debtor} por ${formatMoney(debt.amount)}?`)) {
+      return;
+    }
+
+    sharedExpenses = sharedExpenses.filter((candidate) => candidate.id !== debt.id);
+    saveSharedExpenses();
+    renderShared();
+    return;
+  }
+
+  sharedExpenses = sharedExpenses.map((debt) =>
+    debt.id === row.dataset.id
+      ? {
+          ...debt,
+          settled: !debt.settled,
+          settledAt: debt.settled ? "" : new Date().toISOString(),
+        }
+      : debt
+  );
+  saveSharedExpenses();
+  renderShared();
 });
 
 elements.csvImportButton.addEventListener("click", () => {
@@ -924,6 +1267,7 @@ elements.csvImportButton.addEventListener("click", () => {
   elements.csvImportButton.disabled = true;
   elements.csvImportStatus.textContent = `${importedMovements.length} movimientos importados`;
   elements.csvPreview.textContent = "Importacion completada.";
+  syncMovementSelects();
   render();
 });
 
@@ -954,19 +1298,38 @@ elements.backupImport.addEventListener("click", () => {
 
   movements = pendingBackup.movements;
   settings = pendingBackup.settings;
+  sharedExpenses = pendingBackup.sharedExpenses;
   saveMovements();
   saveSettings();
+  saveSharedExpenses();
   pendingBackup = null;
   elements.backupFile.value = "";
   elements.backupImport.disabled = true;
   elements.backupStatus.textContent = "Backup importado";
+  syncMovementSelects();
   render();
 });
 
 elements.form.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const movement = createMovement(new FormData(elements.form));
+  const formData = new FormData(elements.form);
+  const totalAmount = Number(formData.get("amount"));
+  const shouldShare = elements.isShared.checked && formData.get("type") === "expense";
+  const sharedRatio = Number(elements.sharedRatio.value) / 100;
+  const movement = createMovement(formData);
+
+  if (shouldShare) {
+    if (!elements.sharedWith.value.trim() || !Number.isFinite(sharedRatio) || sharedRatio <= 0 || sharedRatio >= 1) {
+      elements.feedback.textContent = "Completa con quien compartes y una proporcion entre 1 y 99.";
+      return;
+    }
+
+    movement.amount = totalAmount * (1 - sharedRatio);
+    movement.shared = true;
+    movement.sharedWith = elements.sharedWith.value.trim();
+  }
+
   if (editingMovementId) {
     movements = movements.map((currentMovement) =>
       currentMovement.id === editingMovementId ? { ...movement, id: editingMovementId } : currentMovement
@@ -976,17 +1339,18 @@ elements.form.addEventListener("submit", (event) => {
     elements.feedback.textContent = "Movimiento actualizado.";
   } else {
     movements = [movement, ...movements];
+    if (shouldShare) {
+      sharedExpenses = [createSharedDebt(movement, totalAmount, sharedRatio), ...sharedExpenses];
+      saveSharedExpenses();
+    }
     elements.feedback.textContent = "Movimiento anadido.";
   }
 
   saveMovements();
   render();
 
-  elements.form.reset();
-  elements.type.value = movement.type;
-  setSelectedDate(new Date(`${movement.date}T00:00:00`));
-  syncMovementSelects();
-  elements.concept.focus();
+  resetMovementForm(movement);
+  closeMovementModal();
 });
 
 elements.list.addEventListener("click", (event) => {
@@ -1015,15 +1379,20 @@ elements.list.addEventListener("click", (event) => {
     elements.party.value = movement.party;
     elements.recurrence.value = movement.recurrence;
     elements.note.value = movement.note;
+    elements.isShared.checked = false;
+    syncSharedFields();
     elements.submitButton.textContent = "Guardar cambios";
     elements.feedback.textContent = "Editando movimiento.";
+    openMovementModal();
     elements.concept.focus();
     return;
   }
 
   if (confirm(`Eliminar "${movement.concept}" del ${formatDate(movement.date)}?`)) {
     movements = movements.filter((candidate) => candidate.id !== movement.id);
+    sharedExpenses = sharedExpenses.filter((debt) => debt.sourceMovementId !== movement.id);
     saveMovements();
+    saveSharedExpenses();
     render();
   }
 });
@@ -1043,6 +1412,7 @@ elements.conceptForm.addEventListener("submit", (event) => {
 
   saveSettings();
   elements.conceptForm.reset();
+  syncMovementSelects();
   render();
 });
 
@@ -1058,6 +1428,7 @@ elements.categoryForm.addEventListener("submit", (event) => {
   }
 
   elements.categoryForm.reset();
+  syncMovementSelects();
   render();
 });
 
@@ -1099,6 +1470,7 @@ elements.conceptList.addEventListener("click", (event) => {
   }
 
   saveSettings();
+  syncMovementSelects();
   render();
 });
 
@@ -1123,13 +1495,20 @@ elements.categoryList.addEventListener("click", (event) => {
 
   category.label = nextLabel;
   saveSettings();
+  syncMovementSelects();
   render();
 });
 
 elements.conceptSort.addEventListener("input", renderConcepts);
 elements.conceptGroup.addEventListener("input", renderConcepts);
-elements.type.addEventListener("change", syncMovementSelects);
+elements.type.addEventListener("change", () => {
+  syncMovementSelects();
+  syncSharedFields();
+});
 elements.concept.addEventListener("change", syncCategoryFromConcept);
+elements.isShared.addEventListener("change", () => {
+  syncSharedFields();
+});
 elements.dateTrigger.addEventListener("click", () => toggleDatePicker());
 elements.prevMonth.addEventListener("click", () => moveDatePickerMonth(-1));
 elements.nextMonth.addEventListener("click", () => moveDatePickerMonth(1));
@@ -1159,6 +1538,7 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     toggleDatePicker(false);
+    closeMovementModal();
   }
 });
 
