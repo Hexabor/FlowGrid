@@ -128,4 +128,27 @@ window.FlowGridChangelog = [
       "Sin cambios funcionales: misma app, misma persistencia, mismas vistas. Validado en Edge headless contra el servidor local.",
     ],
   },
+  {
+    date: "2026-04-29",
+    commit: "dev@HEAD",
+    title: "Emisor/receptor admite vacio",
+    changes: [
+      "Dejar el campo emisor/receptor vacio ya no muestra 'Sin emisor': la celda queda en blanco.",
+    ],
+  },
+  {
+    date: "2026-04-29",
+    commit: "dev@HEAD",
+    title: "Backend en la nube (Supabase) - Fase 2",
+    changes: [
+      "FlowGrid pasa de localStorage puro a backend cloud: Supabase Postgres con Row Level Security.",
+      "Login por magic link: introduces tu email una vez, te llega un enlace, entras sin contrasenas. La sesion persiste entre dispositivos.",
+      "Schema con cuatro tablas (movements, settings, people, shared_entries) y politicas RLS owner_id = auth.uid() en todas. Ver supabase/schema.sql.",
+      "Sync local-first: localStorage sigue siendo la fuente rapida del UI. Tras cada save se hace push de fondo a Supabase (delete extras + upsert) sin bloquear.",
+      "Hidratacion al arrancar: cloud manda. Si el cloud esta vacio (primer login en una cuenta) sube tu localStorage como semilla -> migracion automatica.",
+      "Gate de auth: si no hay sesion, ves el formulario de login y nada mas; si la hay, app normal con tu email y boton de logout en la sidebar.",
+      "Tres modulos nuevos: core/config.js (URL+anon key publica), core/supabase.js (cliente+auth), core/cloud.js (push y hydrate con field mapping camelCase<->snake_case).",
+      "Forkeable: alguien que clone el repo solo tiene que cambiar los dos valores de core/config.js para apuntar a su propio Supabase.",
+    ],
+  },
 ];
