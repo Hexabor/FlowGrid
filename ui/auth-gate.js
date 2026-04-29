@@ -26,16 +26,19 @@ export async function refreshSessionBadge() {
 }
 
 function surfaceUrlAuthInfo() {
-  const hash = window.location.hash;
-  const search = window.location.search;
-  const params = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : search.slice(1));
-  const error = params.get("error_description") || params.get("error");
-  if (error) {
-    feedback.textContent = `Error en el enlace: ${decodeURIComponent(error)}`;
+  const initial = window.__FG_INITIAL_URL__;
+  if (!initial) return;
+  if (initial.error) {
+    feedback.textContent = `Error en el enlace: ${decodeURIComponent(initial.error)}`;
     return;
   }
-  if (params.get("code") || params.get("access_token")) {
-    feedback.textContent = "Procesando enlace...";
+  if (initial.hasAccessToken || initial.hasCode) {
+    // The link came back with auth params but the session never got created.
+    // Surface this so the user can see the failure rather than land silently
+    // back on the form.
+    const kind = initial.hasAccessToken ? "access_token" : "code";
+    feedback.textContent = `El enlace trajo ${kind} pero no se creo sesion. Mira la consola para detalles.`;
+    console.warn("[auth gate] redirect arrived with", kind, "but no session was created. URL:", initial.href);
   }
 }
 

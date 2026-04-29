@@ -692,6 +692,29 @@
     </div>
 
     <script src="changelog.js"></script>
+    <script>
+      // Capture the URL state before any module loads, so the auth gate can
+      // diagnose what came back from the magic-link redirect even if
+      // supabase-js has already cleaned up the hash.
+      window.__FG_INITIAL_URL__ = (function () {
+        const url = window.location.href;
+        const hash = window.location.hash || "";
+        const search = window.location.search || "";
+        const all =
+          (hash.startsWith("#") ? hash.slice(1) : "") +
+          (search.startsWith("?") ? (hash ? "&" : "") + search.slice(1) : "");
+        const params = new URLSearchParams(all);
+        return {
+          href: url,
+          hash: hash,
+          search: search,
+          hasAccessToken: !!params.get("access_token"),
+          hasCode: !!params.get("code"),
+          error: params.get("error_description") || params.get("error") || null,
+          type: params.get("type") || null,
+        };
+      })();
+    </script>
     <script type="module" src="app.js"></script>
   </body>
 </html>
