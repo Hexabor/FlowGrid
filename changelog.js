@@ -117,4 +117,15 @@ window.FlowGridChangelog = [
       "Preparacion para la Fase 2 (mover storage a Supabase) y la Fase 3 (cuentas e invitaciones).",
     ],
   },
+  {
+    date: "2026-04-29",
+    commit: "dev@HEAD",
+    title: "Modulos organizados en carpetas (core/features/ui)",
+    changes: [
+      "Los 15 modulos pasan de la raiz a tres carpetas por responsabilidad: core/ (state, dom, storage, utils, constants), features/ (movements, shared, people, analysis, settings, csv, backup) y ui/ (datepicker, render, changelog-view).",
+      "El entry app.js sigue en la raiz; index.html no necesita cambios porque solo apunta a app.js.",
+      "Imports relativos actualizados con extension .js explicita (requisito de los ES modules en el navegador).",
+      "Sin cambios funcionales: misma app, misma persistencia, mismas vistas. Validado en Edge headless contra el servidor local.",
+    ],
+  },
 ];
