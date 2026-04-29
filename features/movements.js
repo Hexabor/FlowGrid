@@ -98,7 +98,7 @@ export function createMovementCard(movement, compact = false) {
   card.querySelector(".amount").textContent = formatMoney(signedAmount);
   card.querySelector(".amount").classList.add(movement.type);
   card.querySelector(".date").textContent = formatDate(movement.date);
-  card.querySelector(".party").textContent = movement.party || "Sin emisor";
+  card.querySelector(".party").textContent = movement.party || "";
   card.querySelector(".recurrence").textContent = recurrence[0].toUpperCase() + recurrence.slice(1);
   card.querySelector(".shared-cell").textContent = getMovementSharedLabel(movement);
 
