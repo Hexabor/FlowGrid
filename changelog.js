@@ -139,6 +139,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-04-30",
     commit: "dev@HEAD",
+    title: "Captura de URL inicial para diagnostico de auth",
+    changes: [
+      "Snippet inline en index.html que guarda window.location.href en window.__FG_INITIAL_URL__ antes de que se cargue ningun modulo.",
+      "Si el redirect del magic link traia access_token o code y aun asi acabas en el gate, ahora se ve un mensaje explicito en el feedback en vez de quedarse mudo.",
+      "El warning va tambien a consola con la URL completa, util para diagnosticar configuraciones mal puestas en Supabase.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "dev@HEAD",
     title: "Auth con flow implicit y errores visibles",
     changes: [
       "Magic link cambiado a flowType implicit (token en el #hash, no requiere abrir el enlace en el mismo navegador donde se rellena el email).",
