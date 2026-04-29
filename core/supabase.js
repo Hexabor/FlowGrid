@@ -6,7 +6,12 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    flowType: "implicit",
   },
+});
+
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log("[supabase auth]", event, session ? `session for ${session.user.email}` : "no session");
 });
 
 export async function getSession() {
