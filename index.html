@@ -7,6 +7,25 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <div id="auth-gate" class="auth-gate" hidden>
+      <div class="auth-card">
+        <div class="auth-brand">
+          <span class="brand-mark">FG</span>
+          <strong>FlowGrid</strong>
+        </div>
+        <h1>Entra con tu correo</h1>
+        <p class="auth-blurb">Te enviamos un enlace magico. Haz clic en el desde tu correo y entras directo, sin contrasenas.</p>
+        <form id="auth-form" class="auth-form">
+          <label>
+            <span>Correo electronico</span>
+            <input id="auth-email" name="email" type="email" autocomplete="email" required>
+          </label>
+          <button id="auth-submit" class="primary-action" type="submit">Enviar enlace</button>
+          <p id="auth-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+
     <div class="shell">
       <aside class="sidebar" aria-label="Navegacion principal">
         <div class="brand">
@@ -79,6 +98,17 @@
             </svg>
           </button>
         </nav>
+
+        <div class="session-footer">
+          <span id="auth-user" class="session-email"></span>
+          <button id="auth-logout" class="session-logout" type="button" title="Cerrar sesion" aria-label="Cerrar sesion">
+            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <path d="M16 17l5-5-5-5"></path>
+              <path d="M21 12H9"></path>
+            </svg>
+          </button>
+        </div>
       </aside>
 
       <main class="app">

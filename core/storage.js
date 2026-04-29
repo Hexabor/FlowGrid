@@ -8,6 +8,13 @@ import {
   defaultConcepts,
   seedMovements,
 } from "./constants.js";
+import {
+  cloudPushMovements,
+  cloudPushSettings,
+  cloudPushPeople,
+  cloudPushSharedEntries,
+  pushInBackground,
+} from "./cloud.js";
 
 function loadMovements() {
   const stored = localStorage.getItem(MOVEMENTS_KEY);
@@ -87,16 +94,20 @@ export function initState() {
 
 export function saveMovements() {
   localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(state.movements));
+  pushInBackground(cloudPushMovements);
 }
 
 export function saveSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+  pushInBackground(cloudPushSettings);
 }
 
 export function savePeople() {
   localStorage.setItem(PEOPLE_KEY, JSON.stringify(state.people));
+  pushInBackground(cloudPushPeople);
 }
 
 export function saveSharedEntries() {
   localStorage.setItem(SHARED_KEY, JSON.stringify(state.sharedEntries));
+  pushInBackground(cloudPushSharedEntries);
 }
