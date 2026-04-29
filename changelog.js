@@ -103,4 +103,18 @@ window.FlowGridChangelog = [
       "Las entradas de tipo pago se distinguen visualmente (fondo azul claro).",
     ],
   },
+  {
+    date: "2026-04-29",
+    commit: "dev@HEAD",
+    title: "Refactor a ES modules (sin cambios funcionales)",
+    changes: [
+      "app.js dividido en 16 modulos por dominio (constants, utils, state, dom, storage, people, movements, shared, analysis, datepicker, settings, csv, backup, changelog-view, render, app).",
+      "El entry app.js queda como wiring minimo: initState, setInitialDate, render y listeners globales.",
+      "Estado mutable global centralizado en un objeto state singleton; mutaciones in-place desde cada modulo.",
+      "Cada modulo registra sus propios listeners; render.js coordina el repintado completo.",
+      "index.html carga app.js como type=\"module\". changelog.js (datos) y styles.css sin cambios.",
+      "Sin cambios de comportamiento: misma funcionalidad, mismas claves de localStorage, mismas vistas.",
+      "Preparacion para la Fase 2 (mover storage a Supabase) y la Fase 3 (cuentas e invitaciones).",
+    ],
+  },
 ];
