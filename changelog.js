@@ -137,6 +137,16 @@ window.FlowGridChangelog = [
     ],
   },
   {
+    date: "2026-04-30",
+    commit: "dev@HEAD",
+    title: "Auth con flow implicit y errores visibles",
+    changes: [
+      "Magic link cambiado a flowType implicit (token en el #hash, no requiere abrir el enlace en el mismo navegador donde se rellena el email).",
+      "Si el redirect llega con error_description o error en la URL, se muestra en el feedback del gate en vez de quedar mudo.",
+      "Eventos de auth (sign-in, sign-out, refresh) logueados en consola con prefijo [supabase auth] para depuracion.",
+    ],
+  },
+  {
     date: "2026-04-29",
     commit: "dev@HEAD",
     title: "Backend en la nube (Supabase) - Fase 2",
