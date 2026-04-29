@@ -1,0 +1,15 @@
+export const state = {
+  movements: [],
+  settings: { categories: [], concepts: [] },
+  people: [],
+  sharedEntries: [],
+  datePickerMonth: new Date(),
+  editingMovementId: null,
+  pendingCsvMovements: [],
+  pendingBackup: null,
+  monthCursor: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+  yearCursor: new Date(new Date().getFullYear(), 0, 1),
+  sharedFilterPersonId: "all",
+  editingSharedEntryId: null,
+  activeDateTarget: null,
+};
