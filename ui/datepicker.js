@@ -1,6 +1,6 @@
-import { state } from "./state.js";
-import { elements } from "./dom.js";
-import { APP_LOCALE, formatDate, getMondayFirstOffset, toIsoDate } from "./utils.js";
+import { state } from "../core/state.js";
+import { elements } from "../core/dom.js";
+import { APP_LOCALE, formatDate, getMondayFirstOffset, toIsoDate } from "../core/utils.js";
 
 export function getActiveDateTarget() {
   return state.activeDateTarget ?? { input: elements.date, trigger: elements.dateTrigger };

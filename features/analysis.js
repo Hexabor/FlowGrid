@@ -1,6 +1,6 @@
-import { state } from "./state.js";
-import { elements } from "./dom.js";
-import { APP_LOCALE, formatMoney } from "./utils.js";
+import { state } from "../core/state.js";
+import { elements } from "../core/dom.js";
+import { APP_LOCALE, formatMoney } from "../core/utils.js";
 import { getCategoryLabel } from "./movements.js";
 
 export function getPeriodRange(type) {

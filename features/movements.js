@@ -1,8 +1,8 @@
-import { state } from "./state.js";
-import { elements, openMovementModal, closeMovementModal } from "./dom.js";
-import { saveMovements, saveSharedEntries } from "./storage.js";
-import { createId, formatDate, formatMoney, formatMonthLabel, optionMarkup } from "./utils.js";
-import { SHARED_MODES } from "./constants.js";
+import { state } from "../core/state.js";
+import { elements, openMovementModal, closeMovementModal } from "../core/dom.js";
+import { saveMovements, saveSharedEntries } from "../core/storage.js";
+import { createId, formatDate, formatMoney, formatMonthLabel, optionMarkup } from "../core/utils.js";
+import { SHARED_MODES } from "../core/constants.js";
 import {
   applySharedEntryToForm,
   buildSharedExpenseEntry,
@@ -12,7 +12,7 @@ import {
   syncSharedFields,
 } from "./shared.js";
 import { renderAnalysis } from "./analysis.js";
-import { setMovementDate } from "./datepicker.js";
+import { setMovementDate } from "../ui/datepicker.js";
 
 export function getCategory(value) {
   return state.settings.categories.find((category) => category.value === value);

@@ -1,7 +1,7 @@
-import { state } from "./state.js";
-import { elements, setSettingsPanel } from "./dom.js";
-import { saveMovements, saveSettings } from "./storage.js";
-import { createId, createSlug, optionMarkup } from "./utils.js";
+import { state } from "../core/state.js";
+import { elements, setSettingsPanel } from "../core/dom.js";
+import { saveMovements, saveSettings } from "../core/storage.js";
+import { createId, createSlug, optionMarkup } from "../core/utils.js";
 import { getCategoryLabel, renderMovements, syncMovementSelects } from "./movements.js";
 import { renderAnalysis } from "./analysis.js";
 

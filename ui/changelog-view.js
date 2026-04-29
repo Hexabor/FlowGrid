@@ -1,5 +1,5 @@
-import { elements } from "./dom.js";
-import { formatDate } from "./utils.js";
+import { elements } from "../core/dom.js";
+import { formatDate } from "../core/utils.js";
 
 export function renderChangelog() {
   const entries = window.FlowGridChangelog ?? [];

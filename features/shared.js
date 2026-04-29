@@ -1,11 +1,11 @@
-import { state } from "./state.js";
-import { elements, openMovementModal } from "./dom.js";
-import { saveMovements, saveSharedEntries, savePeople } from "./storage.js";
-import { SHARED_MODES } from "./constants.js";
-import { createId, formatDate, formatMoney, formatMonthLabel } from "./utils.js";
+import { state } from "../core/state.js";
+import { elements, openMovementModal } from "../core/dom.js";
+import { saveMovements, saveSharedEntries, savePeople } from "../core/storage.js";
+import { SHARED_MODES } from "../core/constants.js";
+import { createId, formatDate, formatMoney, formatMonthLabel } from "../core/utils.js";
 import { getPersonName, getSharedBalance, personHasEntries, renderPeople } from "./people.js";
 import { renderMovements, syncMovementSelects, fillMovementForm } from "./movements.js";
-import { setMovementDate, setPaymentDate } from "./datepicker.js";
+import { setMovementDate, setPaymentDate } from "../ui/datepicker.js";
 
 export function entryBalanceImpact(entry) {
   if (entry.type === "expense") {

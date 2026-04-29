@@ -1,7 +1,7 @@
-import { state } from "./state.js";
-import { elements } from "./dom.js";
-import { savePeople } from "./storage.js";
-import { createId } from "./utils.js";
+import { state } from "../core/state.js";
+import { elements } from "../core/dom.js";
+import { savePeople } from "../core/storage.js";
+import { createId } from "../core/utils.js";
 import { entryBalanceImpact, renderSharedView, syncSharedPersonOptions, syncSharedModeLabels } from "./shared.js";
 
 export function getPerson(id) {

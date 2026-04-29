@@ -1,9 +1,9 @@
-import { state } from "./state.js";
-import { elements } from "./dom.js";
-import { saveMovements, savePeople, saveSettings, saveSharedEntries } from "./storage.js";
-import { toIsoDate } from "./utils.js";
+import { state } from "../core/state.js";
+import { elements } from "../core/dom.js";
+import { saveMovements, savePeople, saveSettings, saveSharedEntries } from "../core/storage.js";
+import { toIsoDate } from "../core/utils.js";
 import { syncMovementSelects } from "./movements.js";
-import { render } from "./render.js";
+import { render } from "../ui/render.js";
 
 export function exportBackup() {
   const backup = {

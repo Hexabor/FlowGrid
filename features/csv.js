@@ -1,6 +1,6 @@
-import { state } from "./state.js";
-import { elements } from "./dom.js";
-import { saveMovements, saveSettings } from "./storage.js";
+import { state } from "../core/state.js";
+import { elements } from "../core/dom.js";
+import { saveMovements, saveSettings } from "../core/storage.js";
 import {
   createId,
   createSlug,
@@ -9,7 +9,7 @@ import {
   labelFromSlug,
   parseEuroAmount,
   parseSheetDate,
-} from "./utils.js";
+} from "../core/utils.js";
 import { getSignedAmount, renderMovements, syncMovementSelects } from "./movements.js";
 import { renderAnalysis } from "./analysis.js";
 import { createCategory, normalizeCategory, renderCategories, renderConcepts } from "./settings.js";
