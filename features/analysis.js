@@ -43,7 +43,10 @@ export function groupTotals(items, keyGetter) {
   const groups = new Map();
 
   items.forEach((movement) => {
-    const key = keyGetter(movement);
+    // Trim whitespace so "Compra" and "Compra " merge into one group.
+    // CSV imports occasionally leave trailing spaces on the values.
+    const raw = keyGetter(movement) ?? "";
+    const key = String(raw).trim();
     const current = groups.get(key) ?? { label: key, income: 0, expense: 0, count: 0 };
 
     current.count += 1;
