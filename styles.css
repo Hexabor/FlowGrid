@@ -1858,15 +1858,16 @@ dt {
     margin-top: 0;
   }
 
-  /* Two-row mobile card. Row 1 = concept (with optional note as a subline)
-     on the left, importe big on the right. Row 2 = party + recurrence
-     (small, inline) on the left, action buttons on the right. */
+  /* Two-row mobile card.
+     Row 1 = importe big on the left, party + recurrencia inline on the right.
+     Row 2 = concept (with optional note as a subline) on the left, action
+     buttons on the right. */
   .movement-card {
     grid-template-columns: 1fr auto;
     grid-template-rows: auto auto;
     grid-template-areas:
-      "main amount"
-      "meta actions";
+      "amount meta"
+      "main   actions";
     gap: 4px 10px;
     align-items: start;
     min-width: 0;
@@ -1890,7 +1891,7 @@ dt {
     grid-area: amount;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: center;
   }
 
@@ -1901,6 +1902,7 @@ dt {
     gap: 4px 10px;
     margin: 0;
     align-items: baseline;
+    justify-content: flex-end;
   }
 
   .movement-card .movement-meta div {
