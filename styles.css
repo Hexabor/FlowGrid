@@ -1858,17 +1858,16 @@ dt {
     margin-top: 0;
   }
 
-  /* Two-row mobile card with importe centred horizontally and across both
-     rows. The amount column has a fixed width so the importe always lands
-     at the same x-position regardless of how short or long the figure is.
-     Concepto+nota stack on the left; party (top-right) above recurrencia;
-     action buttons sit bottom-right. */
+  /* Two-row mobile card. Importe centred horizontally and across both
+     rows; the amount column is fixed-width so the figure always lands
+     at the same x-position. Concepto+nota top-left, recurrencia
+     bottom-left (on its own line), party top-right, actions bottom-right. */
   .movement-card {
     grid-template-columns: minmax(0, 1fr) 140px auto;
     grid-template-rows: auto auto;
     grid-template-areas:
-      "main amount meta"
-      "main amount actions";
+      "main       amount party"
+      "recurrence amount actions";
     gap: 4px 10px;
     align-items: stretch;
     min-width: 0;
@@ -1884,9 +1883,9 @@ dt {
     grid-area: main;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     gap: 2px;
     min-width: 0;
+    align-self: start;
   }
 
   .movement-card .movement-side {
@@ -1897,14 +1896,11 @@ dt {
     justify-content: center;
   }
 
-  .movement-card .movement-meta {
-    grid-area: meta;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin: 0;
-    align-items: flex-end;
-    justify-content: center;
+  /* Flatten movement-meta + its dt/dd wrappers so party and recurrence
+     become direct grid items and can be placed independently. */
+  .movement-card .movement-meta,
+  .movement-card .movement-meta div {
+    display: contents;
   }
 
   .movement-card .movement-meta div {
@@ -1953,6 +1949,9 @@ dt {
   }
 
   .movement-card .party {
+    grid-area: party;
+    justify-self: end;
+    align-self: start;
     color: var(--muted);
     font-size: 0.82rem;
     white-space: nowrap;
@@ -1966,6 +1965,9 @@ dt {
   }
 
   .movement-card .recurrence {
+    grid-area: recurrence;
+    justify-self: start;
+    align-self: end;
     color: var(--muted);
     font-size: 0.72rem;
     text-transform: uppercase;
