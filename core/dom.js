@@ -33,6 +33,7 @@ export const elements = {
   sharedUnevenFeedback: document.querySelector("#shared-uneven-feedback"),
   feedback: document.querySelector("#form-feedback"),
   submitButton: document.querySelector("#movement-form .primary-action"),
+  submitLabel: document.querySelector("#movement-form .movement-submit-label"),
   categoryFilter: document.querySelector("#category-filter"),
   typeFilter: document.querySelector("#type-filter"),
   search: document.querySelector("#search"),

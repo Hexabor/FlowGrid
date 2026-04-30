@@ -235,7 +235,7 @@ export function openSharedEntryEdit(entry) {
     applySharedEntryToForm(entry);
   }
 
-  elements.submitButton.textContent = "Guardar cambios";
+  elements.submitLabel.textContent = "Guardar cambios";
   elements.feedback.textContent = "Editando entrada compartida.";
   openMovementModal();
 }

@@ -1629,9 +1629,9 @@ dt {
   }
 
   #movement-form #amount {
-    min-height: 84px;
-    padding: 14px 14px;
-    font-size: 2.4rem;
+    min-height: 110px;
+    padding: 18px 14px;
+    font-size: 3.2rem;
     font-weight: 800;
     text-align: center;
   }
@@ -1669,10 +1669,34 @@ dt {
     color: var(--text);
   }
 
-  #movement-form > button[type="submit"] {
-    margin-top: 14px;
-    min-height: 52px;
-    font-size: 1.05rem;
+  /* Floating square submit pinned to the bottom-center of the viewport.
+     Removed from grid flow via position:fixed; the form gets bottom
+     padding so the last in-flow field can't hide behind it. */
+  #movement-form {
+    padding-bottom: 110px;
+  }
+
+  #movement-form > button[type="submit"].movement-submit {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 76px;
+    height: 76px;
+    min-height: 76px;
+    margin: 0;
+    padding: 0;
+    border-radius: 18px;
+    box-shadow: 0 12px 28px rgba(15, 118, 110, 0.32);
+    z-index: 50;
+  }
+
+  .movement-submit .movement-submit-label {
+    display: none;
+  }
+
+  .movement-submit .movement-submit-icon {
+    display: block;
   }
 
   .shared-fields {
@@ -1845,6 +1869,19 @@ dt {
     height: 30px;
     min-height: 30px;
   }
+}
+
+/* ==== Submit icon (visible only on mobile, when the button is square) ==== */
+.movement-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.movement-submit-icon {
+  display: none;
+  width: 36px;
+  height: 36px;
 }
 
 /* ==== Type toggle (movement form, mobile only) ==== */

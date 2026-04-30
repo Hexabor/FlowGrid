@@ -235,7 +235,7 @@ export function resetMovementForm(movement) {
   elements.sharedMyShare.value = "";
   elements.sharedTheirShare.value = "";
   elements.sharedUnevenFeedback.textContent = "";
-  elements.submitButton.textContent = "Anadir movimiento";
+  elements.submitLabel.textContent = "Anadir movimiento";
   state.editingMovementId = null;
   state.editingSharedEntryId = null;
   syncMovementSelects();
@@ -292,7 +292,7 @@ elements.list.addEventListener("click", (event) => {
   if (editButton) {
     state.editingMovementId = movement.id;
     fillMovementForm(movement);
-    elements.submitButton.textContent = "Guardar cambios";
+    elements.submitLabel.textContent = "Guardar cambios";
     elements.feedback.textContent = "Editando movimiento.";
     openMovementModal();
     elements.concept.focus();
@@ -302,7 +302,7 @@ elements.list.addEventListener("click", (event) => {
   if (duplicateButton) {
     state.editingMovementId = null;
     fillMovementForm(movement);
-    elements.submitButton.textContent = "Anadir movimiento";
+    elements.submitLabel.textContent = "Anadir movimiento";
     elements.feedback.textContent = "Copia preparada. Ajusta lo que cambie.";
     openMovementModal();
     elements.concept.focus();
@@ -429,7 +429,7 @@ elements.form.addEventListener("submit", (event) => {
     }
     state.editingMovementId = null;
     state.editingSharedEntryId = null;
-    elements.submitButton.textContent = "Anadir movimiento";
+    elements.submitLabel.textContent = "Anadir movimiento";
     elements.feedback.textContent = "Cambios guardados.";
   } else {
     elements.feedback.textContent = skipMovement
