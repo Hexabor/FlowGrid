@@ -139,6 +139,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-04-30",
     commit: "dev@HEAD",
+    title: "Bootstrap de la app por onAuthChange (sin race con getSession)",
+    changes: [
+      "app.js antes hacia await getSession() y, si era null, mostraba el gate. En algunos casos getSession devolvia null aun habiendose creado la sesion (timing race con la inicializacion async de supabase-js), asi que el gate se quedaba arriba aunque el log mostrase SIGNED_IN.",
+      "Ahora app.js solo escucha onAuthChange, que dispara INITIAL_SESSION en cuanto el listener se registra (ya este la inicializacion terminada o no) y SIGNED_IN/SIGNED_OUT en cada cambio. Una unica fuente de verdad, sin race.",
+      "Logs anyadidos: [app] booting, [app] boot complete y [app] auth change: ... para diagnosticar el flujo del login en consola si vuelve a fallar.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "dev@HEAD",
     title: "Captura de URL inicial para diagnostico de auth",
     changes: [
       "Snippet inline en index.html que guarda window.location.href en window.__FG_INITIAL_URL__ antes de que se cargue ningun modulo.",
