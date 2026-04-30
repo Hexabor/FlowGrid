@@ -169,15 +169,24 @@ export async function cloudPushAll() {
 // ---- hydrate (cloud is authoritative; first login pushes local seed up) ----
 
 export async function cloudHydrate() {
+  console.log("[cloud hydrate] start");
   const ownerId = await getUserId();
+  console.log("[cloud hydrate] ownerId:", ownerId);
   if (!ownerId) return;
 
+  console.log("[cloud hydrate] firing queries");
   const [movementsRes, settingsRes, peopleRes, sharedRes] = await Promise.all([
     supabase.from("movements").select("*").eq("owner_id", ownerId),
     supabase.from("settings").select("*").eq("owner_id", ownerId).maybeSingle(),
     supabase.from("people").select("*").eq("owner_id", ownerId),
     supabase.from("shared_entries").select("*").eq("owner_id", ownerId),
   ]);
+  console.log("[cloud hydrate] queries done", {
+    movements: movementsRes.data?.length,
+    people: peopleRes.data?.length,
+    shared: sharedRes.data?.length,
+    hasSettings: !!settingsRes.data,
+  });
 
   for (const res of [movementsRes, settingsRes, peopleRes, sharedRes]) {
     if (res.error) throw res.error;

@@ -38,7 +38,9 @@ export async function signInWithMagicLink(email) {
 }
 
 export async function signOut() {
+  console.log("[supabase auth] signOut called");
   await supabase.auth.signOut();
+  console.log("[supabase auth] signOut returned");
 }
 
 export function onAuthChange(callback) {
