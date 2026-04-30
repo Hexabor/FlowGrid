@@ -1858,11 +1858,13 @@ dt {
     margin-top: 0;
   }
 
-  /* Two-row mobile card with importe centred (horizontally and across both
-     rows). Concepto+nota stack on the left full height; party+recurrencia
-     hug top-right; action buttons sit bottom-right. */
+  /* Two-row mobile card with importe centred horizontally and across both
+     rows. The amount column has a fixed width so the importe always lands
+     at the same x-position regardless of how short or long the figure is.
+     Concepto+nota stack on the left; party (top-right) above recurrencia;
+     action buttons sit bottom-right. */
   .movement-card {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) 140px auto;
     grid-template-rows: auto auto;
     grid-template-areas:
       "main amount meta"
@@ -1898,11 +1900,11 @@ dt {
   .movement-card .movement-meta {
     grid-area: meta;
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px 10px;
+    flex-direction: column;
+    gap: 2px;
     margin: 0;
-    align-items: baseline;
-    justify-content: flex-end;
+    align-items: flex-end;
+    justify-content: center;
   }
 
   .movement-card .movement-meta div {
