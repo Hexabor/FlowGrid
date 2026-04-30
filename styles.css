@@ -1858,18 +1858,17 @@ dt {
     margin-top: 0;
   }
 
-  /* Two-row mobile card.
-     Row 1 = importe big on the left, party + recurrencia inline on the right.
-     Row 2 = concept (with optional note as a subline) on the left, action
-     buttons on the right. */
+  /* Two-row mobile card with importe centred (horizontally and across both
+     rows). Concepto+nota stack on the left full height; party+recurrencia
+     hug top-right; action buttons sit bottom-right. */
   .movement-card {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-rows: auto auto;
     grid-template-areas:
-      "amount meta"
-      "main   actions";
+      "main amount meta"
+      "main amount actions";
     gap: 4px 10px;
-    align-items: start;
+    align-items: stretch;
     min-width: 0;
     min-height: 0;
     padding: 8px 10px;
@@ -1883,6 +1882,7 @@ dt {
     grid-area: main;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 2px;
     min-width: 0;
   }
@@ -1891,7 +1891,7 @@ dt {
     grid-area: amount;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
   }
 
