@@ -1777,6 +1777,12 @@ body.is-locked .shell {
   padding: 24px;
 }
 
+/* The `hidden` attribute is the JS API we use to toggle the gate; without
+   this rule the `display: grid` above wins and the gate stays visible. */
+.auth-gate[hidden] {
+  display: none;
+}
+
 .auth-card {
   width: 100%;
   max-width: 420px;

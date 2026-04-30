@@ -1,5 +1,14 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-04-30",
+    commit: "dev@HEAD",
+    title: "Fix: el gate de auth tapaba la app booteada",
+    changes: [
+      "El CSS .auth-gate { display: grid } ganaba por especificidad al atributo hidden del HTML, asi que aunque hideAuthGate() seteara gate.hidden=true el formulario seguia visible sobre la app ya renderizada por z-index.",
+      "Anadida regla .auth-gate[hidden] { display: none } que devuelve al atributo el control de la visibilidad.",
+    ],
+  },
+  {
     date: "2026-04-28",
     commit: "7f3c479",
     title: "Core estatico inicial",
