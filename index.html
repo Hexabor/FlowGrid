@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-01-1200">
+    <link rel="stylesheet" href="styles.css?v=2026-05-01-1230">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -254,34 +254,61 @@
           <section class="panel" aria-labelledby="ledger-title">
             <div class="section-heading">
               <h2 id="ledger-title">Listado</h2>
-              <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
+              <div class="ledger-actions">
+                <button id="open-search-modal" class="primary-action" type="button">Buscar</button>
+                <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
+              </div>
               <span id="movement-count"></span>
-            </div>
-
-            <div class="filters" aria-label="Filtros">
-              <label>
-                <span>Buscar</span>
-                <input id="search" type="search" placeholder="Concepto, nota o emisor">
-              </label>
-              <label>
-                <span>Categoria</span>
-                <select id="category-filter">
-                  <option value="all">Todas</option>
-                </select>
-              </label>
-              <label>
-                <span>Tipo</span>
-                <select id="type-filter">
-                  <option value="all">Todos</option>
-                  <option value="expense">Gastos</option>
-                  <option value="income">Ingresos</option>
-                </select>
-              </label>
             </div>
 
             <div id="movement-list" class="movement-list"></div>
           </section>
         </section>
+
+        <div id="search-modal" class="modal" hidden>
+          <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
+            <div class="section-heading">
+              <h2 id="search-title">Buscar movimientos</h2>
+              <button id="close-search-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
+            </div>
+
+            <form id="search-form" class="search-form">
+              <label>
+                <span>Concepto</span>
+                <input id="search-concept" name="concept" type="search" autocomplete="off" placeholder="Cualquier concepto">
+              </label>
+
+              <label>
+                <span>Nota</span>
+                <input id="search-note" name="note" type="search" autocomplete="off" placeholder="Cualquier nota">
+              </label>
+
+              <label>
+                <span>Emisor / receptor</span>
+                <input id="search-party" name="party" type="search" autocomplete="off" placeholder="Cualquier emisor o receptor">
+              </label>
+
+              <label>
+                <span>Categoria</span>
+                <select id="category-filter" name="category">
+                  <option value="all">Todas</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Tipo</span>
+                <select id="type-filter" name="type">
+                  <option value="all">Todos</option>
+                  <option value="expense">Gastos</option>
+                  <option value="income">Ingresos</option>
+                </select>
+              </label>
+
+              <button class="primary-action" type="submit">Aplicar filtros</button>
+              <button id="search-clear" class="ghost-action" type="button">Limpiar</button>
+            </form>
+          </div>
+        </div>
 
         <div id="movement-modal" class="modal" hidden>
           <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="form-title">
@@ -775,7 +802,7 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-01 12:00";
+      window.__FG_BUILD__ = "2026-05-01 12:30";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;

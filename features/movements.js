@@ -115,7 +115,9 @@ function compareMovements(a, b, key) {
 }
 
 export function getFilteredMovements() {
-  const query = elements.search.value.trim().toLowerCase();
+  const conceptQuery = elements.searchConcept.value.trim().toLowerCase();
+  const noteQuery = elements.searchNote.value.trim().toLowerCase();
+  const partyQuery = elements.searchParty.value.trim().toLowerCase();
   const selectedCategory = elements.categoryFilter.value;
   const selectedType = elements.typeFilter.value;
   const { key, dir } = state.movementSort;
@@ -123,19 +125,25 @@ export function getFilteredMovements() {
   return state.movements
     .filter((movement) => selectedType === "all" || movement.type === selectedType)
     .filter((movement) => selectedCategory === "all" || movement.category === selectedCategory)
-    .filter((movement) => {
-      const haystack = [movement.concept, movement.note, movement.party, getCategoryLabel(movement.category)]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(query);
-    })
+    .filter((movement) => !conceptQuery || (movement.concept || "").toLowerCase().includes(conceptQuery))
+    .filter((movement) => !noteQuery || (movement.note || "").toLowerCase().includes(noteQuery))
+    .filter((movement) => !partyQuery || (movement.party || "").toLowerCase().includes(partyQuery))
     .sort((a, b) => {
       const cmp = compareMovements(a, b, key);
       // Tie-break by date desc + id so equal-key rows have a stable order.
       const fallback = b.date.localeCompare(a.date) || (b.id || "").localeCompare(a.id || "");
       return (dir === "asc" ? cmp : -cmp) || fallback;
     });
+}
+
+export function isSearchActive() {
+  return Boolean(
+    elements.searchConcept.value.trim() ||
+      elements.searchNote.value.trim() ||
+      elements.searchParty.value.trim() ||
+      elements.categoryFilter.value !== "all" ||
+      elements.typeFilter.value !== "all"
+  );
 }
 
 export function createMovementCard(movement, compact = false) {
@@ -400,9 +408,45 @@ elements.list.addEventListener("click", (event) => {
   }
 });
 
-[elements.search, elements.categoryFilter, elements.typeFilter].forEach((control) => {
-  control.addEventListener("input", renderMovements);
+function refreshSearchButtonState() {
+  elements.openSearchModal.classList.toggle("is-active", isSearchActive());
+}
+
+elements.openSearchModal.addEventListener("click", () => {
+  elements.searchModal.hidden = false;
+  elements.searchConcept.focus();
 });
+
+function closeSearchModal() {
+  elements.searchModal.hidden = true;
+}
+
+elements.closeSearchModal.addEventListener("click", closeSearchModal);
+
+elements.searchModal.addEventListener("click", (event) => {
+  if (event.target === elements.searchModal) {
+    closeSearchModal();
+  }
+});
+
+elements.searchForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  closeSearchModal();
+  renderMovements();
+  refreshSearchButtonState();
+});
+
+elements.searchClear.addEventListener("click", () => {
+  elements.searchConcept.value = "";
+  elements.searchNote.value = "";
+  elements.searchParty.value = "";
+  elements.categoryFilter.value = "all";
+  elements.typeFilter.value = "all";
+  renderMovements();
+  refreshSearchButtonState();
+});
+
+refreshSearchButtonState();
 
 elements.openMovementModal.addEventListener("click", () => {
   resetMovementForm();

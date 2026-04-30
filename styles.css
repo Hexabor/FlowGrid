@@ -2059,6 +2059,64 @@ dt {
   border-color: var(--green);
 }
 
+/* ==== Search modal form ==== */
+.search-form {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 720px) {
+  .search-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .search-form > label:nth-of-type(1),
+  .search-form > label:nth-of-type(2) {
+    grid-column: 1 / -1;
+  }
+
+  .search-form > button {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ==== Ledger header actions (Buscar + Nuevo movimiento) ==== */
+.ledger-actions {
+  display: flex;
+  gap: 8px;
+}
+
+#open-search-modal.is-active {
+  position: relative;
+}
+
+#open-search-modal.is-active::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ffd166;
+  box-shadow: 0 0 0 2px var(--teal);
+}
+
+.ghost-action {
+  min-height: 36px;
+  padding: 0 14px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.ghost-action:hover {
+  color: var(--text);
+  border-color: #b8c5cb;
+}
+
 /* ==== Danger zone (settings) ==== */
 .danger-panel {
   border-color: #f0b7b7;
