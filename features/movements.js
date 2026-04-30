@@ -260,6 +260,11 @@ elements.typeToggleButtons.forEach((btn) => {
 elements.type.addEventListener("change", syncTypeToggle);
 syncTypeToggle();
 
+// Mark the form as js-enhanced only after the toggle handlers are wired up.
+// The CSS that hides the original Tipo select on mobile keys off this class,
+// so if the JS module fails to load the user still sees the fallback select.
+elements.form.classList.add("js-type-toggle");
+
 elements.list.addEventListener("click", (event) => {
   const editButton = event.target.closest(".edit-action");
   const duplicateButton = event.target.closest(".duplicate-action");

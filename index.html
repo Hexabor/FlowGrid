@@ -4,7 +4,49 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-04-30-2345">
+    <link rel="stylesheet" href="styles.css?v=2026-05-01-0010">
+    <style>
+      /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
+         atomically with the HTML and can't be defeated by a stale styles.css
+         cache. Type-select-field hidden ONLY when JS has confirmed the toggle
+         is wired up (see .js-type-toggle on the form), so if scripts fail
+         the user still has the original Tipo select to fall back on. */
+      .type-toggle { display: none; }
+      .type-toggle-button {
+        display: grid;
+        place-items: center;
+        min-height: 76px;
+        padding: 12px;
+        color: #65727b;
+        background: #fbfcfd;
+        border: 2px solid #d8e0e4;
+        border-radius: 12px;
+        font: inherit;
+        font-size: 1.1rem;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .type-toggle-button[data-type-target="expense"].is-active {
+        color: #c92a2a;
+        background: rgba(201, 42, 42, 0.08);
+        border-color: #c92a2a;
+      }
+      .type-toggle-button[data-type-target="income"].is-active {
+        color: #18794e;
+        background: rgba(24, 121, 78, 0.08);
+        border-color: #18794e;
+      }
+      @media (max-width: 719px) {
+        .type-toggle {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .movement-form.js-type-toggle .type-select-field {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="auth-gate" class="auth-gate" hidden>
@@ -715,7 +757,7 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-04-30 23:45";
+      window.__FG_BUILD__ = "2026-05-01 00:10";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
