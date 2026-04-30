@@ -7,6 +7,7 @@ export const elements = {
   openMovementModal: document.querySelector("#open-movement-modal"),
   closeMovementModal: document.querySelector("#close-movement-modal"),
   type: document.querySelector("#type"),
+  typeToggleButtons: document.querySelectorAll(".type-toggle-button"),
   date: document.querySelector("#date"),
   dateTrigger: document.querySelector("#date-trigger"),
   datePicker: document.querySelector("#date-picker"),

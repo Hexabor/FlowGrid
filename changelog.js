@@ -2,6 +2,17 @@ window.FlowGridChangelog = [
   {
     date: "2026-04-30",
     commit: "dev@HEAD",
+    title: "Rediseno mobile del modal de nuevo movimiento",
+    changes: [
+      "Tipo de movimiento como par de botones grandes (Gasto / Ingreso) en lugar de un select. Estado activo con tinte rojo (gasto) o verde (ingreso). Solo en mobile; el desktop sigue usando el select original.",
+      "Reordenacion mobile: Tipo arriba, luego Fecha + Importe en grande (date-trigger 56px, importe 64px centrado y peso 700), Concepto, Recurrencia, Emisor, Nota, Compartido.",
+      "Concepto por defecto en movimientos nuevos pasa a 'Compra' (si existe en la lista del usuario) en lugar de la primera entrada alfabetica. La recurrencia 'Puntual' ya era el default por estructura del select.",
+      "Desktop intacto: todo el rediseno vive dentro del media query max-width: 719px.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "c0792b3",
     title: "Zona peligrosa: borrar todos los movimientos con doble confirmacion",
     changes: [
       "Nueva seccion al final de la pestana Backup con un boton para borrar todos los movimientos de golpe (local + cloud).",

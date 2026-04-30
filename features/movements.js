@@ -190,6 +190,7 @@ export function createMovement(formData) {
 
 export function fillMovementForm(movement) {
   elements.type.value = movement.type;
+  syncTypeToggle();
   syncMovementSelects();
   elements.concept.value = movement.concept;
   elements.category.value = movement.category;
@@ -225,7 +226,39 @@ export function resetMovementForm(movement) {
   state.editingMovementId = null;
   state.editingSharedEntryId = null;
   syncMovementSelects();
+
+  // For brand-new expense movements, default the concept to "Compra" if it
+  // exists in the user's settings; falls back to whatever syncMovementSelects
+  // already picked.
+  if (!movement && elements.type.value === "expense") {
+    const compra = getConceptsForType("expense").find((c) => c.label === "Compra");
+    if (compra) {
+      elements.concept.value = "Compra";
+      syncCategoryFromConcept();
+    }
+  }
+
+  syncTypeToggle();
 }
+
+export function syncTypeToggle() {
+  const value = elements.type.value;
+  elements.typeToggleButtons.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.typeTarget === value);
+  });
+}
+
+elements.typeToggleButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (elements.type.value === btn.dataset.typeTarget) return;
+    elements.type.value = btn.dataset.typeTarget;
+    elements.type.dispatchEvent(new Event("change", { bubbles: true }));
+    syncTypeToggle();
+  });
+});
+
+elements.type.addEventListener("change", syncTypeToggle);
+syncTypeToggle();
 
 elements.list.addEventListener("click", (event) => {
   const editButton = event.target.closest(".edit-action");

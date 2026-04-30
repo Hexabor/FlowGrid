@@ -250,7 +250,12 @@
             </div>
 
             <form id="movement-form" class="movement-form">
-              <label>
+              <div class="type-toggle" role="group" aria-label="Tipo de movimiento">
+                <button type="button" class="type-toggle-button is-active" data-type-target="expense">Gasto</button>
+                <button type="button" class="type-toggle-button" data-type-target="income">Ingreso</button>
+              </div>
+
+              <label class="type-select-field">
                 <span>Tipo</span>
                 <select id="type" name="type" required>
                   <option value="expense">Gasto</option>
@@ -710,7 +715,7 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-04-30 23:00";
+      window.__FG_BUILD__ = "2026-04-30 23:30";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
