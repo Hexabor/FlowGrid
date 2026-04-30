@@ -1762,6 +1762,23 @@ dt {
   }
 }
 
+/* ==== Build version label (fixed, top-right) ==== */
+.app-version {
+  position: fixed;
+  top: 4px;
+  right: 6px;
+  z-index: 60;
+  padding: 1px 5px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.66rem;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ==== Auth gate ==== */
 body.is-locked .shell {
   display: none;

@@ -691,8 +691,19 @@
       <div id="date-grid" class="date-grid"></div>
     </div>
 
+    <div id="app-version" class="app-version" aria-hidden="true"></div>
     <script src="changelog.js"></script>
     <script>
+      // Bumped on every commit so the user can tell at a glance that Pages
+      // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
+      // commit time). If the corner label still shows the old value after a
+      // hard reload, Pages hasn't propagated yet.
+      window.__FG_BUILD__ = "2026-04-30 17:30";
+      (function () {
+        const el = document.getElementById("app-version");
+        if (el) el.textContent = window.__FG_BUILD__;
+      })();
+
       // Capture the URL state before any module loads, so the auth gate can
       // diagnose what came back from the magic-link redirect even if
       // supabase-js has already cleaned up the hash.
