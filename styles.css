@@ -2117,6 +2117,13 @@ dt {
   line-height: 1;
 }
 
+/* The HTML `hidden` attribute is the API used to toggle this button;
+   without this rule the `display: grid` above wins and the button stays
+   visible even when no filters are active. */
+.filter-clear-button[hidden] {
+  display: none;
+}
+
 .filter-clear-button:hover {
   background: #a82222;
 }
