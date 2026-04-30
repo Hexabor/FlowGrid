@@ -7,6 +7,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: "implicit",
+    // Default lock uses navigator.locks. We had it hang getSession() forever
+    // when the lock got into a stale state. FlowGrid is single-tab anyway, so
+    // a no-op lock is safe and removes the hang entirely.
+    lock: async (_name, _timeout, fn) => fn(),
   },
 });
 

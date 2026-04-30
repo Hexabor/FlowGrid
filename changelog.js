@@ -2,6 +2,15 @@ window.FlowGridChangelog = [
   {
     date: "2026-04-30",
     commit: "dev@HEAD",
+    title: "Fix: bootApp se colgaba en getSession por lock huerfano",
+    changes: [
+      "Tras arreglar el gate, el boot se quedaba en `[cloud hydrate] start` para siempre porque supabase.auth.getSession() esperaba un navigator.locks que estaba huerfano.",
+      "Sustituido el lock por un no-op en la config de auth. La app es single-tab, no necesita sincronizacion entre tabs.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "86ce048",
     title: "Fix: el gate de auth tapaba la app booteada",
     changes: [
       "El CSS .auth-gate { display: grid } ganaba por especificidad al atributo hidden del HTML, asi que aunque hideAuthGate() seteara gate.hidden=true el formulario seguia visible sobre la app ya renderizada por z-index.",
