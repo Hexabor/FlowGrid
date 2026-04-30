@@ -1,7 +1,7 @@
 import { initState } from "./core/storage.js";
 import { setInitialDate, toggleDatePicker } from "./ui/datepicker.js";
 import { render } from "./ui/render.js";
-import { closeMovementModal, elements, setView } from "./core/dom.js";
+import { closeMovementModal, elements, restoreLastView, setView } from "./core/dom.js";
 import { closePaymentModal } from "./features/shared.js";
 import { onAuthChange } from "./core/supabase.js";
 import { cloudHydrate } from "./core/cloud.js";
@@ -24,6 +24,7 @@ async function bootApp() {
   setInitialDate();
   render();
   refreshSessionBadge();
+  restoreLastView();
   console.log("[app] boot complete");
 }
 

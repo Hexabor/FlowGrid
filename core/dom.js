@@ -114,11 +114,30 @@ export function closeMovementModal() {
   elements.movementModal.hidden = true;
 }
 
+const VIEW_STORAGE_KEY = "flowgrid.view.v1";
+
 export function setView(viewName) {
   elements.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
   elements.navButtons.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.viewTarget === viewName);
   });
+  try {
+    localStorage.setItem(VIEW_STORAGE_KEY, viewName);
+  } catch {
+    // localStorage may be unavailable (private mode, quota); ignore.
+  }
+}
+
+export function restoreLastView() {
+  let stored;
+  try {
+    stored = localStorage.getItem(VIEW_STORAGE_KEY);
+  } catch {
+    return;
+  }
+  if (!stored) return;
+  const exists = Array.from(elements.views).some((view) => view.dataset.view === stored);
+  if (exists) setView(stored);
 }
 
 export function setSettingsPanel(panelName) {
