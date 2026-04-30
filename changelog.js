@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-04-30",
     commit: "dev@HEAD",
+    title: "Fase 2 cerrada: backend cloud validado end-to-end",
+    changes: [
+      "Login con magic-link funcionando, persistencia de sesion correcta, hidratacion desde cloud OK, push de movimientos nuevos OK, logout OK.",
+      "Validado en escritorio y movil. La app sigue siendo single-user; multiusuario llega en Fase 3.",
+      "Limpieza: retirados los console.log diagnosticos que se anadieron para localizar el cuelgue del lock huerfano.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "67aff3b",
     title: "Fix: bootApp se colgaba en getSession por lock huerfano",
     changes: [
       "Tras arreglar el gate, el boot se quedaba en `[cloud hydrate] start` para siempre porque supabase.auth.getSession() esperaba un navigator.locks que estaba huerfano.",
