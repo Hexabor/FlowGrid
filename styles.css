@@ -1623,9 +1623,10 @@ dt {
   .movement-form > button[type="submit"]{ order: 10; }
 
   #date-trigger {
-    min-height: 56px;
-    padding: 12px 14px;
-    font-size: 1.2rem;
+    min-height: 60px;
+    padding: 8px 14px;
+    font-size: 2.4rem;
+    font-weight: 700;
   }
 
   /* Importe: keep the 3.2rem typography but tighten the box so it
@@ -1639,11 +1640,13 @@ dt {
   }
 
   /* Recurrencia (paired with Fecha) and Concepto (full width below):
-     bigger content typography, height stays sensible. */
+     same content typography as Fecha so the row reads as a unit. */
   #movement-form #concept,
   #movement-form #recurrence {
-    min-height: 50px;
-    font-size: 1.2rem;
+    min-height: 60px;
+    padding: 6px 10px;
+    font-size: 2.4rem;
+    font-weight: 700;
   }
 
   /* Gasto compartido toggle: turn into a proper tappable strip with
