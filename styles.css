@@ -2065,6 +2065,16 @@ dt {
   gap: 10px;
 }
 
+.filter-count {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  background: var(--surface-soft);
+  border-radius: 6px;
+  color: var(--text);
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (min-width: 720px) {
   .search-form {
     grid-template-columns: 1fr 1fr;
@@ -2075,7 +2085,8 @@ dt {
     grid-column: 1 / -1;
   }
 
-  .search-form > button {
+  .search-form > button,
+  .search-form > .filter-count {
     grid-column: 1 / -1;
   }
 }

@@ -412,6 +412,12 @@ function refreshSearchButtonState() {
   elements.resetSearchButton.hidden = !isSearchActive();
 }
 
+function refreshFilterCount() {
+  const count = getFilteredMovements().length;
+  elements.filterCount.textContent =
+    count === 1 ? "1 movimiento coincide" : `${count} movimientos coinciden`;
+}
+
 function clearSearchFilters() {
   elements.searchConcept.value = "";
   elements.searchNote.value = "";
@@ -420,10 +426,22 @@ function clearSearchFilters() {
   elements.typeFilter.value = "all";
   renderMovements();
   refreshSearchButtonState();
+  refreshFilterCount();
 }
+
+[
+  elements.searchConcept,
+  elements.searchNote,
+  elements.searchParty,
+  elements.categoryFilter,
+  elements.typeFilter,
+].forEach((control) => {
+  control.addEventListener("input", refreshFilterCount);
+});
 
 elements.openSearchModal.addEventListener("click", () => {
   elements.searchModal.hidden = false;
+  refreshFilterCount();
   elements.searchConcept.focus();
 });
 

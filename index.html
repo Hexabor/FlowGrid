@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-01-1335">
+    <link rel="stylesheet" href="styles.css?v=2026-05-01-1355">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -303,6 +303,8 @@
                   <option value="income">Ingresos</option>
                 </select>
               </label>
+
+              <p id="filter-count" class="filter-count" aria-live="polite"></p>
 
               <button class="primary-action" type="submit">Aplicar filtros</button>
               <button id="search-clear" class="ghost-action" type="button">Limpiar</button>
@@ -802,7 +804,7 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-01 13:35";
+      window.__FG_BUILD__ = "2026-05-01 13:55";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
