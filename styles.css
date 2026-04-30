@@ -1291,7 +1291,10 @@ dt {
 }
 
 .app {
-  padding: 12px 10px 66px;
+  /* Bottom space large enough to clear the fixed mobile sidebar (nav row +
+     session-footer row with the email/logout) so the last list item can
+     be scrolled fully into view. Desktop overrides this further down. */
+  padding: 12px 10px 140px;
 }
 
 .topbar {
@@ -1855,99 +1858,53 @@ dt {
     margin-top: 0;
   }
 
+  /* Two-row mobile card. Row 1 = concept (with optional note as a subline)
+     on the left, importe big on the right. Row 2 = party + recurrence
+     (small, inline) on the left, action buttons on the right. */
   .movement-card {
     grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
     grid-template-areas:
-      "concept    recurrence"
-      "note       ."
-      "amount     amount"
-      "party      actions"
-      "shared     shared";
-    gap: 2px 10px;
-    align-items: center;
+      "main amount"
+      "meta actions";
+    gap: 4px 10px;
+    align-items: start;
     min-width: 0;
     min-height: 0;
-    padding: 6px 10px;
+    padding: 8px 10px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 10px;
     box-shadow: var(--shadow);
   }
 
-  .movement-card .movement-main,
-  .movement-card .movement-side,
-  .movement-card .movement-meta,
+  .movement-card .movement-main {
+    grid-area: main;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .movement-card .movement-side {
+    grid-area: amount;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .movement-card .movement-meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin: 0;
+    align-items: baseline;
+  }
+
   .movement-card .movement-meta div {
     display: contents;
-  }
-
-  .movement-card .date,
-  .movement-card .tag,
-  .movement-card dt {
-    display: none;
-  }
-
-  .movement-card h3 {
-    grid-area: concept;
-    justify-self: start;
-    font-size: 1rem;
-    font-weight: 800;
-    white-space: normal;
-  }
-
-  .movement-card .movement-note {
-    grid-area: note;
-    color: var(--muted);
-    font-size: 0.82rem;
-    white-space: normal;
-  }
-
-  .movement-card .movement-note:empty {
-    display: none;
-  }
-
-  .movement-card .amount {
-    grid-area: amount;
-    justify-self: center;
-    margin: 0;
-    font-size: 1.8rem;
-  }
-
-  .movement-card .recurrence {
-    grid-area: recurrence;
-    justify-self: end;
-    color: var(--muted);
-    font-size: 0.74rem;
-    text-transform: uppercase;
-  }
-
-  .movement-card .party {
-    grid-area: party;
-    justify-self: start;
-    display: block;
-    color: var(--muted);
-    font-size: 0.82rem;
-    white-space: normal;
-  }
-
-  .movement-card .party:empty {
-    display: none;
-  }
-
-  .movement-card .shared-cell {
-    grid-area: shared;
-    color: var(--muted);
-    font-size: 0.78rem;
-    white-space: normal;
-  }
-
-  .movement-card .shared-cell:empty {
-    display: none;
-  }
-
-  .movement-card .shared-cell:not(:empty)::before {
-    content: "Compartido: ";
-    font-weight: 800;
   }
 
   .movement-card .movement-actions {
@@ -1956,6 +1913,59 @@ dt {
     gap: 6px;
     justify-content: flex-end;
     align-items: center;
+    align-self: center;
+  }
+
+  .movement-card .tag,
+  .movement-card .date,
+  .movement-card dt,
+  .movement-card .shared-cell {
+    display: none;
+  }
+
+  .movement-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    white-space: normal;
+  }
+
+  .movement-card .movement-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    white-space: normal;
+  }
+
+  .movement-card .movement-note:empty {
+    display: none;
+  }
+
+  .movement-card .amount {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .movement-card .party {
+    color: var(--muted);
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 16ch;
+  }
+
+  .movement-card .party:empty {
+    display: none;
+  }
+
+  .movement-card .recurrence {
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .movement-card .edit-action,
