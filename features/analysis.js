@@ -44,8 +44,9 @@ export function groupTotals(items, keyGetter) {
 
   items.forEach((movement) => {
     const key = keyGetter(movement);
-    const current = groups.get(key) ?? { label: key, income: 0, expense: 0 };
+    const current = groups.get(key) ?? { label: key, income: 0, expense: 0, count: 0 };
 
+    current.count += 1;
     if (movement.type === "income") {
       current.income += movement.amount;
     } else {
@@ -55,34 +56,80 @@ export function groupTotals(items, keyGetter) {
     groups.set(key, current);
   });
 
-  return [...groups.values()].sort((a, b) => b.income - b.expense - (a.income - a.expense));
+  return [...groups.values()];
+}
+
+const BREAKDOWN_COLUMNS = [
+  { label: "Concepto", key: "label" },
+  { label: "Mov.", key: "count" },
+  { label: "Balance", key: "balance" },
+];
+
+function compareBreakdownRows(a, b, key) {
+  switch (key) {
+    case "label":
+      return a.label.localeCompare(b.label, "es", { sensitivity: "base" });
+    case "count":
+      return a.count - b.count;
+    case "balance":
+      return (a.income - a.expense) - (b.income - b.expense);
+    default:
+      return 0;
+  }
+}
+
+function sortBreakdownRows(rows) {
+  const { key, dir } = state.breakdownSort;
+  return [...rows].sort((a, b) => {
+    const cmp = compareBreakdownRows(a, b, key);
+    return dir === "asc" ? cmp : -cmp;
+  });
 }
 
 export function renderBreakdown(container, rows) {
   container.innerHTML = "";
 
+  const { key: sortKey, dir: sortDir } = state.breakdownSort;
+  const header = document.createElement("div");
+  header.className = "breakdown-header";
+  BREAKDOWN_COLUMNS.forEach(({ label, key }) => {
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "breakdown-header-cell";
+    cell.dataset.sortKey = key;
+    if (key === sortKey) {
+      cell.classList.add("is-active");
+    }
+    const arrow = key === sortKey ? (sortDir === "asc" ? " ▲" : " ▼") : "";
+    cell.textContent = `${label}${arrow}`;
+    header.append(cell);
+  });
+  container.append(header);
+
   if (!rows.length) {
-    container.innerHTML = '<p class="empty-state">No hay movimientos en este periodo.</p>';
+    container.insertAdjacentHTML(
+      "beforeend",
+      '<p class="empty-state">No hay movimientos en este periodo.</p>'
+    );
     return;
   }
 
   const fragment = document.createDocumentFragment();
 
-  rows.forEach((row) => {
+  sortBreakdownRows(rows).forEach((row) => {
     const item = document.createElement("article");
     const label = document.createElement("strong");
-    const income = document.createElement("span");
-    const expense = document.createElement("span");
+    const count = document.createElement("span");
     const balance = document.createElement("span");
 
     item.className = "breakdown-row";
     label.textContent = row.label;
-    income.textContent = formatMoney(row.income);
-    expense.textContent = formatMoney(row.expense);
-    balance.textContent = formatMoney(row.income - row.expense);
-    balance.className = row.income - row.expense >= 0 ? "amount income" : "amount expense";
+    count.textContent = row.count;
+    const net = row.income - row.expense;
+    balance.textContent = formatMoney(net);
+    balance.className = net >= 0 ? "amount income" : "amount expense";
 
-    item.append(label, income, expense, balance);
+    item.append(label, count, balance);
     fragment.append(item);
   });
 
@@ -124,6 +171,28 @@ document.querySelectorAll("[data-period]").forEach((button) => {
       state.yearCursor = new Date(state.yearCursor.getFullYear() + step, 0, 1);
     }
 
+    renderAnalysis();
+  });
+});
+
+// Click on a breakdown header cell toggles sort. Same sort applies to all
+// four breakdown lists (month/year × concept/category) for consistency.
+[
+  elements.monthConceptBreakdown,
+  elements.monthCategoryBreakdown,
+  elements.yearConceptBreakdown,
+  elements.yearCategoryBreakdown,
+].forEach((list) => {
+  list.addEventListener("click", (event) => {
+    const cell = event.target.closest(".breakdown-header-cell");
+    if (!cell) return;
+    const key = cell.dataset.sortKey;
+    if (state.breakdownSort.key === key) {
+      state.breakdownSort.dir = state.breakdownSort.dir === "asc" ? "desc" : "asc";
+    } else {
+      state.breakdownSort.key = key;
+      state.breakdownSort.dir = key === "label" ? "asc" : "desc";
+    }
     renderAnalysis();
   });
 });

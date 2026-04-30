@@ -11,6 +11,7 @@ export const state = {
   yearCursor: new Date(new Date().getFullYear(), 0, 1),
   sharedFilterContactId: "all",
   movementSort: { key: "date", dir: "desc" },
+  breakdownSort: { key: "balance", dir: "desc" },
   editingSharedEntryId: null,
   activeDateTarget: null,
 };

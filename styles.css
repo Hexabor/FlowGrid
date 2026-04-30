@@ -792,13 +792,54 @@ dt {
   border-radius: 8px;
 }
 
+.breakdown-header,
 .breakdown-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 92px 92px 92px;
+  grid-template-columns: minmax(0, 1fr) 56px 110px;
   gap: 8px;
   align-items: center;
+  padding: 5px 10px;
+}
+
+.breakdown-header {
+  min-height: 28px;
+  background: #eef2f4;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.breakdown-header-cell {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.breakdown-header-cell:not(:first-child) {
+  justify-self: end;
+  text-align: right;
+}
+
+.breakdown-header-cell:hover {
+  color: var(--text);
+}
+
+.breakdown-header-cell.is-active {
+  color: var(--nav);
+}
+
+.breakdown-row {
   min-height: 32px;
-  padding: 5px 8px;
   background: #fbfcfd;
   border-bottom: 1px solid var(--line);
 }
