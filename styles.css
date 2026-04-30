@@ -1597,28 +1597,25 @@ dt {
     border-radius: 0;
   }
 
+  /* Mobile-only redesign of the new-movement form: 2-column grid so
+     Concepto + Recurrencia can sit side-by-side, plus reordering and
+     enlarged inputs. The type-toggle CSS itself lives inline in <head>
+     to survive a stale styles.css cache. */
   .movement-form {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Mobile-only redesign of the new-movement form: replace the type select
-     with a pair of big toggle buttons, reorder fields so Fecha + Importe
-     come right after the toggle, and enlarge the date and amount inputs. */
-  .type-toggle {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .movement-form.js-type-toggle .type-select-field {
-    display: none;
+  /* By default every direct child spans the full row; only Concepto and
+     Recurrencia (which we want side-by-side) override this below. */
+  .movement-form > * {
+    grid-column: 1 / -1;
   }
 
   .movement-form .type-toggle           { order: 1; }
   .movement-form > label:nth-of-type(2) { order: 2; } /* Fecha */
   .movement-form > label:nth-of-type(3) { order: 3; } /* Importe */
-  .movement-form > label:nth-of-type(4) { order: 4; } /* Concepto */
-  .movement-form > label:nth-of-type(6) { order: 5; } /* Recurrencia */
+  .movement-form > label:nth-of-type(4) { order: 4; grid-column: span 1; } /* Concepto */
+  .movement-form > label:nth-of-type(6) { order: 5; grid-column: span 1; } /* Recurrencia */
   .movement-form > label:nth-of-type(5) { order: 6; } /* Emisor / receptor */
   .movement-form > label.field-wide     { order: 7; } /* Nota */
   .movement-form > label.toggle-field   { order: 8; } /* Gasto compartido */
@@ -1637,6 +1634,45 @@ dt {
     font-size: 1.6rem;
     font-weight: 700;
     text-align: center;
+  }
+
+  /* Concepto and Recurrencia: a touch larger so they don't feel cramped
+     once they share a row. */
+  #movement-form #concept,
+  #movement-form #recurrence {
+    min-height: 46px;
+    font-size: 1rem;
+  }
+
+  /* Gasto compartido toggle: turn into a proper tappable strip with
+     extra breathing room above the Anadir button so it can't be
+     missed-tapped. */
+  .movement-form .toggle-field {
+    min-height: 56px;
+    padding: 12px 14px;
+    margin-top: 8px;
+    background: #fbfcfd;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+
+  .movement-form .toggle-field input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+
+  .movement-form .toggle-field span {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text);
+  }
+
+  #movement-form > button[type="submit"] {
+    margin-top: 14px;
+    min-height: 52px;
+    font-size: 1.05rem;
   }
 
   .shared-fields {
