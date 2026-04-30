@@ -62,15 +62,32 @@ export function groupTotals(items, keyGetter) {
 const BREAKDOWN_COLUMNS = [
   { label: "Concepto", key: "label" },
   { label: "Mov.", key: "count" },
+  { label: "%", key: "percent" },
   { label: "Balance", key: "balance" },
 ];
 
-function compareBreakdownRows(a, b, key) {
+// What share of the period's income (or expense) this row represents.
+// Income-leaning rows are scored against total income; expense-leaning rows
+// against total expense. Zero-balance rows return 0.
+function getRowPercent(row, totals) {
+  const net = row.income - row.expense;
+  if (net > 0 && totals.income > 0) {
+    return row.income / totals.income;
+  }
+  if (net < 0 && totals.expense > 0) {
+    return row.expense / totals.expense;
+  }
+  return 0;
+}
+
+function compareBreakdownRows(a, b, key, totals) {
   switch (key) {
     case "label":
       return a.label.localeCompare(b.label, "es", { sensitivity: "base" });
     case "count":
       return a.count - b.count;
+    case "percent":
+      return getRowPercent(a, totals) - getRowPercent(b, totals);
     case "balance":
       return (a.income - a.expense) - (b.income - b.expense);
     default:
@@ -78,15 +95,21 @@ function compareBreakdownRows(a, b, key) {
   }
 }
 
-function sortBreakdownRows(rows) {
+function sortBreakdownRows(rows, totals) {
   const { key, dir } = state.breakdownSort;
   return [...rows].sort((a, b) => {
-    const cmp = compareBreakdownRows(a, b, key);
+    const cmp = compareBreakdownRows(a, b, key, totals);
     return dir === "asc" ? cmp : -cmp;
   });
 }
 
-export function renderBreakdown(container, rows) {
+const percentFormatter = new Intl.NumberFormat("es-ES", {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+export function renderBreakdown(container, rows, totals) {
   container.innerHTML = "";
 
   const { key: sortKey, dir: sortDir } = state.breakdownSort;
@@ -116,20 +139,22 @@ export function renderBreakdown(container, rows) {
 
   const fragment = document.createDocumentFragment();
 
-  sortBreakdownRows(rows).forEach((row) => {
+  sortBreakdownRows(rows, totals).forEach((row) => {
     const item = document.createElement("article");
     const label = document.createElement("strong");
     const count = document.createElement("span");
+    const percent = document.createElement("span");
     const balance = document.createElement("span");
 
     item.className = "breakdown-row";
     label.textContent = row.label;
     count.textContent = row.count;
+    percent.textContent = percentFormatter.format(getRowPercent(row, totals));
     const net = row.income - row.expense;
     balance.textContent = formatMoney(net);
     balance.className = net >= 0 ? "amount income" : "amount expense";
 
-    item.append(label, count, balance);
+    item.append(label, count, percent, balance);
     fragment.append(item);
   });
 
@@ -149,10 +174,15 @@ export function renderPeriodAnalysis(type) {
   elements[`${prefix}IncomeTotal`].textContent = formatMoney(totals.income);
   elements[`${prefix}ExpenseTotal`].textContent = formatMoney(totals.expense);
   elements[`${prefix}BalanceTotal`].textContent = formatMoney(totals.income - totals.expense);
-  renderBreakdown(elements[`${prefix}ConceptBreakdown`], groupTotals(items, (movement) => movement.concept));
+  renderBreakdown(
+    elements[`${prefix}ConceptBreakdown`],
+    groupTotals(items, (movement) => movement.concept),
+    totals
+  );
   renderBreakdown(
     elements[`${prefix}CategoryBreakdown`],
-    groupTotals(items, (movement) => getCategoryLabel(movement.category))
+    groupTotals(items, (movement) => getCategoryLabel(movement.category)),
+    totals
   );
 }
 

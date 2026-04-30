@@ -795,7 +795,7 @@ dt {
 .breakdown-header,
 .breakdown-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px 110px;
+  grid-template-columns: minmax(0, 1fr) 56px 60px 110px;
   gap: 8px;
   align-items: center;
   padding: 5px 10px;
