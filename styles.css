@@ -1858,17 +1858,18 @@ dt {
     margin-top: 0;
   }
 
-  /* Two-row mobile card. Importe centred horizontally and across both
-     rows; the amount column is fixed-width so the figure always lands
-     at the same x-position. Concepto+nota top-left, recurrencia
-     bottom-left (on its own line), party top-right, actions bottom-right. */
+  /* Mobile card: concept + recurrencia stacked top-left, nota on its own
+     row below (so a long note expands within its own slot without pushing
+     concept down), importe centred in a fixed-width column, party top-right,
+     actions bottom-right. */
   .movement-card {
     grid-template-columns: minmax(0, 1fr) 140px auto;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     grid-template-areas:
-      "main       amount party"
-      "recurrence amount actions";
-    gap: 4px 10px;
+      "concept    amount party"
+      "recurrence amount party"
+      "note       amount actions";
+    gap: 2px 10px;
     align-items: stretch;
     min-width: 0;
     min-height: 0;
@@ -1879,13 +1880,12 @@ dt {
     box-shadow: var(--shadow);
   }
 
-  .movement-card .movement-main {
-    grid-area: main;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    align-self: start;
+  /* Flatten the structural wrappers so concept/note/party/recurrence
+     become direct grid items and can each be placed by name. */
+  .movement-card .movement-main,
+  .movement-card .movement-meta,
+  .movement-card .movement-meta div {
+    display: contents;
   }
 
   .movement-card .movement-side {
@@ -1894,13 +1894,6 @@ dt {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-  }
-
-  /* Flatten movement-meta + its dt/dd wrappers so party and recurrence
-     become direct grid items and can be placed independently. */
-  .movement-card .movement-meta,
-  .movement-card .movement-meta div {
-    display: contents;
   }
 
   .movement-card .movement-meta div {
@@ -1924,6 +1917,8 @@ dt {
   }
 
   .movement-card h3 {
+    grid-area: concept;
+    align-self: end;
     margin: 0;
     font-size: 1rem;
     font-weight: 800;
@@ -1931,6 +1926,8 @@ dt {
   }
 
   .movement-card .movement-note {
+    grid-area: note;
+    align-self: start;
     margin: 0;
     color: var(--muted);
     font-size: 0.78rem;
@@ -1951,7 +1948,7 @@ dt {
   .movement-card .party {
     grid-area: party;
     justify-self: end;
-    align-self: start;
+    align-self: center;
     color: var(--muted);
     font-size: 0.82rem;
     white-space: nowrap;
@@ -1966,8 +1963,7 @@ dt {
 
   .movement-card .recurrence {
     grid-area: recurrence;
-    justify-self: start;
-    align-self: end;
+    align-self: start;
     color: var(--muted);
     font-size: 0.72rem;
     text-transform: uppercase;
