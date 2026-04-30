@@ -324,12 +324,12 @@ elements.form.addEventListener("submit", (event) => {
   let modeKey = null;
 
   if (shouldShare) {
-    const personId = elements.sharedPerson.value;
+    const contactId = elements.sharedContact.value;
     modeKey = elements.sharedMode.value;
     const mode = SHARED_MODES[modeKey];
 
-    if (!personId || !mode) {
-      elements.feedback.textContent = "Selecciona persona y modo del gasto compartido.";
+    if (!contactId || !mode) {
+      elements.feedback.textContent = "Selecciona contacto y modo del gasto compartido.";
       return;
     }
 
@@ -349,7 +349,7 @@ elements.form.addEventListener("submit", (event) => {
     }
 
     sharedEntry = buildSharedExpenseEntry({
-      personId,
+      contactId,
       total: totalAmount,
       modeKey,
       myShare,

@@ -50,9 +50,10 @@ create policy "settings: owner full access"
   with check (owner_id = auth.uid());
 
 -- =============================================================================
--- PEOPLE  (will be renamed "contacts" in Fase 3 alongside the rename refactor)
+-- CONTACTS  (renamed from "people" in Fase 3; existing projects must run
+-- supabase/migrate-3-people-to-contacts.sql once)
 -- =============================================================================
-create table if not exists public.people (
+create table if not exists public.contacts (
   id          text primary key,
   owner_id    uuid not null references auth.users(id) on delete cascade,
   name        text not null,
@@ -62,13 +63,13 @@ create table if not exists public.people (
   updated_at  timestamptz not null default now()
 );
 
-create index if not exists people_owner_idx on public.people(owner_id);
+create index if not exists contacts_owner_idx on public.contacts(owner_id);
 
-alter table public.people enable row level security;
+alter table public.contacts enable row level security;
 
-drop policy if exists "people: owner full access" on public.people;
-create policy "people: owner full access"
-  on public.people for all
+drop policy if exists "contacts: owner full access" on public.contacts;
+create policy "contacts: owner full access"
+  on public.contacts for all
   using (owner_id = auth.uid())
   with check (owner_id = auth.uid());
 
@@ -78,7 +79,7 @@ create policy "people: owner full access"
 create table if not exists public.shared_entries (
   id                 text primary key,
   owner_id           uuid not null references auth.users(id) on delete cascade,
-  person_id          text not null,   -- soft FK; app cleans up if a person is removed
+  contact_id         text not null,   -- soft FK; app cleans up if a contact is removed
   type               text not null check (type in ('expense', 'payment')),
   date               date not null,
   concept            text not null,
@@ -93,8 +94,8 @@ create table if not exists public.shared_entries (
   updated_at         timestamptz not null default now()
 );
 
-create index if not exists shared_entries_owner_idx         on public.shared_entries(owner_id);
-create index if not exists shared_entries_owner_person_idx  on public.shared_entries(owner_id, person_id);
+create index if not exists shared_entries_owner_idx          on public.shared_entries(owner_id);
+create index if not exists shared_entries_owner_contact_idx  on public.shared_entries(owner_id, contact_id);
 
 alter table public.shared_entries enable row level security;
 
@@ -119,10 +120,10 @@ $$;
 
 drop trigger if exists movements_set_updated_at      on public.movements;
 drop trigger if exists settings_set_updated_at       on public.settings;
-drop trigger if exists people_set_updated_at         on public.people;
+drop trigger if exists contacts_set_updated_at       on public.contacts;
 drop trigger if exists shared_entries_set_updated_at on public.shared_entries;
 
 create trigger movements_set_updated_at      before update on public.movements      for each row execute function public.set_updated_at();
 create trigger settings_set_updated_at       before update on public.settings       for each row execute function public.set_updated_at();
-create trigger people_set_updated_at         before update on public.people         for each row execute function public.set_updated_at();
+create trigger contacts_set_updated_at       before update on public.contacts       for each row execute function public.set_updated_at();
 create trigger shared_entries_set_updated_at before update on public.shared_entries for each row execute function public.set_updated_at();

@@ -1,6 +1,6 @@
 import { state } from "../core/state.js";
 import { elements } from "../core/dom.js";
-import { saveMovements, savePeople, saveSettings, saveSharedEntries } from "../core/storage.js";
+import { saveMovements, saveContacts, saveSettings, saveSharedEntries } from "../core/storage.js";
 import { toIsoDate } from "../core/utils.js";
 import { syncMovementSelects } from "./movements.js";
 import { render } from "../ui/render.js";
@@ -8,10 +8,10 @@ import { render } from "../ui/render.js";
 export function exportBackup() {
   const backup = {
     exportedAt: new Date().toISOString(),
-    version: 2,
+    version: 3,
     movements: state.movements,
     settings: state.settings,
-    people: state.people,
+    contacts: state.contacts,
     sharedEntries: state.sharedEntries,
   };
   const content = `window.FlowGridBackup = ${JSON.stringify(backup, null, 2)};\n`;
@@ -33,8 +33,17 @@ export function parseBackup(text) {
     throw new Error("Backup invalido");
   }
 
-  parsed.people = Array.isArray(parsed.people) ? parsed.people : [];
-  parsed.sharedEntries = Array.isArray(parsed.sharedEntries) ? parsed.sharedEntries : [];
+  // Older backups (v<3) use `people` / `personId`; map them transparently.
+  parsed.contacts = Array.isArray(parsed.contacts)
+    ? parsed.contacts
+    : Array.isArray(parsed.people)
+      ? parsed.people
+      : [];
+  parsed.sharedEntries = Array.isArray(parsed.sharedEntries)
+    ? parsed.sharedEntries.map((entry) =>
+        entry.contactId || !entry.personId ? entry : { ...entry, contactId: entry.personId }
+      )
+    : [];
 
   return parsed;
 }
@@ -66,11 +75,11 @@ elements.backupImport.addEventListener("click", () => {
 
   state.movements = state.pendingBackup.movements;
   state.settings = state.pendingBackup.settings;
-  state.people = state.pendingBackup.people;
+  state.contacts = state.pendingBackup.contacts;
   state.sharedEntries = state.pendingBackup.sharedEntries;
   saveMovements();
   saveSettings();
-  savePeople();
+  saveContacts();
   saveSharedEntries();
   state.pendingBackup = null;
   elements.backupFile.value = "";

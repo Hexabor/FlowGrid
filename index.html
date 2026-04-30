@@ -301,11 +301,11 @@
               </label>
 
               <div id="shared-fields" class="shared-fields" hidden>
-                <label class="shared-person-field">
-                  <span>Persona</span>
-                  <div class="shared-person-control">
-                    <select id="shared-person" name="sharedPersonId"></select>
-                    <button id="shared-person-add" class="icon-button" type="button" title="Crear persona" aria-label="Crear persona">+</button>
+                <label class="shared-contact-field">
+                  <span>Contacto</span>
+                  <div class="shared-contact-control">
+                    <select id="shared-contact" name="sharedContactId"></select>
+                    <button id="shared-contact-add" class="icon-button" type="button" title="Crear contacto" aria-label="Crear contacto">+</button>
                   </div>
                 </label>
                 <label class="shared-mode-field">
@@ -314,9 +314,9 @@
                     <option value="me-equal">Tu pagaste, partes iguales</option>
                     <option value="me-uneven">Tu pagaste, partes desiguales</option>
                     <option value="me-full">Se te debe la cantidad total</option>
-                    <option value="them-equal">Persona pago, partes iguales</option>
-                    <option value="them-uneven">Persona pago, partes desiguales</option>
-                    <option value="them-full">A persona le debes la cantidad total</option>
+                    <option value="them-equal">Contacto pago, partes iguales</option>
+                    <option value="them-uneven">Contacto pago, partes desiguales</option>
+                    <option value="them-full">Le debes la cantidad total al contacto</option>
                   </select>
                 </label>
                 <div id="shared-uneven" class="shared-uneven" hidden>
@@ -438,7 +438,7 @@
           <section class="panel">
             <div class="section-heading">
               <h2>Saldos</h2>
-              <span id="shared-people-count"></span>
+              <span id="shared-contacts-count"></span>
             </div>
             <div id="shared-balances" class="balance-grid"></div>
           </section>
@@ -450,9 +450,9 @@
 
             <div class="shared-toolbar">
               <label>
-                <span>Persona</span>
-                <select id="shared-person-filter">
-                  <option value="all">Todas</option>
+                <span>Contacto</span>
+                <select id="shared-contact-filter">
+                  <option value="all">Todos</option>
                 </select>
               </label>
             </div>
@@ -471,8 +471,8 @@
 
             <form id="payment-form" class="movement-form">
               <label>
-                <span>Persona</span>
-                <select id="payment-person" name="personId" required></select>
+                <span>Contacto</span>
+                <select id="payment-contact" name="contactId" required></select>
               </label>
               <label>
                 <span>Importe</span>
@@ -502,7 +502,7 @@
 
           <div class="settings-tabs" aria-label="Secciones de configuracion">
             <button class="settings-tab is-active" type="button" data-settings-target="concepts">Conceptos y categorias</button>
-            <button class="settings-tab" type="button" data-settings-target="people">Personas</button>
+            <button class="settings-tab" type="button" data-settings-target="contacts">Contactos</button>
             <button class="settings-tab" type="button" data-settings-target="csv">Importar CSV</button>
             <button class="settings-tab" type="button" data-settings-target="backup">Backup JS</button>
           </div>
@@ -564,23 +564,23 @@
             </section>
           </section>
 
-          <section class="settings-panel" data-settings-panel="people">
+          <section class="settings-panel" data-settings-panel="contacts">
             <section class="panel">
               <div class="section-heading">
-                <h2>Personas</h2>
-                <span id="people-count"></span>
+                <h2>Contactos</h2>
+                <span id="contacts-count"></span>
               </div>
-              <p class="empty-state">Las personas se usan para los gastos compartidos. Mas adelante podras invitarlas a colaborar.</p>
+              <p class="empty-state">Los contactos se usan para los gastos compartidos. Mas adelante podras invitarles a colaborar.</p>
 
-              <form id="people-form" class="settings-form">
+              <form id="contacts-form" class="settings-form">
                 <label>
                   <span>Nombre</span>
-                  <input id="new-person-name" name="name" type="text" autocomplete="off" required>
+                  <input id="new-contact-name" name="name" type="text" autocomplete="off" required>
                 </label>
-                <button class="primary-action" type="submit">Anadir persona</button>
+                <button class="primary-action" type="submit">Anadir contacto</button>
               </form>
 
-              <div id="people-list" class="config-list"></div>
+              <div id="contacts-list" class="config-list"></div>
             </section>
           </section>
 

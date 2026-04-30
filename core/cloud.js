@@ -3,7 +3,7 @@ import { supabase, getUserId } from "./supabase.js";
 import {
   MOVEMENTS_KEY,
   SETTINGS_KEY,
-  PEOPLE_KEY,
+  CONTACTS_KEY,
   SHARED_KEY,
   defaultCategories,
   defaultConcepts,
@@ -43,18 +43,18 @@ function movementFromCloud(row) {
   };
 }
 
-function personToCloud(p, ownerId) {
+function contactToCloud(c, ownerId) {
   return {
-    id: p.id,
+    id: c.id,
     owner_id: ownerId,
-    name: p.name,
-    email: p.email ?? "",
-    invited_at: p.invitedAt ?? null,
-    created_at: p.createdAt ?? new Date().toISOString(),
+    name: c.name,
+    email: c.email ?? "",
+    invited_at: c.invitedAt ?? null,
+    created_at: c.createdAt ?? new Date().toISOString(),
   };
 }
 
-function personFromCloud(row) {
+function contactFromCloud(row) {
   return {
     id: row.id,
     name: row.name,
@@ -68,7 +68,7 @@ function sharedToCloud(e, ownerId) {
   return {
     id: e.id,
     owner_id: ownerId,
-    person_id: e.personId,
+    contact_id: e.contactId,
     type: e.type,
     date: e.date,
     concept: e.concept,
@@ -87,7 +87,7 @@ function sharedFromCloud(row) {
   return {
     id: row.id,
     type: row.type,
-    personId: row.person_id,
+    contactId: row.contact_id,
     date: row.date,
     concept: row.concept,
     note: row.note ?? "",
@@ -131,10 +131,10 @@ export async function cloudPushMovements() {
   await syncTable("movements", ownerId, state.movements, movementToCloud);
 }
 
-export async function cloudPushPeople() {
+export async function cloudPushContacts() {
   const ownerId = await getUserId();
   if (!ownerId) return;
-  await syncTable("people", ownerId, state.people, personToCloud);
+  await syncTable("contacts", ownerId, state.contacts, contactToCloud);
 }
 
 export async function cloudPushSharedEntries() {
@@ -160,7 +160,7 @@ export async function cloudPushSettings() {
 export async function cloudPushAll() {
   await Promise.all([
     cloudPushMovements(),
-    cloudPushPeople(),
+    cloudPushContacts(),
     cloudPushSharedEntries(),
     cloudPushSettings(),
   ]);
@@ -172,20 +172,20 @@ export async function cloudHydrate() {
   const ownerId = await getUserId();
   if (!ownerId) return;
 
-  const [movementsRes, settingsRes, peopleRes, sharedRes] = await Promise.all([
+  const [movementsRes, settingsRes, contactsRes, sharedRes] = await Promise.all([
     supabase.from("movements").select("*").eq("owner_id", ownerId),
     supabase.from("settings").select("*").eq("owner_id", ownerId).maybeSingle(),
-    supabase.from("people").select("*").eq("owner_id", ownerId),
+    supabase.from("contacts").select("*").eq("owner_id", ownerId),
     supabase.from("shared_entries").select("*").eq("owner_id", ownerId),
   ]);
 
-  for (const res of [movementsRes, settingsRes, peopleRes, sharedRes]) {
+  for (const res of [movementsRes, settingsRes, contactsRes, sharedRes]) {
     if (res.error) throw res.error;
   }
 
   const cloudIsEmpty =
     !movementsRes.data?.length &&
-    !peopleRes.data?.length &&
+    !contactsRes.data?.length &&
     !sharedRes.data?.length &&
     !settingsRes.data;
 
@@ -193,17 +193,17 @@ export async function cloudHydrate() {
     // First login on this account: seed the cloud with whatever is in localStorage
     // (or with the demo defaults if localStorage is also empty).
     const localMovements = readLocalArray(MOVEMENTS_KEY) ?? seedMovements;
-    const localPeople = readLocalArray(PEOPLE_KEY) ?? [];
+    const localContacts = readLocalArray(CONTACTS_KEY) ?? [];
     const localShared = readLocalArray(SHARED_KEY) ?? [];
     const localSettings = readLocalSettings();
 
     state.movements = localMovements;
-    state.people = localPeople;
+    state.contacts = localContacts;
     state.sharedEntries = localShared;
     state.settings = localSettings;
 
     writeLocal(MOVEMENTS_KEY, state.movements);
-    writeLocal(PEOPLE_KEY, state.people);
+    writeLocal(CONTACTS_KEY, state.contacts);
     writeLocal(SHARED_KEY, state.sharedEntries);
     writeLocal(SETTINGS_KEY, state.settings);
 
@@ -213,7 +213,7 @@ export async function cloudHydrate() {
 
   // Cloud is authoritative: replace local snapshot with what's in the cloud.
   const cloudMovements = (movementsRes.data ?? []).map(movementFromCloud);
-  const cloudPeople = (peopleRes.data ?? []).map(personFromCloud);
+  const cloudContacts = (contactsRes.data ?? []).map(contactFromCloud);
   const cloudShared = (sharedRes.data ?? []).map(sharedFromCloud);
   const cloudSettings = settingsRes.data
     ? {
@@ -223,12 +223,12 @@ export async function cloudHydrate() {
     : { categories: defaultCategories, concepts: defaultConcepts };
 
   state.movements = cloudMovements;
-  state.people = cloudPeople;
+  state.contacts = cloudContacts;
   state.sharedEntries = cloudShared;
   state.settings = cloudSettings;
 
   writeLocal(MOVEMENTS_KEY, state.movements);
-  writeLocal(PEOPLE_KEY, state.people);
+  writeLocal(CONTACTS_KEY, state.contacts);
   writeLocal(SHARED_KEY, state.sharedEntries);
   writeLocal(SETTINGS_KEY, state.settings);
 }

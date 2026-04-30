@@ -3,7 +3,10 @@ import { createSlug } from "./utils.js";
 export const MOVEMENTS_KEY = "flowgrid.movements.v1";
 export const SETTINGS_KEY = "flowgrid.settings.v1";
 export const SHARED_KEY = "flowgrid.shared.v2";
-export const PEOPLE_KEY = "flowgrid.people.v1";
+export const CONTACTS_KEY = "flowgrid.contacts.v1";
+// Legacy key kept only for one-time migration on first boot after the
+// person→contact rename. Safe to remove once all clients have migrated.
+export const LEGACY_PEOPLE_KEY = "flowgrid.people.v1";
 
 export const SHARED_MODES = {
   "me-equal": { paidBy: "me", split: "equal", label: "Tu pagaste, partes iguales" },

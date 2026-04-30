@@ -2,6 +2,19 @@ window.FlowGridChangelog = [
   {
     date: "2026-04-30",
     commit: "dev@HEAD",
+    title: "Fase 3 — paso 1: rename persona→contacto en todo el repo",
+    changes: [
+      "UI: pestaña \"Personas\" pasa a \"Contactos\". Labels, placeholders y mensajes actualizados (\"Selecciona contacto\", \"Sin contactos creados\", etc).",
+      "Modos compartidos en el formulario reflejan el nuevo termino (\"Contacto pago, partes iguales\", etc).",
+      "Refactor JS: state.people→state.contacts, personId→contactId, savePeople→saveContacts, getPersonName→getContactName, syncSharedPersonOptions→syncSharedContactOptions, etc. Renombrado features/people.js a features/contacts.js.",
+      "Cloud: tabla `people` y columna `shared_entries.person_id` renombradas a `contacts` y `contact_id`. Schema actualizado y migracion idempotente en supabase/migrate-3-people-to-contacts.sql.",
+      "LocalStorage: nueva clave `flowgrid.contacts.v1`. Migracion automatica desde la antigua `flowgrid.people.v1` en el primer boot tras la actualizacion (copia y borra la antigua).",
+      "Backups: el formato exportado pasa a v3 con `contacts` y `contactId`. La importacion sigue aceptando backups v<3 con `people`/`personId` mapeandolos al vuelo.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "29281ea",
     title: "Fase 2 cerrada: backend cloud validado end-to-end",
     changes: [
       "Login con magic-link funcionando, persistencia de sesion correcta, hidratacion desde cloud OK, push de movimientos nuevos OK, logout OK.",

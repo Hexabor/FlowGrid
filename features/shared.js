@@ -1,9 +1,9 @@
 import { state } from "../core/state.js";
 import { elements, openMovementModal } from "../core/dom.js";
-import { saveMovements, saveSharedEntries, savePeople } from "../core/storage.js";
+import { saveMovements, saveSharedEntries, saveContacts } from "../core/storage.js";
 import { SHARED_MODES } from "../core/constants.js";
 import { createId, formatDate, formatMoney, formatMonthLabel } from "../core/utils.js";
-import { getPersonName, getSharedBalance, personHasEntries, renderPeople } from "./people.js";
+import { getContactName, getSharedBalance, contactHasEntries, renderContacts } from "./contacts.js";
 import { renderMovements, syncMovementSelects, fillMovementForm } from "./movements.js";
 import { setMovementDate, setPaymentDate } from "../ui/datepicker.js";
 
@@ -15,15 +15,15 @@ export function entryBalanceImpact(entry) {
 }
 
 export function entryDescription(entry) {
-  const personName = getPersonName(entry.personId);
+  const contactName = getContactName(entry.contactId);
   if (entry.type === "payment") {
     return entry.paidBy === "me"
-      ? `Pago a ${personName}`
-      : `${personName} te paga`;
+      ? `Pago a ${contactName}`
+      : `${contactName} te paga`;
   }
   const mode = entry.splitMode === "full"
-    ? entry.paidBy === "me" ? `Prestado a ${personName}` : `Cubierto por ${personName}`
-    : entry.paidBy === "me" ? `Pagaste tu` : `Pago ${personName}`;
+    ? entry.paidBy === "me" ? `Prestado a ${contactName}` : `Cubierto por ${contactName}`
+    : entry.paidBy === "me" ? `Pagaste tu` : `Pago ${contactName}`;
   return `${entry.concept} — ${mode}`;
 }
 
@@ -35,7 +35,7 @@ export function getMovementSharedLabel(movement) {
   if (!entry) {
     return "";
   }
-  return getPersonName(entry.personId);
+  return getContactName(entry.contactId);
 }
 
 export function inferSharedModeKey(entry) {
@@ -47,13 +47,13 @@ export function inferSharedModeKey(entry) {
   return "me-equal";
 }
 
-export function buildSharedExpenseEntry({ personId, total, modeKey, myShare, theirShare, date, concept, note, sourceMovementId }) {
+export function buildSharedExpenseEntry({ contactId, total, modeKey, myShare, theirShare, date, concept, note, sourceMovementId }) {
   const mode = SHARED_MODES[modeKey];
 
   return {
     id: createId(),
     type: "expense",
-    personId,
+    contactId,
     date,
     concept,
     note: note || "",
@@ -67,11 +67,11 @@ export function buildSharedExpenseEntry({ personId, total, modeKey, myShare, the
   };
 }
 
-export function buildSharedPaymentEntry({ personId, total, paidBy, date, note }) {
+export function buildSharedPaymentEntry({ contactId, total, paidBy, date, note }) {
   return {
     id: createId(),
     type: "payment",
-    personId,
+    contactId,
     date,
     concept: "Liquidacion",
     note: note || "",
@@ -116,7 +116,7 @@ export function syncSharedFields() {
 
   const enabled = elements.isShared.checked && elements.type.value === "expense";
   elements.sharedFields.hidden = !enabled;
-  elements.sharedPerson.required = enabled;
+  elements.sharedContact.required = enabled;
   elements.sharedMode.required = enabled;
 
   if (!enabled) {
@@ -126,25 +126,25 @@ export function syncSharedFields() {
     return;
   }
 
-  syncSharedPersonOptions();
+  syncSharedContactOptions();
   syncSharedModeLabels();
   syncSharedUnevenVisibility();
   syncSharedTotalHint();
 }
 
-export function syncSharedPersonOptions() {
-  const selected = elements.sharedPerson.value;
-  elements.sharedPerson.innerHTML = state.people.length
-    ? state.people.map((person) => `<option value="${person.id}">${person.name}</option>`).join("")
-    : '<option value="">Sin personas creadas</option>';
+export function syncSharedContactOptions() {
+  const selected = elements.sharedContact.value;
+  elements.sharedContact.innerHTML = state.contacts.length
+    ? state.contacts.map((contact) => `<option value="${contact.id}">${contact.name}</option>`).join("")
+    : '<option value="">Sin contactos creados</option>';
 
-  if (selected && state.people.some((person) => person.id === selected)) {
-    elements.sharedPerson.value = selected;
+  if (selected && state.contacts.some((contact) => contact.id === selected)) {
+    elements.sharedContact.value = selected;
   }
 }
 
 export function syncSharedModeLabels() {
-  const name = getPersonName(elements.sharedPerson.value) || "Persona";
+  const name = getContactName(elements.sharedContact.value) || "Contacto";
   Object.entries(SHARED_MODES).forEach(([key, mode]) => {
     const option = elements.sharedMode.querySelector(`option[value="${key}"]`);
     if (option) {
@@ -159,7 +159,7 @@ export function syncSharedUnevenVisibility() {
   elements.sharedUneven.hidden = !isUneven;
   elements.sharedMyShare.required = isUneven;
   elements.sharedTheirShare.required = isUneven;
-  elements.sharedTheirShareLabel.textContent = `Parte de ${getPersonName(elements.sharedPerson.value) || "la otra persona"}`;
+  elements.sharedTheirShareLabel.textContent = `Parte de ${getContactName(elements.sharedContact.value) || "el otro contacto"}`;
 }
 
 export function syncSharedTotalHint() {
@@ -195,7 +195,7 @@ export function applySharedEntryToForm(entry) {
   elements.amount.value = entry.total;
   elements.isShared.checked = true;
   syncSharedFields();
-  elements.sharedPerson.value = entry.personId;
+  elements.sharedContact.value = entry.contactId;
   syncSharedModeLabels();
   elements.sharedMode.value = inferSharedModeKey(entry);
   syncSharedUnevenVisibility();
@@ -240,8 +240,8 @@ export function openSharedEntryEdit(entry) {
   openMovementModal();
 }
 
-export function openLiquidateModal(personId) {
-  const balance = getSharedBalance(personId);
+export function openLiquidateModal(contactId) {
+  const balance = getSharedBalance(contactId);
   if (Math.abs(balance) < 0.005) {
     return;
   }
@@ -249,16 +249,16 @@ export function openLiquidateModal(personId) {
   elements.paymentModal.hidden = false;
   elements.paymentForm.reset();
   elements.paymentFeedback.textContent = "";
-  elements.paymentPerson.innerHTML = state.people
-    .map((person) => `<option value="${person.id}">${person.name}</option>`)
+  elements.paymentContact.innerHTML = state.contacts
+    .map((contact) => `<option value="${contact.id}">${contact.name}</option>`)
     .join("");
-  elements.paymentPerson.value = personId;
+  elements.paymentContact.value = contactId;
   elements.paymentAmount.value = Math.abs(balance).toFixed(2);
   setPaymentDate(new Date());
 
-  const personName = getPersonName(personId);
-  const direction = balance > 0 ? `${personName} te paga` : `tu pagas a ${personName}`;
-  elements.paymentTitle.textContent = `Liquidar saldo con ${personName}`;
+  const contactName = getContactName(contactId);
+  const direction = balance > 0 ? `${contactName} te paga` : `tu pagas a ${contactName}`;
+  elements.paymentTitle.textContent = `Liquidar saldo con ${contactName}`;
   elements.paymentFeedback.textContent = `Saldo actual: ${formatMoney(Math.abs(balance))} (${direction})`;
   elements.paymentAmount.focus();
   elements.paymentAmount.select();
@@ -275,20 +275,20 @@ export function renderSharedView() {
 }
 
 function renderSharedBalances() {
-  const peopleWithActivity = state.people.filter(
-    (person) => personHasEntries(person.id)
+  const contactsWithActivity = state.contacts.filter(
+    (contact) => contactHasEntries(contact.id)
   );
 
-  elements.sharedPeopleCount.textContent = `${peopleWithActivity.length} personas activas`;
+  elements.sharedContactsCount.textContent = `${contactsWithActivity.length} contactos activos`;
   elements.sharedBalances.innerHTML = "";
 
-  if (!state.people.length) {
+  if (!state.contacts.length) {
     elements.sharedBalances.innerHTML =
-      '<p class="empty-state">Crea personas en Configuracion para empezar a registrar gastos compartidos.</p>';
+      '<p class="empty-state">Crea contactos en Configuracion para empezar a registrar gastos compartidos.</p>';
     return;
   }
 
-  if (!peopleWithActivity.length) {
+  if (!contactsWithActivity.length) {
     elements.sharedBalances.innerHTML =
       '<p class="empty-state">Sin actividad. Anade un gasto compartido desde Movimientos.</p>';
     return;
@@ -296,10 +296,10 @@ function renderSharedBalances() {
 
   const fragment = document.createDocumentFragment();
 
-  peopleWithActivity
-    .map((person) => ({ person, balance: getSharedBalance(person.id) }))
+  contactsWithActivity
+    .map((contact) => ({ contact, balance: getSharedBalance(contact.id) }))
     .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
-    .forEach(({ person, balance }) => {
+    .forEach(({ contact, balance }) => {
       const card = document.createElement("article");
       const header = document.createElement("div");
       const name = document.createElement("strong");
@@ -308,13 +308,13 @@ function renderSharedBalances() {
       const actions = document.createElement("div");
 
       card.className = "balance-card";
-      card.dataset.personId = person.id;
+      card.dataset.contactId = contact.id;
       card.classList.toggle("is-positive", balance > 0.005);
       card.classList.toggle("is-negative", balance < -0.005);
       card.classList.toggle("is-zero", Math.abs(balance) < 0.005);
 
       header.className = "balance-header";
-      name.textContent = person.name;
+      name.textContent = contact.name;
       hint.className = "balance-hint";
 
       if (Math.abs(balance) < 0.005) {
@@ -343,7 +343,7 @@ function renderSharedBalances() {
       settleButton.className = "balance-action settle";
       settleButton.dataset.action = "settle";
       settleButton.disabled = Math.abs(balance) < 0.005;
-      const direction = balance > 0 ? `${person.name} te paga` : `Tu pagas a ${person.name}`;
+      const direction = balance > 0 ? `${contact.name} te paga` : `Tu pagas a ${contact.name}`;
       settleButton.innerHTML = Math.abs(balance) < 0.005
         ? `<strong>Saldo al dia</strong>`
         : `<strong>Liquidar saldo</strong><small>${direction}</small>`;
@@ -358,22 +358,22 @@ function renderSharedBalances() {
 }
 
 function renderSharedFilterOptions() {
-  const selected = state.sharedFilterPersonId;
-  const options = ['<option value="all">Todas</option>'].concat(
-    state.people.map((person) => `<option value="${person.id}">${person.name}</option>`)
+  const selected = state.sharedFilterContactId;
+  const options = ['<option value="all">Todos</option>'].concat(
+    state.contacts.map((contact) => `<option value="${contact.id}">${contact.name}</option>`)
   );
-  elements.sharedPersonFilter.innerHTML = options.join("");
-  elements.sharedPersonFilter.value = state.people.some((person) => person.id === selected) ? selected : "all";
-  state.sharedFilterPersonId = elements.sharedPersonFilter.value;
+  elements.sharedContactFilter.innerHTML = options.join("");
+  elements.sharedContactFilter.value = state.contacts.some((contact) => contact.id === selected) ? selected : "all";
+  state.sharedFilterContactId = elements.sharedContactFilter.value;
 }
 
 function renderSharedEntries() {
-  const personId = state.sharedFilterPersonId;
+  const contactId = state.sharedFilterContactId;
 
   let entries = [...state.sharedEntries];
 
-  if (personId !== "all") {
-    entries = entries.filter((entry) => entry.personId === personId);
+  if (contactId !== "all") {
+    entries = entries.filter((entry) => entry.contactId === contactId);
   }
 
   entries.sort((a, b) => (b.date + b.createdAt).localeCompare(a.date + a.createdAt));
@@ -381,7 +381,7 @@ function renderSharedEntries() {
   elements.sharedEntries.innerHTML = "";
 
   if (!entries.length) {
-    elements.sharedEntries.innerHTML = '<p class="empty-state">Sin entradas con esta persona.</p>';
+    elements.sharedEntries.innerHTML = '<p class="empty-state">Sin entradas con este contacto.</p>';
     return;
   }
 
@@ -429,8 +429,8 @@ function buildSharedEntryRow(entry) {
   if (entry.type === "expense" && entry.splitMode !== "full") {
     const breakdown = document.createElement("span");
     breakdown.className = "shared-entry-breakdown";
-    const personName = getPersonName(entry.personId);
-    breakdown.textContent = `Total ${formatMoney(entry.total)} — tu ${formatMoney(entry.myShare)} · ${personName} ${formatMoney(entry.theirShare)}`;
+    const contactName = getContactName(entry.contactId);
+    breakdown.textContent = `Total ${formatMoney(entry.total)} — tu ${formatMoney(entry.myShare)} · ${contactName} ${formatMoney(entry.theirShare)}`;
     main.append(breakdown);
   }
 
@@ -470,7 +470,7 @@ function buildSharedEntryRow(entry) {
   return row;
 }
 
-elements.sharedPerson.addEventListener("change", () => {
+elements.sharedContact.addEventListener("change", () => {
   syncSharedModeLabels();
   syncSharedUnevenVisibility();
 });
@@ -484,27 +484,27 @@ elements.sharedMyShare.addEventListener("input", syncSharedTotalHint);
 elements.sharedTheirShare.addEventListener("input", syncSharedTotalHint);
 elements.amount.addEventListener("input", syncSharedTotalHint);
 
-elements.sharedPersonAdd.addEventListener("click", () => {
-  const name = prompt("Nombre de la persona:");
+elements.sharedContactAdd.addEventListener("click", () => {
+  const name = prompt("Nombre del contacto:");
   if (!name?.trim()) {
     return;
   }
   const trimmed = name.trim();
-  const existing = state.people.find((person) => person.name.toLowerCase() === trimmed.toLowerCase());
-  let personId;
+  const existing = state.contacts.find((contact) => contact.name.toLowerCase() === trimmed.toLowerCase());
+  let contactId;
   if (existing) {
-    personId = existing.id;
+    contactId = existing.id;
   } else {
     const created = { id: createId(), name: trimmed, email: "", invitedAt: null, createdAt: new Date().toISOString() };
-    state.people = [...state.people, created];
-    savePeople();
-    personId = created.id;
+    state.contacts = [...state.contacts, created];
+    saveContacts();
+    contactId = created.id;
   }
-  syncSharedPersonOptions();
-  elements.sharedPerson.value = personId;
+  syncSharedContactOptions();
+  elements.sharedContact.value = contactId;
   syncSharedModeLabels();
   syncSharedUnevenVisibility();
-  renderPeople();
+  renderContacts();
 });
 
 elements.sharedEntries.addEventListener("click", (event) => {
@@ -528,7 +528,7 @@ elements.sharedEntries.addEventListener("click", (event) => {
     return;
   }
 
-  if (!confirm(`Eliminar entrada "${entry.concept}" con ${getPersonName(entry.personId)}?`)) {
+  if (!confirm(`Eliminar entrada "${entry.concept}" con ${getContactName(entry.contactId)}?`)) {
     return;
   }
 
@@ -544,28 +544,28 @@ elements.sharedEntries.addEventListener("click", (event) => {
   renderMovements();
 });
 
-elements.sharedPersonFilter.addEventListener("change", () => {
-  state.sharedFilterPersonId = elements.sharedPersonFilter.value;
+elements.sharedContactFilter.addEventListener("change", () => {
+  state.sharedFilterContactId = elements.sharedContactFilter.value;
   renderSharedEntries();
 });
 
 elements.sharedBalances.addEventListener("click", (event) => {
   const button = event.target.closest("[data-action]");
-  const card = event.target.closest("[data-person-id]");
+  const card = event.target.closest("[data-contact-id]");
   if (!card) {
     return;
   }
 
-  const personId = card.dataset.personId;
+  const contactId = card.dataset.contactId;
   const action = button?.dataset.action || "view";
 
   if (action === "settle") {
-    openLiquidateModal(personId);
+    openLiquidateModal(contactId);
     return;
   }
 
-  state.sharedFilterPersonId = personId;
-  elements.sharedPersonFilter.value = state.sharedFilterPersonId;
+  state.sharedFilterContactId = contactId;
+  elements.sharedContactFilter.value = state.sharedFilterContactId;
   renderSharedEntries();
   document.querySelector("#shared-entries")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
@@ -581,24 +581,24 @@ elements.paymentModal.addEventListener("click", (event) => {
 elements.paymentForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const personId = elements.paymentPerson.value;
+  const contactId = elements.paymentContact.value;
   const amount = Number(elements.paymentAmount.value);
   const date = elements.paymentDate.value;
   const note = elements.paymentNote.value.trim();
 
-  if (!personId || !Number.isFinite(amount) || amount <= 0 || !date) {
-    elements.paymentFeedback.textContent = "Completa persona, importe y fecha.";
+  if (!contactId || !Number.isFinite(amount) || amount <= 0 || !date) {
+    elements.paymentFeedback.textContent = "Completa contacto, importe y fecha.";
     return;
   }
 
-  const balance = getSharedBalance(personId);
+  const balance = getSharedBalance(contactId);
   if (Math.abs(balance) < 0.005) {
-    elements.paymentFeedback.textContent = "No hay saldo con esta persona.";
+    elements.paymentFeedback.textContent = "No hay saldo con este contacto.";
     return;
   }
 
   const entry = buildSharedPaymentEntry({
-    personId,
+    contactId,
     total: amount,
     paidBy: balance > 0 ? "them" : "me",
     date,

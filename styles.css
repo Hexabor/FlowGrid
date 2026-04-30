@@ -1001,24 +1001,24 @@ dt {
   margin-top: 0;
 }
 
-.shared-person-control {
+.shared-contact-control {
   display: flex;
   gap: 6px;
   align-items: stretch;
 }
 
-.shared-person-control select {
+.shared-contact-control select {
   flex: 1 1 auto;
 }
 
-.shared-person-control .icon-button {
+.shared-contact-control .icon-button {
   width: 36px;
   min-width: 36px;
   height: auto;
   align-self: stretch;
 }
 
-.shared-person-field,
+.shared-contact-field,
 .shared-mode-field {
   grid-column: 1 / -1;
 }

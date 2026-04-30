@@ -3,7 +3,8 @@ import {
   MOVEMENTS_KEY,
   SETTINGS_KEY,
   SHARED_KEY,
-  PEOPLE_KEY,
+  CONTACTS_KEY,
+  LEGACY_PEOPLE_KEY,
   defaultCategories,
   defaultConcepts,
   seedMovements,
@@ -11,7 +12,7 @@ import {
 import {
   cloudPushMovements,
   cloudPushSettings,
-  cloudPushPeople,
+  cloudPushContacts,
   cloudPushSharedEntries,
   pushInBackground,
 } from "./cloud.js";
@@ -70,25 +71,38 @@ function loadSharedEntries() {
   }
 }
 
-function loadPeople() {
-  const stored = localStorage.getItem(PEOPLE_KEY);
-
-  if (!stored) {
-    return [];
+function loadContacts() {
+  const stored = localStorage.getItem(CONTACTS_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
-
-  try {
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+  // One-time migration from the legacy key. If found, copy to the new key
+  // and remove the legacy entry so this only happens once per device.
+  const legacy = localStorage.getItem(LEGACY_PEOPLE_KEY);
+  if (legacy) {
+    try {
+      const parsed = JSON.parse(legacy);
+      if (Array.isArray(parsed)) {
+        localStorage.setItem(CONTACTS_KEY, legacy);
+        localStorage.removeItem(LEGACY_PEOPLE_KEY);
+        return parsed;
+      }
+    } catch {
+      // fall through
+    }
   }
+  return [];
 }
 
 export function initState() {
   state.movements = loadMovements();
   state.settings = loadSettings();
-  state.people = loadPeople();
+  state.contacts = loadContacts();
   state.sharedEntries = loadSharedEntries();
 }
 
@@ -102,9 +116,9 @@ export function saveSettings() {
   pushInBackground(cloudPushSettings);
 }
 
-export function savePeople() {
-  localStorage.setItem(PEOPLE_KEY, JSON.stringify(state.people));
-  pushInBackground(cloudPushPeople);
+export function saveContacts() {
+  localStorage.setItem(CONTACTS_KEY, JSON.stringify(state.contacts));
+  pushInBackground(cloudPushContacts);
 }
 
 export function saveSharedEntries() {

@@ -1,7 +1,7 @@
 export const state = {
   movements: [],
   settings: { categories: [], concepts: [] },
-  people: [],
+  contacts: [],
   sharedEntries: [],
   datePickerMonth: new Date(),
   editingMovementId: null,
@@ -9,7 +9,7 @@ export const state = {
   pendingBackup: null,
   monthCursor: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   yearCursor: new Date(new Date().getFullYear(), 0, 1),
-  sharedFilterPersonId: "all",
+  sharedFilterContactId: "all",
   editingSharedEntryId: null,
   activeDateTarget: null,
 };
