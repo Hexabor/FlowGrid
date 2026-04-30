@@ -2086,22 +2086,6 @@ dt {
   gap: 8px;
 }
 
-#open-search-modal.is-active {
-  position: relative;
-}
-
-#open-search-modal.is-active::after {
-  content: "";
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #ffd166;
-  box-shadow: 0 0 0 2px var(--teal);
-}
-
 .ghost-action {
   min-height: 36px;
   padding: 0 14px;
@@ -2115,6 +2099,26 @@ dt {
 .ghost-action:hover {
   color: var(--text);
   border-color: #b8c5cb;
+}
+
+.filter-clear-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  color: #ffffff;
+  background: var(--red);
+  border: 0;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.filter-clear-button:hover {
+  background: #a82222;
 }
 
 /* ==== Danger zone (settings) ==== */

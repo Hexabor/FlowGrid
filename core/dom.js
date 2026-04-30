@@ -44,6 +44,7 @@ export const elements = {
   closeSearchModal: document.querySelector("#close-search-modal"),
   searchForm: document.querySelector("#search-form"),
   searchClear: document.querySelector("#search-clear"),
+  resetSearchButton: document.querySelector("#reset-search"),
   list: document.querySelector("#movement-list"),
   template: document.querySelector("#movement-template"),
   currentPeriod: document.querySelector("#current-period"),

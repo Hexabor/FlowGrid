@@ -409,7 +409,17 @@ elements.list.addEventListener("click", (event) => {
 });
 
 function refreshSearchButtonState() {
-  elements.openSearchModal.classList.toggle("is-active", isSearchActive());
+  elements.resetSearchButton.hidden = !isSearchActive();
+}
+
+function clearSearchFilters() {
+  elements.searchConcept.value = "";
+  elements.searchNote.value = "";
+  elements.searchParty.value = "";
+  elements.categoryFilter.value = "all";
+  elements.typeFilter.value = "all";
+  renderMovements();
+  refreshSearchButtonState();
 }
 
 elements.openSearchModal.addEventListener("click", () => {
@@ -437,14 +447,10 @@ elements.searchForm.addEventListener("submit", (event) => {
 });
 
 elements.searchClear.addEventListener("click", () => {
-  elements.searchConcept.value = "";
-  elements.searchNote.value = "";
-  elements.searchParty.value = "";
-  elements.categoryFilter.value = "all";
-  elements.typeFilter.value = "all";
-  renderMovements();
-  refreshSearchButtonState();
+  clearSearchFilters();
 });
+
+elements.resetSearchButton.addEventListener("click", clearSearchFilters);
 
 refreshSearchButtonState();
 

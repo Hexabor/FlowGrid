@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-01-1245">
+    <link rel="stylesheet" href="styles.css?v=2026-05-01-1320">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -255,7 +255,8 @@
             <div class="section-heading">
               <h2 id="movement-count">0 movimientos</h2>
               <div class="ledger-actions">
-                <button id="open-search-modal" class="primary-action" type="button">Buscar</button>
+                <button id="reset-search" class="filter-clear-button" type="button" aria-label="Limpiar filtros" hidden>x</button>
+                <button id="open-search-modal" class="primary-action" type="button">Filtrar</button>
                 <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
               </div>
             </div>
@@ -267,7 +268,7 @@
         <div id="search-modal" class="modal" hidden>
           <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
             <div class="section-heading">
-              <h2 id="search-title">Buscar movimientos</h2>
+              <h2 id="search-title">Filtrar movimientos</h2>
               <button id="close-search-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
             </div>
 
@@ -801,10 +802,27 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-01 13:00";
+      window.__FG_BUILD__ = "2026-05-01 13:20";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
+      })();
+
+      // Restore the saved view before the module bootstrap completes, so the
+      // user doesn't see a flash of Home while bootApp is still hydrating.
+      (function () {
+        let target = "home";
+        try {
+          target = localStorage.getItem("flowgrid.view.v1") || "home";
+        } catch (_) {
+          // localStorage unavailable; stay on home.
+        }
+        document.querySelectorAll("[data-view]").forEach((view) => {
+          view.classList.toggle("is-active", view.dataset.view === target);
+        });
+        document.querySelectorAll(".nav-button[data-view-target]").forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.viewTarget === target);
+        });
       })();
 
       // Capture the URL state before any module loads, so the auth gate can
