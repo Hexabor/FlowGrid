@@ -152,8 +152,14 @@ async function restDelete(table, ids) {
 
 // ---- push (full-snapshot diff: delete extras + upsert all) ----
 
+// Supabase truncates GET responses to a project-wide max (1000 rows by
+// default) without flagging the truncation. We always pass an explicit limit
+// well above any realistic personal-finance dataset so silent data loss
+// can't happen during hydrate or sync diffing.
+const ROW_LIMIT = 50000;
+
 async function syncTable(table, ownerId, localRows, toCloud) {
-  const existing = await restGet(`${table}?owner_id=eq.${ownerId}&select=id`);
+  const existing = await restGet(`${table}?owner_id=eq.${ownerId}&select=id&limit=${ROW_LIMIT}`);
   const localIds = new Set(localRows.map((r) => r.id));
   const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
   await restDelete(table, toDelete);
@@ -210,10 +216,10 @@ export async function cloudHydrate() {
   if (!ownerId) return;
 
   const [movementsData, settingsData, contactsData, sharedData] = await Promise.all([
-    restGet(`movements?owner_id=eq.${ownerId}&select=*`),
-    restGet(`settings?owner_id=eq.${ownerId}&select=*`),
-    restGet(`contacts?owner_id=eq.${ownerId}&select=*`),
-    restGet(`shared_entries?owner_id=eq.${ownerId}&select=*`),
+    restGet(`movements?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
+    restGet(`settings?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
+    restGet(`contacts?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
+    restGet(`shared_entries?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
   ]);
 
   const settingsRow = settingsData[0] ?? null;
