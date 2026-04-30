@@ -1472,15 +1472,29 @@ dd {
 
 .edit-action,
 .duplicate-action {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
   min-height: 26px;
-  padding: 0 7px;
+  padding: 0;
   color: var(--nav);
   background: transparent;
   border: 1px solid var(--line);
   border-radius: 6px;
-  font-size: 0.78rem;
-  font-weight: 800;
   line-height: 1;
+}
+
+.action-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .edit-action {
@@ -1819,12 +1833,13 @@ dt {
       "concept    recurrence"
       "note       ."
       "amount     amount"
-      "shared     actions";
-    gap: 4px 10px;
+      "party      actions"
+      "shared     shared";
+    gap: 2px 10px;
     align-items: center;
     min-width: 0;
     min-height: 0;
-    padding: 10px 12px;
+    padding: 6px 10px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -1839,7 +1854,6 @@ dt {
   }
 
   .movement-card .date,
-  .movement-card .party,
   .movement-card .tag,
   .movement-card dt {
     display: none;
@@ -1856,7 +1870,7 @@ dt {
   .movement-card .movement-note {
     grid-area: note;
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     white-space: normal;
   }
 
@@ -1867,23 +1881,40 @@ dt {
   .movement-card .amount {
     grid-area: amount;
     justify-self: center;
-    margin: 4px 0 2px;
-    font-size: 1.45rem;
+    margin: 0;
+    font-size: 1.2rem;
   }
 
   .movement-card .recurrence {
     grid-area: recurrence;
     justify-self: end;
     color: var(--muted);
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     text-transform: uppercase;
+  }
+
+  .movement-card .party {
+    grid-area: party;
+    justify-self: start;
+    display: block;
+    color: var(--muted);
+    font-size: 0.82rem;
+    white-space: normal;
+  }
+
+  .movement-card .party:empty {
+    display: none;
   }
 
   .movement-card .shared-cell {
     grid-area: shared;
     color: var(--muted);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     white-space: normal;
+  }
+
+  .movement-card .shared-cell:empty {
+    display: none;
   }
 
   .movement-card .shared-cell:not(:empty)::before {
@@ -1901,17 +1932,24 @@ dt {
 
   .movement-card .edit-action,
   .movement-card .duplicate-action {
-    width: auto;
-    min-width: auto;
-    height: auto;
-    padding: 5px 10px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+  }
+
+  .movement-card .edit-action .action-icon,
+  .movement-card .duplicate-action .action-icon {
+    width: 16px;
+    height: 16px;
   }
 
   .movement-card .delete-action {
-    width: 30px;
-    min-width: 30px;
-    height: 30px;
-    min-height: 30px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
   }
 }
 
