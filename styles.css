@@ -1630,13 +1630,19 @@ dt {
   }
 
   /* Importe: keep the 3.2rem typography but tighten the box so it
-     doesn't look like a billboard. */
+     doesn't look like a billboard. Right padding is wider so the €
+     suffix has its own room. */
   #movement-form #amount {
     min-height: 72px;
-    padding: 6px 14px;
+    padding: 6px 56px 6px 14px;
     font-size: 3.2rem;
     font-weight: 800;
     text-align: center;
+  }
+
+  #movement-form .amount-suffix {
+    font-size: 2.4rem;
+    right: 16px;
   }
 
   /* Recurrencia (paired with Fecha) and Concepto (full width below):
@@ -1907,6 +1913,28 @@ dt {
     height: 30px;
     min-height: 30px;
   }
+}
+
+/* ==== Importe with € suffix ==== */
+.amount-input {
+  position: relative;
+}
+
+.amount-suffix {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+/* ==== Disabled toggle-field (e.g. Gasto compartido on income) ==== */
+.toggle-field:has(input:disabled) {
+  opacity: 0.2;
+  pointer-events: none;
 }
 
 /* ==== Submit icon (visible only on mobile, when the button is square) ==== */

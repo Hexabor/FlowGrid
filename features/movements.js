@@ -46,12 +46,23 @@ export function getConceptsForType(type) {
   );
 }
 
+// Per-type default concept so toggling Gasto/Ingreso lands on a sensible
+// pick instead of the alphabetical first.
+const DEFAULT_CONCEPT_BY_TYPE = {
+  expense: "Compra",
+  income: "Salario",
+};
+
 export function syncMovementSelects() {
   const currentConcept = elements.concept.value;
   const concepts = getConceptsForType(elements.type.value);
-  const selectedConcept = concepts.some((concept) => concept.label === currentConcept)
-    ? currentConcept
-    : concepts[0]?.label;
+  let selectedConcept;
+  if (concepts.some((concept) => concept.label === currentConcept)) {
+    selectedConcept = currentConcept;
+  } else {
+    const preferred = DEFAULT_CONCEPT_BY_TYPE[elements.type.value];
+    selectedConcept = concepts.find((c) => c.label === preferred)?.label ?? concepts[0]?.label;
+  }
 
   elements.concept.innerHTML = optionMarkup(concepts, selectedConcept);
   elements.category.innerHTML = optionMarkup(state.settings.categories, getConcept(selectedConcept)?.category);
@@ -239,18 +250,6 @@ export function resetMovementForm(movement) {
   state.editingMovementId = null;
   state.editingSharedEntryId = null;
   syncMovementSelects();
-
-  // For brand-new expense movements, default the concept to "Compra" if it
-  // exists in the user's settings; falls back to whatever syncMovementSelects
-  // already picked.
-  if (!movement && elements.type.value === "expense") {
-    const compra = getConceptsForType("expense").find((c) => c.label === "Compra");
-    if (compra) {
-      elements.concept.value = "Compra";
-      syncCategoryFromConcept();
-    }
-  }
-
   syncTypeToggle();
 }
 

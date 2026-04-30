@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-01-0235">
+    <link rel="stylesheet" href="styles.css?v=2026-05-01-0255">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -313,7 +313,10 @@
 
               <label>
                 <span>Importe</span>
-                <input id="amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0,00" required>
+                <div class="amount-input">
+                  <input id="amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0,00" required>
+                  <span class="amount-suffix" aria-hidden="true">€</span>
+                </div>
               </label>
 
               <label>
@@ -762,7 +765,7 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-01 02:35";
+      window.__FG_BUILD__ = "2026-05-01 02:55";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;

@@ -110,11 +110,13 @@ export function computeSharedShares(total, modeKey, rawMyShare, rawTheirShare) {
 }
 
 export function syncSharedFields() {
-  if (elements.type.value !== "expense") {
+  const isExpense = elements.type.value === "expense";
+  elements.isShared.disabled = !isExpense;
+  if (!isExpense) {
     elements.isShared.checked = false;
   }
 
-  const enabled = elements.isShared.checked && elements.type.value === "expense";
+  const enabled = elements.isShared.checked && isExpense;
   elements.sharedFields.hidden = !enabled;
   elements.sharedContact.required = enabled;
   elements.sharedMode.required = enabled;
