@@ -30,9 +30,16 @@ export function getSignedAmount(movement) {
   return movement.type === "income" ? movement.amount : -movement.amount;
 }
 
+// Concepts that should appear in BOTH the expense and income dropdowns,
+// even though they have a single stored category. Currently just "Renta"
+// (you can pay it as a tenant or receive it as a landlord).
+const DUAL_TYPE_CONCEPTS = new Set(["Renta"]);
+
 export function getConceptsForType(type) {
   const filtered = type === "income"
-    ? state.settings.concepts.filter((concept) => concept.category === "ingreso")
+    ? state.settings.concepts.filter(
+        (concept) => concept.category === "ingreso" || DUAL_TYPE_CONCEPTS.has(concept.label)
+      )
     : state.settings.concepts.filter((concept) => concept.category !== "ingreso");
   return filtered.slice().sort((a, b) =>
     a.label.localeCompare(b.label, "es", { sensitivity: "base" })
@@ -56,9 +63,13 @@ export function syncMovementSelects() {
 export function syncCategoryFromConcept() {
   const concept = getConcept(elements.concept.value);
 
-  if (concept) {
-    elements.category.value = concept.category;
-  }
+  if (!concept) return;
+
+  // For income movements the category is always "ingreso" regardless of the
+  // concept's stored category. This handles dual-type concepts like "Renta"
+  // whose stored category is the expense flavor.
+  const isIncome = elements.type.value === "income";
+  elements.category.value = isIncome ? "ingreso" : concept.category;
 }
 
 export function paintTag(tag, categoryValue) {

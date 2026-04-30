@@ -262,10 +262,25 @@ export async function cloudHydrate() {
       }
     : { categories: defaultCategories, concepts: defaultConcepts };
 
+  // One-shot migration (2026-05-01): "Recuperados" moved from category
+  // "extra" to "ingreso". Idempotent; runs only on accounts that still have
+  // the old mapping. Pushes the corrected settings back to cloud once.
+  let settingsMigrated = false;
+  for (const concept of state.settings.concepts) {
+    if (concept.label === "Recuperados" && concept.category === "extra") {
+      concept.category = "ingreso";
+      settingsMigrated = true;
+    }
+  }
+
   writeLocal(MOVEMENTS_KEY, state.movements);
   writeLocal(CONTACTS_KEY, state.contacts);
   writeLocal(SHARED_KEY, state.sharedEntries);
   writeLocal(SETTINGS_KEY, state.settings);
+
+  if (settingsMigrated) {
+    await cloudPushSettings();
+  }
 }
 
 function readLocalArray(key) {

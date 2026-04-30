@@ -57,7 +57,7 @@ export const defaultConcepts = [
   ["IRPF", "extra"],
   ["Perdido", "perdido"],
   ["Salario", "ingreso"],
-  ["Recuperados", "extra"],
+  ["Recuperados", "ingreso"],
   ["Renta", "extra"],
   ["Fondos indexados", "ahorro"],
   ["Cuenta remunerada", "ahorro"],
