@@ -1629,19 +1629,19 @@ dt {
   }
 
   #movement-form #amount {
-    min-height: 64px;
-    padding: 12px 14px;
-    font-size: 1.6rem;
-    font-weight: 700;
+    min-height: 84px;
+    padding: 14px 14px;
+    font-size: 2.4rem;
+    font-weight: 800;
     text-align: center;
   }
 
-  /* Concepto and Recurrencia: a touch larger so they don't feel cramped
-     once they share a row. */
+  /* Concepto and Recurrencia: bigger content (not the uppercase label
+     above it) so the value reads cleanly once they share a row. */
   #movement-form #concept,
   #movement-form #recurrence {
-    min-height: 46px;
-    font-size: 1rem;
+    min-height: 50px;
+    font-size: 1.1rem;
   }
 
   /* Gasto compartido toggle: turn into a proper tappable strip with

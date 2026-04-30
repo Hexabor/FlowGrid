@@ -31,10 +31,12 @@ export function getSignedAmount(movement) {
 }
 
 export function getConceptsForType(type) {
-  if (type === "income") {
-    return state.settings.concepts.filter((concept) => concept.category === "ingreso");
-  }
-  return state.settings.concepts.filter((concept) => concept.category !== "ingreso");
+  const filtered = type === "income"
+    ? state.settings.concepts.filter((concept) => concept.category === "ingreso")
+    : state.settings.concepts.filter((concept) => concept.category !== "ingreso");
+  return filtered.slice().sort((a, b) =>
+    a.label.localeCompare(b.label, "es", { sensitivity: "base" })
+  );
 }
 
 export function syncMovementSelects() {
