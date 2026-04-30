@@ -91,10 +91,34 @@ export function paintTag(tag, categoryValue) {
   tag.style.color = category?.text ?? "#172026";
 }
 
+function compareMovements(a, b, key) {
+  switch (key) {
+    case "date":
+      return a.date.localeCompare(b.date) || (a.id || "").localeCompare(b.id || "");
+    case "concept":
+      return a.concept.localeCompare(b.concept, "es", { sensitivity: "base" });
+    case "amount":
+      return getSignedAmount(a) - getSignedAmount(b);
+    case "note":
+      return (a.note || "").localeCompare(b.note || "", "es", { sensitivity: "base" });
+    case "party":
+      return (a.party || "").localeCompare(b.party || "", "es", { sensitivity: "base" });
+    case "category":
+      return getCategoryLabel(a.category).localeCompare(getCategoryLabel(b.category), "es", { sensitivity: "base" });
+    case "recurrence":
+      return (a.recurrence || "").localeCompare(b.recurrence || "", "es", { sensitivity: "base" });
+    case "shared":
+      return (a.sharedEntryId ? 1 : 0) - (b.sharedEntryId ? 1 : 0);
+    default:
+      return 0;
+  }
+}
+
 export function getFilteredMovements() {
   const query = elements.search.value.trim().toLowerCase();
   const selectedCategory = elements.categoryFilter.value;
   const selectedType = elements.typeFilter.value;
+  const { key, dir } = state.movementSort;
 
   return state.movements
     .filter((movement) => selectedType === "all" || movement.type === selectedType)
@@ -106,7 +130,12 @@ export function getFilteredMovements() {
 
       return haystack.includes(query);
     })
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort((a, b) => {
+      const cmp = compareMovements(a, b, key);
+      // Tie-break by date desc + id so equal-key rows have a stable order.
+      const fallback = b.date.localeCompare(a.date) || (b.id || "").localeCompare(a.id || "");
+      return (dir === "asc" ? cmp : -cmp) || fallback;
+    });
 }
 
 export function createMovementCard(movement, compact = false) {
@@ -133,43 +162,70 @@ export function createMovementCard(movement, compact = false) {
   return card;
 }
 
+const SORTABLE_HEADERS = [
+  { label: "Fecha", key: "date" },
+  { label: "Concepto", key: "concept" },
+  { label: "Importe", key: "amount" },
+  { label: "Nota", key: "note" },
+  { label: "Emisor / receptor", key: "party" },
+  { label: "Categoria", key: "category" },
+  { label: "Recurrencia", key: "recurrence" },
+  { label: "Compartido", key: "shared" },
+];
+
 export function renderMovementList(container, items, compact = false) {
   container.innerHTML = "";
 
-  if (!items.length) {
+  if (!items.length && compact) {
     container.innerHTML = '<p class="empty-state">No hay movimientos con estos filtros.</p>';
     return;
   }
 
   const fragment = document.createDocumentFragment();
+  const { key: sortKey, dir: sortDir } = state.movementSort;
 
   if (!compact) {
     const header = document.createElement("div");
     header.className = "movement-header";
-    [
-      "Fecha",
-      "Concepto",
-      "Importe",
-      "Nota",
-      "Emisor / receptor",
-      "Categoria",
-      "Recurrencia",
-      "Compartido",
-      "",
-      "",
-      "",
-    ].forEach((label) => {
-      const cell = document.createElement("span");
-      cell.textContent = label;
+    SORTABLE_HEADERS.forEach(({ label, key }) => {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "movement-header-cell";
+      cell.dataset.sortKey = key;
+      if (key === sortKey) {
+        cell.classList.add("is-active");
+        cell.dataset.sortDir = sortDir;
+      }
+      const arrow = key === sortKey ? (sortDir === "asc" ? " ▲" : " ▼") : "";
+      cell.textContent = `${label}${arrow}`;
       header.append(cell);
     });
+    // Three empty cells holding column space for the action buttons; not sortable.
+    for (let i = 0; i < 3; i += 1) {
+      const filler = document.createElement("span");
+      filler.className = "movement-header-cell movement-header-cell-static";
+      header.append(filler);
+    }
     fragment.append(header);
   }
+
+  if (!items.length) {
+    container.append(fragment);
+    container.insertAdjacentHTML(
+      "beforeend",
+      '<p class="empty-state">No hay movimientos con estos filtros.</p>'
+    );
+    return;
+  }
+
+  // Month/date dividers only make sense when the list is sorted by date,
+  // since otherwise items jump between months freely.
+  const showDateGroups = sortKey === "date";
 
   let lastDate = null;
   let lastMonthKey = null;
   items.forEach((movement) => {
-    if (!compact) {
+    if (!compact && showDateGroups) {
       const monthKey = movement.date.slice(0, 7);
       if (monthKey !== lastMonthKey) {
         const monthHeader = document.createElement("div");
@@ -271,6 +327,23 @@ elements.typeToggleButtons.forEach((btn) => {
 
 elements.type.addEventListener("change", syncTypeToggle);
 syncTypeToggle();
+
+// Header click → toggle sort. Delegated on the list container so the
+// dynamically rendered header buttons get caught regardless of when they
+// were created.
+elements.list.addEventListener("click", (event) => {
+  const header = event.target.closest(".movement-header-cell:not(.movement-header-cell-static)");
+  if (!header) return;
+  const key = header.dataset.sortKey;
+  if (!key) return;
+  if (state.movementSort.key === key) {
+    state.movementSort.dir = state.movementSort.dir === "asc" ? "desc" : "asc";
+  } else {
+    state.movementSort.key = key;
+    state.movementSort.dir = key === "date" ? "desc" : "asc";
+  }
+  renderMovements();
+});
 
 elements.list.addEventListener("click", (event) => {
   const editButton = event.target.closest(".edit-action");

@@ -1364,7 +1364,7 @@ textarea {
 .movement-header,
 .movement-card {
   display: grid;
-  grid-template-columns: 78px minmax(100px, 1fr) 84px minmax(120px, 1.3fr) minmax(100px, 0.9fr) minmax(80px, 96px) 76px minmax(70px, 0.6fr) 50px 50px 28px;
+  grid-template-columns: 78px minmax(100px, 1fr) 84px minmax(120px, 1.3fr) minmax(100px, 0.9fr) minmax(80px, 96px) 76px minmax(70px, 0.6fr) 28px 28px 28px;
   gap: 6px;
   align-items: center;
 }
@@ -1382,6 +1382,34 @@ textarea {
   font-size: 0.76rem;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.movement-header-cell {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movement-header-cell:hover {
+  color: var(--text);
+}
+
+.movement-header-cell.is-active {
+  color: var(--nav);
+}
+
+.movement-header-cell-static {
+  cursor: default;
 }
 
 .movement-card {
@@ -1882,7 +1910,7 @@ dt {
     grid-area: amount;
     justify-self: center;
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.8rem;
   }
 
   .movement-card .recurrence {

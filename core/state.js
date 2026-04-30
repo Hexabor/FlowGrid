@@ -10,6 +10,7 @@ export const state = {
   monthCursor: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   yearCursor: new Date(new Date().getFullYear(), 0, 1),
   sharedFilterContactId: "all",
+  movementSort: { key: "date", dir: "desc" },
   editingSharedEntryId: null,
   activeDateTarget: null,
 };
