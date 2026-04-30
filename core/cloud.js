@@ -169,15 +169,18 @@ export async function cloudPushAll() {
 // ---- hydrate (cloud is authoritative; first login pushes local seed up) ----
 
 export async function cloudHydrate() {
+  console.log("[cloud hydrate] start");
   const ownerId = await getUserId();
+  console.log("[cloud hydrate] ownerId:", ownerId);
   if (!ownerId) return;
 
-  const [movementsRes, settingsRes, contactsRes, sharedRes] = await Promise.all([
-    supabase.from("movements").select("*").eq("owner_id", ownerId),
-    supabase.from("settings").select("*").eq("owner_id", ownerId).maybeSingle(),
-    supabase.from("contacts").select("*").eq("owner_id", ownerId),
-    supabase.from("shared_entries").select("*").eq("owner_id", ownerId),
-  ]);
+  console.log("[cloud hydrate] firing queries");
+  const movementsP = supabase.from("movements").select("*").eq("owner_id", ownerId).then((r) => { console.log("[cloud hydrate] movements done", r.error || r.data?.length); return r; });
+  const settingsP = supabase.from("settings").select("*").eq("owner_id", ownerId).maybeSingle().then((r) => { console.log("[cloud hydrate] settings done", r.error || !!r.data); return r; });
+  const contactsP = supabase.from("contacts").select("*").eq("owner_id", ownerId).then((r) => { console.log("[cloud hydrate] contacts done", r.error || r.data?.length); return r; });
+  const sharedP = supabase.from("shared_entries").select("*").eq("owner_id", ownerId).then((r) => { console.log("[cloud hydrate] shared done", r.error || r.data?.length); return r; });
+  const [movementsRes, settingsRes, contactsRes, sharedRes] = await Promise.all([movementsP, settingsP, contactsP, sharedP]);
+  console.log("[cloud hydrate] all queries resolved");
 
   for (const res of [movementsRes, settingsRes, contactsRes, sharedRes]) {
     if (res.error) throw res.error;

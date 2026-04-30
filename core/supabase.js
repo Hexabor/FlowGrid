@@ -42,7 +42,9 @@ export async function signInWithMagicLink(email) {
 }
 
 export async function signOut() {
-  await supabase.auth.signOut();
+  console.log("[supabase auth] signOut called");
+  const { error } = await supabase.auth.signOut();
+  console.log("[supabase auth] signOut returned", error || "ok");
 }
 
 export function onAuthChange(callback) {
