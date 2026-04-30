@@ -206,19 +206,15 @@ export async function cloudPushAll() {
 // ---- hydrate (cloud is authoritative; first login pushes local seed up) ----
 
 export async function cloudHydrate() {
-  console.log("[cloud hydrate] start");
   const ownerId = await getUserId();
-  console.log("[cloud hydrate] ownerId:", ownerId);
   if (!ownerId) return;
 
-  console.log("[cloud hydrate] firing queries");
   const [movementsData, settingsData, contactsData, sharedData] = await Promise.all([
-    restGet(`movements?owner_id=eq.${ownerId}&select=*`).then((r) => { console.log("[cloud hydrate] movements done", r.length); return r; }),
-    restGet(`settings?owner_id=eq.${ownerId}&select=*`).then((r) => { console.log("[cloud hydrate] settings done", r.length); return r; }),
-    restGet(`contacts?owner_id=eq.${ownerId}&select=*`).then((r) => { console.log("[cloud hydrate] contacts done", r.length); return r; }),
-    restGet(`shared_entries?owner_id=eq.${ownerId}&select=*`).then((r) => { console.log("[cloud hydrate] shared done", r.length); return r; }),
+    restGet(`movements?owner_id=eq.${ownerId}&select=*`),
+    restGet(`settings?owner_id=eq.${ownerId}&select=*`),
+    restGet(`contacts?owner_id=eq.${ownerId}&select=*`),
+    restGet(`shared_entries?owner_id=eq.${ownerId}&select=*`),
   ]);
-  console.log("[cloud hydrate] all queries resolved");
 
   const settingsRow = settingsData[0] ?? null;
   const cloudIsEmpty =

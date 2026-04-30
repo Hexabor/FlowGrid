@@ -2,6 +2,29 @@ window.FlowGridChangelog = [
   {
     date: "2026-04-30",
     commit: "dev@HEAD",
+    title: "Fase 3 — paso 2: campo email opcional en contactos",
+    changes: [
+      "Formulario de Contactos en Configuracion ahora pide tambien email (opcional). El campo se guarda y se sincroniza al cloud como cualquier otro dato del contacto.",
+      "Edicion inline en la lista de contactos amplia la fila con un input de email junto al nombre. Ambos editables a la vez, se guardan con el mismo OK.",
+      "Sin cambios funcionales todavia; el email queda preparado para el siguiente paso (envio de invitacion via magic-link).",
+      "Limpieza: retirados los console.log diagnosticos del bypass de supabase-js que se quedaron en cloud.js y supabase.js tras resolver el bug de queries.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "adafce5",
+    title: "Bypass de supabase-js para queries: fetch directo al endpoint REST",
+    changes: [
+      "Las queries de supabase-js se quedaban colgadas indefinidamente en Phase 3 sin error, sin trafico, sin timeout. Ni el override de `lock` a no-op, ni cachear la sesion, ni pinear v2.45.0 lo arreglaron — la cola interna pendingInLock del auth-client estaba rota.",
+      "Reescrito core/cloud.js con fetch directo a /rest/v1/* usando el access_token cacheado desde onAuthStateChange. supabase-js sigue gestionando login/logout, solo se bypassa el data plane.",
+      "Documentado en SUPABASE_JS_INCIDENT.md (en raiz del repo) con diagnostico, intentos fallidos, fix y como reconocer el bug si vuelve a aparecer.",
+      "Anadido un build label fijo en la esquina arriba-derecha (timestamp) que se bumpea en cada commit, util para ver visualmente cuando Pages ha servido un deploy nuevo.",
+      "Reducido el seed de movimientos demo a una sola entrada explicita ('Borra este movimiento') para que testers nuevos empiecen practicamente vacios.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "fdf2d79",
     title: "Fase 3 — paso 1: rename persona→contacto en todo el repo",
     changes: [
       "UI: pestaña \"Personas\" pasa a \"Contactos\". Labels, placeholders y mensajes actualizados (\"Selecciona contacto\", \"Sin contactos creados\", etc).",

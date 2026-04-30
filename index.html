@@ -577,6 +577,10 @@
                   <span>Nombre</span>
                   <input id="new-contact-name" name="name" type="text" autocomplete="off" required>
                 </label>
+                <label>
+                  <span>Email <small class="label-hint">(opcional)</small></span>
+                  <input id="new-contact-email" name="email" type="email" autocomplete="off">
+                </label>
                 <button class="primary-action" type="submit">Anadir contacto</button>
               </form>
 
@@ -698,7 +702,7 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-04-30 21:30";
+      window.__FG_BUILD__ = "2026-04-30 22:00";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;

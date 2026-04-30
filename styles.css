@@ -731,6 +731,17 @@ dt {
   grid-template-columns: minmax(0, 1fr) 34px 42px;
 }
 
+#contacts-list .config-item {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) 42px 34px;
+}
+
+.label-hint {
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .swatch {
   justify-self: end;
   width: 24px;

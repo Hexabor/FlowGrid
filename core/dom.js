@@ -67,6 +67,7 @@ export const elements = {
   paymentFeedback: document.querySelector("#payment-feedback"),
   contactsForm: document.querySelector("#contacts-form"),
   newContactName: document.querySelector("#new-contact-name"),
+  newContactEmail: document.querySelector("#new-contact-email"),
   contactsList: document.querySelector("#contacts-list"),
   contactsCount: document.querySelector("#contacts-count"),
   conceptForm: document.querySelector("#concept-form"),

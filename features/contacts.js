@@ -36,6 +36,7 @@ export function renderContacts() {
   state.contacts.forEach((contact) => {
     const item = document.createElement("article");
     const name = document.createElement("input");
+    const email = document.createElement("input");
     const saveButton = document.createElement("button");
     const deleteButton = document.createElement("button");
 
@@ -43,6 +44,12 @@ export function renderContacts() {
     item.dataset.contactId = contact.id;
     name.value = contact.name;
     name.setAttribute("aria-label", "Nombre del contacto");
+    name.dataset.field = "name";
+    email.type = "email";
+    email.value = contact.email ?? "";
+    email.placeholder = "email (opcional)";
+    email.setAttribute("aria-label", "Email del contacto");
+    email.dataset.field = "email";
     saveButton.type = "button";
     saveButton.className = "save-action";
     saveButton.dataset.action = "save-contact";
@@ -57,7 +64,7 @@ export function renderContacts() {
     deleteButton.textContent = "x";
     deleteButton.disabled = contactHasEntries(contact.id);
 
-    item.append(name, saveButton, deleteButton);
+    item.append(name, email, saveButton, deleteButton);
     fragment.append(item);
   });
 
@@ -67,6 +74,7 @@ export function renderContacts() {
 elements.contactsForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const name = elements.newContactName.value.trim();
+  const email = elements.newContactEmail.value.trim();
 
   if (!name) {
     return;
@@ -80,7 +88,7 @@ elements.contactsForm.addEventListener("submit", (event) => {
 
   state.contacts = [
     ...state.contacts,
-    { id: createId(), name, email: "", invitedAt: null, createdAt: new Date().toISOString() },
+    { id: createId(), name, email, invitedAt: null, createdAt: new Date().toISOString() },
   ];
   saveContacts();
   elements.contactsForm.reset();
@@ -103,11 +111,15 @@ elements.contactsList.addEventListener("click", (event) => {
   }
 
   if (button.dataset.action === "save-contact") {
-    const nextName = item.querySelector("input").value.trim();
-    if (!nextName || nextName === contact.name) {
+    const nextName = item.querySelector('input[data-field="name"]').value.trim();
+    const nextEmail = item.querySelector('input[data-field="email"]').value.trim();
+    const nameChanged = nextName && nextName !== contact.name;
+    const emailChanged = nextEmail !== (contact.email ?? "");
+    if (!nameChanged && !emailChanged) {
       return;
     }
-    contact.name = nextName;
+    if (nameChanged) contact.name = nextName;
+    if (emailChanged) contact.email = nextEmail;
     saveContacts();
     renderContacts();
     renderSharedView();
