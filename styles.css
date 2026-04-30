@@ -1623,9 +1623,9 @@ dt {
   .movement-form > button[type="submit"]{ order: 10; }
 
   #date-trigger {
-    min-height: 60px;
-    padding: 8px 14px;
-    font-size: 2.4rem;
+    min-height: 48px;
+    padding: 6px 12px;
+    font-size: 1.7rem;
     font-weight: 700;
   }
 
@@ -1643,9 +1643,9 @@ dt {
      same content typography as Fecha so the row reads as a unit. */
   #movement-form #concept,
   #movement-form #recurrence {
-    min-height: 60px;
-    padding: 6px 10px;
-    font-size: 2.4rem;
+    min-height: 48px;
+    padding: 4px 10px;
+    font-size: 1.7rem;
     font-weight: 700;
   }
 
@@ -1716,15 +1716,14 @@ dt {
     padding-right: 0;
   }
 
-  /* Close button: also fixed at the bottom, smaller than the submit, off
-     to the left (so the right thumb doesn't accidentally close the modal
-     while reaching for the submit). */
+  /* Close button: also fixed at the bottom, smaller than the submit,
+     placed to the right of the submit with the same gap. */
   #movement-modal #close-movement-modal {
     position: fixed;
     bottom: 34px;
-    right: calc(50% + 56px);
+    left: calc(50% + 56px);
     top: auto;
-    left: auto;
+    right: auto;
     width: 56px;
     height: 56px;
     min-width: 56px;
