@@ -2,6 +2,17 @@ window.FlowGridChangelog = [
   {
     date: "2026-04-30",
     commit: "dev@HEAD",
+    title: "Zona peligrosa: borrar todos los movimientos con doble confirmacion",
+    changes: [
+      "Nueva seccion al final de la pestana Backup con un boton para borrar todos los movimientos de golpe (local + cloud).",
+      "Doble verificacion: hay que escribir literalmente BORRAR en mayusculas y luego confirmar de nuevo. Si el primer texto no coincide exacto, no pasa nada.",
+      "Boton estilizado como destructivo (rojo ghost) y con copia clara del riesgo. No toca contactos, settings ni shared_entries.",
+      "Limit explicito en queries: limit=50000 en cada GET para evitar la truncacion silenciosa a 1000 filas que tiene Supabase por defecto. Necesario para soportar varios anos de datos.",
+    ],
+  },
+  {
+    date: "2026-04-30",
+    commit: "95e0838",
     title: "Fase 3 — paso 2: campo email opcional en contactos",
     changes: [
       "Formulario de Contactos en Configuracion ahora pide tambien email (opcional). El campo se guarda y se sincroniza al cloud como cualquier otro dato del contacto.",

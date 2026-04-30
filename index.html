@@ -625,6 +625,14 @@
 
               <div class="empty-state">El backup exporta movimientos y configuracion en un archivo JS reutilizable.</div>
             </section>
+
+            <section class="panel danger-panel">
+              <div class="section-heading">
+                <h2>Zona peligrosa</h2>
+              </div>
+              <p class="danger-blurb">Borrar todos los movimientos los elimina tambien del cloud y de todos tus dispositivos. <strong>No hay deshacer.</strong></p>
+              <button id="wipe-movements" class="danger-action" type="button">Borrar todos los movimientos</button>
+            </section>
           </section>
         </section>
 
@@ -702,7 +710,7 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-04-30 22:30";
+      window.__FG_BUILD__ = "2026-04-30 23:00";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;

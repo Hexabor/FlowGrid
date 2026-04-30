@@ -1773,6 +1773,38 @@ dt {
   }
 }
 
+/* ==== Danger zone (settings) ==== */
+.danger-panel {
+  border-color: #f0b7b7;
+}
+
+.danger-blurb {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.danger-blurb strong {
+  color: var(--red);
+}
+
+.danger-action {
+  min-height: 36px;
+  padding: 0 14px;
+  color: var(--red);
+  background: transparent;
+  border: 1px solid #f0b7b7;
+  border-radius: 6px;
+  font-weight: 800;
+}
+
+.danger-action:hover {
+  color: #ffffff;
+  background: var(--red);
+  border-color: var(--red);
+}
+
 /* ==== Build version label (fixed, top-right) ==== */
 .app-version {
   position: fixed;

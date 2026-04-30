@@ -88,3 +88,34 @@ elements.backupImport.addEventListener("click", () => {
   syncMovementSelects();
   render();
 });
+
+elements.wipeMovements.addEventListener("click", () => {
+  const count = state.movements.length;
+  if (!count) {
+    alert("No hay movimientos que borrar.");
+    return;
+  }
+
+  // First gate: type the literal word in caps. Trim and case-sensitive match.
+  const typed = prompt(
+    `Vas a borrar ${count} movimiento${count === 1 ? "" : "s"}. ` +
+    `Esto NO se puede deshacer y se sincroniza al cloud.\n\n` +
+    `Para confirmar, escribe BORRAR (en mayusculas):`
+  );
+  if (typed === null) return;
+  if (typed.trim() !== "BORRAR") {
+    alert("Texto incorrecto. No se ha borrado nada.");
+    return;
+  }
+
+  // Second gate: explicit final confirm.
+  if (!confirm(`Ultima confirmacion: borrar los ${count} movimientos definitivamente?`)) {
+    return;
+  }
+
+  state.movements = [];
+  saveMovements();
+  syncMovementSelects();
+  render();
+  alert(`${count} movimiento${count === 1 ? "" : "s"} borrado${count === 1 ? "" : "s"}.`);
+});

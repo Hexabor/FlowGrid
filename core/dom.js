@@ -91,6 +91,7 @@ export const elements = {
   backupFile: document.querySelector("#backup-file"),
   backupImport: document.querySelector("#backup-import"),
   backupStatus: document.querySelector("#backup-status"),
+  wipeMovements: document.querySelector("#wipe-movements"),
   changelogList: document.querySelector("#changelog-list"),
   changelogCount: document.querySelector("#changelog-count"),
 };
