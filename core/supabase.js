@@ -14,23 +14,28 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+// Module-level cache of the current session, fed by onAuthStateChange. We use
+// this instead of calling supabase.auth.getSession() because that call has been
+// hanging in production even with the no-op lock. The cached value is enough
+// for reading user identity; supabase-js handles its own auth-token internals
+// for outgoing requests separately.
+let cachedSession = null;
+
 supabase.auth.onAuthStateChange((event, session) => {
+  cachedSession = session;
   console.log("[supabase auth]", event, session ? `session for ${session.user.email}` : "no session");
 });
 
 export async function getSession() {
-  const { data } = await supabase.auth.getSession();
-  return data.session;
+  return cachedSession;
 }
 
 export async function getUser() {
-  const session = await getSession();
-  return session?.user ?? null;
+  return cachedSession?.user ?? null;
 }
 
 export async function getUserId() {
-  const user = await getUser();
-  return user?.id ?? null;
+  return cachedSession?.user?.id ?? null;
 }
 
 export async function signInWithMagicLink(email) {
