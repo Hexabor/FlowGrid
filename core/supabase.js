@@ -38,6 +38,10 @@ export async function getUserId() {
   return cachedSession?.user?.id ?? null;
 }
 
+export function getAccessToken() {
+  return cachedSession?.access_token ?? null;
+}
+
 export async function signInWithMagicLink(email) {
   const { error } = await supabase.auth.signInWithOtp({
     email,

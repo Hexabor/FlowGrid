@@ -1,5 +1,12 @@
+// Cloud sync layer. Uses raw fetch against the Supabase REST endpoint instead
+// of going through supabase-js's PostgrestClient: we hit a hang in the
+// library's internal auth/lock mechanism that wasn't fixable by overriding
+// `lock` or pinning the version. Auth (login, session) still uses supabase-js
+// because that side worked fine; only the data plane is bypassed.
+
 import { state } from "./state.js";
-import { supabase, getUserId } from "./supabase.js";
+import { getUserId, getAccessToken } from "./supabase.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 import {
   MOVEMENTS_KEY,
   SETTINGS_KEY,
@@ -101,27 +108,57 @@ function sharedFromCloud(row) {
   };
 }
 
+// ---- raw REST helpers ----
+
+function authHeaders() {
+  const token = getAccessToken();
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${token ?? SUPABASE_ANON_KEY}`,
+  };
+}
+
+async function restGet(path) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status} ${await res.text()}`);
+  return await res.json();
+}
+
+async function restUpsert(table, rows, conflictColumn = "id") {
+  if (!rows.length) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?on_conflict=${conflictColumn}`, {
+    method: "POST",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify(rows),
+  });
+  if (!res.ok) throw new Error(`upsert ${table} failed: ${res.status} ${await res.text()}`);
+}
+
+async function restDelete(table, ids) {
+  if (!ids.length) return;
+  const inList = ids.map((id) => `"${encodeURIComponent(id)}"`).join(",");
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=in.(${inList})`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`delete ${table} failed: ${res.status} ${await res.text()}`);
+}
+
 // ---- push (full-snapshot diff: delete extras + upsert all) ----
 
 async function syncTable(table, ownerId, localRows, toCloud) {
-  const { data: existing, error: selErr } = await supabase
-    .from(table)
-    .select("id")
-    .eq("owner_id", ownerId);
-  if (selErr) throw selErr;
-
+  const existing = await restGet(`${table}?owner_id=eq.${ownerId}&select=id`);
   const localIds = new Set(localRows.map((r) => r.id));
-  const toDelete = (existing ?? []).map((r) => r.id).filter((id) => !localIds.has(id));
-
-  if (toDelete.length) {
-    const { error } = await supabase.from(table).delete().in("id", toDelete);
-    if (error) throw error;
-  }
-
+  const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
+  await restDelete(table, toDelete);
   if (localRows.length) {
-    const payload = localRows.map((r) => toCloud(r, ownerId));
-    const { error } = await supabase.from(table).upsert(payload, { onConflict: "id" });
-    if (error) throw error;
+    await restUpsert(table, localRows.map((r) => toCloud(r, ownerId)));
   }
 }
 
@@ -146,15 +183,15 @@ export async function cloudPushSharedEntries() {
 export async function cloudPushSettings() {
   const ownerId = await getUserId();
   if (!ownerId) return;
-  const { error } = await supabase.from("settings").upsert(
-    {
+  await restUpsert(
+    "settings",
+    [{
       owner_id: ownerId,
       categories: state.settings.categories,
       concepts: state.settings.concepts,
-    },
-    { onConflict: "owner_id" }
+    }],
+    "owner_id"
   );
-  if (error) throw error;
 }
 
 export async function cloudPushAll() {
@@ -175,22 +212,20 @@ export async function cloudHydrate() {
   if (!ownerId) return;
 
   console.log("[cloud hydrate] firing queries");
-  const movementsP = supabase.from("movements").select("*").eq("owner_id", ownerId).then((r) => { console.log("[cloud hydrate] movements done", r.error || r.data?.length); return r; });
-  const settingsP = supabase.from("settings").select("*").eq("owner_id", ownerId).maybeSingle().then((r) => { console.log("[cloud hydrate] settings done", r.error || !!r.data); return r; });
-  const contactsP = supabase.from("contacts").select("*").eq("owner_id", ownerId).then((r) => { console.log("[cloud hydrate] contacts done", r.error || r.data?.length); return r; });
-  const sharedP = supabase.from("shared_entries").select("*").eq("owner_id", ownerId).then((r) => { console.log("[cloud hydrate] shared done", r.error || r.data?.length); return r; });
-  const [movementsRes, settingsRes, contactsRes, sharedRes] = await Promise.all([movementsP, settingsP, contactsP, sharedP]);
+  const [movementsData, settingsData, contactsData, sharedData] = await Promise.all([
+    restGet(`movements?owner_id=eq.${ownerId}&select=*`).then((r) => { console.log("[cloud hydrate] movements done", r.length); return r; }),
+    restGet(`settings?owner_id=eq.${ownerId}&select=*`).then((r) => { console.log("[cloud hydrate] settings done", r.length); return r; }),
+    restGet(`contacts?owner_id=eq.${ownerId}&select=*`).then((r) => { console.log("[cloud hydrate] contacts done", r.length); return r; }),
+    restGet(`shared_entries?owner_id=eq.${ownerId}&select=*`).then((r) => { console.log("[cloud hydrate] shared done", r.length); return r; }),
+  ]);
   console.log("[cloud hydrate] all queries resolved");
 
-  for (const res of [movementsRes, settingsRes, contactsRes, sharedRes]) {
-    if (res.error) throw res.error;
-  }
-
+  const settingsRow = settingsData[0] ?? null;
   const cloudIsEmpty =
-    !movementsRes.data?.length &&
-    !contactsRes.data?.length &&
-    !sharedRes.data?.length &&
-    !settingsRes.data;
+    !movementsData.length &&
+    !contactsData.length &&
+    !sharedData.length &&
+    !settingsRow;
 
   if (cloudIsEmpty) {
     // First login on this account: seed the cloud with whatever is in localStorage
@@ -215,20 +250,15 @@ export async function cloudHydrate() {
   }
 
   // Cloud is authoritative: replace local snapshot with what's in the cloud.
-  const cloudMovements = (movementsRes.data ?? []).map(movementFromCloud);
-  const cloudContacts = (contactsRes.data ?? []).map(contactFromCloud);
-  const cloudShared = (sharedRes.data ?? []).map(sharedFromCloud);
-  const cloudSettings = settingsRes.data
+  state.movements = movementsData.map(movementFromCloud);
+  state.contacts = contactsData.map(contactFromCloud);
+  state.sharedEntries = sharedData.map(sharedFromCloud);
+  state.settings = settingsRow
     ? {
-        categories: settingsRes.data.categories?.length ? settingsRes.data.categories : defaultCategories,
-        concepts: settingsRes.data.concepts?.length ? settingsRes.data.concepts : defaultConcepts,
+        categories: settingsRow.categories?.length ? settingsRow.categories : defaultCategories,
+        concepts: settingsRow.concepts?.length ? settingsRow.concepts : defaultConcepts,
       }
     : { categories: defaultCategories, concepts: defaultConcepts };
-
-  state.movements = cloudMovements;
-  state.contacts = cloudContacts;
-  state.sharedEntries = cloudShared;
-  state.settings = cloudSettings;
 
   writeLocal(MOVEMENTS_KEY, state.movements);
   writeLocal(CONTACTS_KEY, state.contacts);
