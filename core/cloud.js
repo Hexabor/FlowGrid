@@ -152,10 +152,6 @@ async function restDelete(table, ids) {
 
 // ---- push (full-snapshot diff: delete extras + upsert all) ----
 
-// Supabase truncates GET responses to a project-wide max (1000 rows by
-// default) without flagging the truncation. We always pass an explicit limit
-// well above any realistic personal-finance dataset so silent data loss
-// can't happen during hydrate or sync diffing.
 const ROW_LIMIT = 50000;
 
 async function syncTable(table, ownerId, localRows, toCloud) {
@@ -264,13 +260,24 @@ export async function cloudHydrate() {
 
   // One-shot migration (2026-05-01): "Recuperados" moved from category
   // "extra" to "ingreso". Idempotent; runs only on accounts that still have
-  // the old mapping. Pushes the corrected settings back to cloud once.
+  // the old mapping.
   let settingsMigrated = false;
+  let movementsMigrated = false;
   for (const concept of state.settings.concepts) {
     if (concept.label === "Recuperados" && concept.category === "extra") {
       concept.category = "ingreso";
       settingsMigrated = true;
     }
+  }
+
+  // One-shot migration: collapse accent / case duplicates among concepts
+  // (e.g. "Cafeteria/pub" + "Cafetería/pub"). The variant with the most
+  // associated movements wins; the loser's movements are re-pointed to
+  // the winner and the loser concept is removed from the catalogue.
+  const conceptMerge = mergeAccentDuplicates(state.settings.concepts, state.movements);
+  if (conceptMerge.changed) {
+    settingsMigrated = true;
+    if (conceptMerge.movementsTouched) movementsMigrated = true;
   }
 
   writeLocal(MOVEMENTS_KEY, state.movements);
@@ -281,6 +288,72 @@ export async function cloudHydrate() {
   if (settingsMigrated) {
     await cloudPushSettings();
   }
+  if (movementsMigrated) {
+    await cloudPushMovements();
+  }
+}
+
+// Strip combining diacritics + lowercase + trim, so "Cafeteria/pub" and
+// "Cafetería/pub" collapse to the same key.
+function normalizeForMatch(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function mergeAccentDuplicates(concepts, movements) {
+  const buckets = new Map();
+  for (const concept of concepts) {
+    const key = normalizeForMatch(concept.label);
+    if (!key) continue;
+    const list = buckets.get(key) ?? [];
+    list.push(concept);
+    buckets.set(key, list);
+  }
+
+  let changed = false;
+  let movementsTouched = false;
+  const removeIds = new Set();
+
+  for (const group of buckets.values()) {
+    if (group.length <= 1) continue;
+
+    // Pick the variant most movements actually use. Tie-break by longer
+    // label (the accented spelling tends to be the visually richer one).
+    const counts = group.map((c) =>
+      movements.filter((m) => m.concept === c.label).length
+    );
+    const maxCount = Math.max(...counts);
+    const candidates = group.filter((_, i) => counts[i] === maxCount);
+    const winner = candidates.reduce((best, c) =>
+      (c.label || "").length > (best.label || "").length ? c : best
+    );
+    const losers = group.filter((c) => c !== winner);
+    if (!losers.length) continue;
+
+    const loserLabels = new Set(losers.map((l) => l.label));
+    for (const movement of movements) {
+      if (loserLabels.has(movement.concept)) {
+        movement.concept = winner.label;
+        movementsTouched = true;
+        changed = true;
+      }
+    }
+    losers.forEach((l) => removeIds.add(l.id));
+    changed = true;
+  }
+
+  if (removeIds.size) {
+    for (let i = concepts.length - 1; i >= 0; i -= 1) {
+      if (removeIds.has(concepts[i].id)) {
+        concepts.splice(i, 1);
+      }
+    }
+  }
+
+  return { changed, movementsTouched };
 }
 
 function readLocalArray(key) {
