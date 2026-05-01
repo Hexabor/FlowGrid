@@ -1,5 +1,27 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-05-01",
+    commit: "dev@HEAD",
+    title: "Exportar a CSV, onboarding en Compartidos y formulario de feedback",
+    changes: [
+      "Configuracion → CSV: nuevo boton \"Descargar CSV\" que exporta todos los movimientos con cabeceras en espanol (Fecha, Concepto, Importe, Tipo, Categoria, Emisor/Receptor, Recurrencia, Nota). Delimiter ; y BOM UTF-8 para que Excel ES, Numbers y Google Sheets lo abran sin tocar nada. Boton de info con tooltip al hover (escritorio) o tap (movil) que explica que incluye el archivo.",
+      "Compartidos: panel introductorio arriba que explica el modelo (estilo Splitwise pero integrado con tu lista de gastos) con un ejemplo concreto. Plegable: aparece abierto la primera vez y se puede minimizar; FlowGrid recuerda tu eleccion entre sesiones.",
+      "Nueva vista \"Proximas mejoras\" en sidebar y home: roadmap publico con lo que viene (compartidos en grupo, recurrencias automaticas, presupuestos, graficas, invitaciones a contactos).",
+      "Formulario de feedback al final de \"Proximas mejoras\" como vista previa (atenuado, no operativo todavia). Cuando se active, mandara el mensaje directamente desde la app sin abrir cliente de correo. Mientras tanto, banner con email directo de contacto para casos urgentes.",
+      "Tab \"Importar CSV\" pasa a llamarse simplemente \"CSV\" porque ahora alberga import y export.",
+    ],
+  },
+  {
+    date: "2026-05-01",
+    commit: "29281ea",
+    title: "SMTP propio con Resend + dominio arcdev.app",
+    changes: [
+      "FlowGrid envia los magic-links desde noreply@arcdev.app via Resend, con plantilla en espanol. Adios al rate limit de 3/h del relay default de Supabase.",
+      "DNS de arcdev.app gestionado en Cloudflare con DKIM, SPF, DMARC (modo monitor) y MX para bounces.",
+      "Rate limit de Supabase subido a 30 emails/hora; Resend free tier da 100 emails/dia, suficiente para los testers iniciales.",
+    ],
+  },
+  {
     date: "2026-04-30",
     commit: "dev@HEAD",
     title: "Rediseno mobile del modal de nuevo movimiento",

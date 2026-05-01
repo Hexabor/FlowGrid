@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-01-1625">
+    <link rel="stylesheet" href="styles.css?v=2026-05-01-1755">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -139,6 +139,13 @@
               <path d="M8 17h5"></path>
             </svg>
           </button>
+          <button class="nav-button" type="button" data-view-target="roadmap" aria-label="Proximas mejoras">
+            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18h6"></path>
+              <path d="M10 22h4"></path>
+              <path d="M12 2a7 7 0 0 0-4 12.7c.6.4 1 1 1 1.7v.6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-.6c0-.7.4-1.3 1-1.7A7 7 0 0 0 12 2Z"></path>
+            </svg>
+          </button>
         </nav>
 
         <div class="session-footer">
@@ -235,6 +242,15 @@
                 </svg>
                 <strong>Novedades</strong>
                 <small>Implementaciones y fixes de cada sesion.</small>
+                  </button>
+                  <button class="module-card" type="button" data-view-target="roadmap">
+                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 18h6"></path>
+                  <path d="M10 22h4"></path>
+                  <path d="M12 2a7 7 0 0 0-4 12.7c.6.4 1 1 1 1.7v.6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-.6c0-.7.4-1.3 1-1.7A7 7 0 0 0 12 2Z"></path>
+                </svg>
+                <strong>Pr&oacute;ximas mejoras</strong>
+                <small>Roadmap de lo que est&aacute; por venir y env&iacute;o de feedback.</small>
                   </button>
                 </div>
               </section>
@@ -519,6 +535,20 @@
             </div>
           </header>
 
+          <details id="shared-callout" class="panel callout-panel" open>
+            <summary>
+              <span>&iquest;C&oacute;mo funcionan los gastos compartidos?</span>
+              <svg class="callout-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"></path>
+              </svg>
+            </summary>
+            <div class="callout-body">
+              <p>Marca cualquier gasto como <strong>compartido</strong> y FlowGrid lo divide entre t&uacute; y la otra persona. En tus gastos solo cuenta <strong>tu parte</strong>; la otra queda como saldo pendiente con tu contacto.</p>
+              <p class="callout-example"><strong>Ejemplo:</strong> cena 30&nbsp;&euro;, pagas t&uacute;, partes iguales &rarr; tus gastos del mes suben 15&nbsp;&euro;, y aparece <strong>+15&nbsp;&euro;</strong> que tu contacto te debe. Cuando os liquid&eacute;is, el saldo se cierra.</p>
+              <p class="callout-hint">Funciona como <em>Splitwise</em>, pero integrado con tu propia lista de gastos: as&iacute; tu balance personal refleja siempre lo que de verdad has gastado.</p>
+            </div>
+          </details>
+
           <section class="panel">
             <div class="section-heading">
               <h2>Saldos</h2>
@@ -587,7 +617,7 @@
           <div class="settings-tabs" aria-label="Secciones de configuracion">
             <button class="settings-tab is-active" type="button" data-settings-target="concepts">Conceptos y categorias</button>
             <button class="settings-tab" type="button" data-settings-target="contacts">Contactos</button>
-            <button class="settings-tab" type="button" data-settings-target="csv">Importar CSV</button>
+            <button class="settings-tab" type="button" data-settings-target="csv">CSV</button>
             <button class="settings-tab" type="button" data-settings-target="backup">Backup JS</button>
           </div>
 
@@ -675,6 +705,22 @@
           <section class="settings-panel" data-settings-panel="csv">
             <section class="panel">
               <div class="section-heading">
+                <h2>
+                  Exportar movimientos a CSV
+                  <button class="info-button" type="button" aria-label="Qu&eacute; incluye el archivo" aria-expanded="false">
+                    <span aria-hidden="true">i</span>
+                    <span class="info-tooltip" role="tooltip">Genera un CSV con todos tus movimientos: fecha, concepto, importe, tipo, categor&iacute;a, emisor/receptor, recurrencia y nota. Compatible con Excel, Numbers y Google&nbsp;Sheets.</span>
+                  </button>
+                </h2>
+                <span id="csv-export-status">Listo</span>
+              </div>
+              <div class="settings-form">
+                <button id="csv-export-button" class="primary-action" type="button">Descargar CSV</button>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="section-heading">
                 <h2>Importar CSV</h2>
                 <span id="csv-import-status">Sin archivo</span>
               </div>
@@ -734,6 +780,61 @@
               <span id="changelog-count"></span>
             </div>
             <div id="changelog-list" class="changelog-list"></div>
+          </section>
+        </section>
+
+        <section class="view" id="roadmap-view" data-view="roadmap" aria-labelledby="roadmap-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Roadmap</p>
+              <h1 id="roadmap-title">Pr&oacute;ximas mejoras</h1>
+            </div>
+          </header>
+
+          <section class="panel">
+            <p>FlowGrid sigue evolucionando. Estas son las mejoras que estoy trabajando o que est&aacute;n previstas a corto plazo:</p>
+            <ul class="roadmap-list">
+              <li>
+                <strong>Compartidos en grupo (3 o m&aacute;s personas)</strong>
+                <span>Hoy los gastos compartidos son entre t&uacute; y un contacto. Pronto podr&aacute;s repartir un gasto entre varias personas a la vez (suscripciones de grupo, pisos compartidos, viajes con amigos&hellip;).</span>
+              </li>
+              <li>
+                <strong>Recurrencias autom&aacute;ticas</strong>
+                <span>Las entradas marcadas como mensuales o anuales se generar&aacute;n solas en su fecha. Hoy la recurrencia es solo informativa.</span>
+              </li>
+              <li>
+                <strong>Presupuestos por categor&iacute;a</strong>
+                <span>Fija un tope mensual por categor&iacute;a y consulta cu&aacute;nto te queda disponible.</span>
+              </li>
+              <li>
+                <strong>Gr&aacute;ficas y evoluci&oacute;n temporal</strong>
+                <span>Visualiza ingresos, gastos y categor&iacute;as a lo largo del tiempo, no solo en n&uacute;meros.</span>
+              </li>
+              <li>
+                <strong>Invitaciones a contactos</strong>
+                <span>Invita a tus contactos a registrar su parte de los gastos compartidos contigo, para que ambos los introduzc&aacute;is desde vuestras cuentas.</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="panel">
+            <div class="section-heading">
+              <h2>&iquest;Tienes una idea o detectas un fallo?</h2>
+            </div>
+            <p>FlowGrid se hace mejor con tu feedback. Si echas algo en falta, encuentras un bug o se te ocurre una mejora, esc&iacute;beme &mdash; leo todos los mensajes.</p>
+            <p class="feedback-coming-soon-banner">El formulario estar&aacute; operativo <strong>muy pronto</strong>. Mientras tanto, si tienes feedback urgente, esc&iacute;beme a <a href="mailto:j.arc.main@gmail.com?subject=FlowGrid%20feedback">j.arc.main@gmail.com</a>.</p>
+            <form id="feedback-form" class="settings-form is-coming-soon" aria-disabled="true">
+              <label>
+                <span>Asunto <small class="label-hint">(opcional)</small></span>
+                <input id="feedback-subject" name="subject" type="text" autocomplete="off" placeholder="Idea, fallo, sugerencia&hellip;" maxlength="120" disabled>
+              </label>
+              <label>
+                <span>Mensaje</span>
+                <textarea id="feedback-message" name="message" rows="6" minlength="10" maxlength="3000" placeholder="Cu&eacute;ntame en detalle&hellip;" required disabled></textarea>
+              </label>
+              <button id="feedback-submit" class="primary-action" type="submit" disabled>Enviar feedback</button>
+              <p id="feedback-status" class="feedback-status" role="status" aria-live="polite"></p>
+            </form>
           </section>
         </section>
       </main>
@@ -804,7 +905,7 @@
       // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
       // commit time). If the corner label still shows the old value after a
       // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-01 16:25";
+      window.__FG_BUILD__ = "2026-05-01 17:55";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -825,6 +926,19 @@
         document.querySelectorAll(".nav-button[data-view-target]").forEach((button) => {
           button.classList.toggle("is-active", button.dataset.viewTarget === target);
         });
+      })();
+
+      // Restore the saved collapsed state of the Compartidos info panel
+      // before modules load, so the user doesn't see a flash of the open
+      // panel if they had collapsed it last time.
+      (function () {
+        try {
+          const collapsed = localStorage.getItem("flowgrid.shared.callout.collapsed.v1") === "1";
+          const callout = document.getElementById("shared-callout");
+          if (callout && collapsed) callout.removeAttribute("open");
+        } catch (_) {
+          // localStorage unavailable; leave the default (open).
+        }
       })();
 
       // Capture the URL state before any module loads, so the auth gate can
@@ -849,6 +963,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-01-1625"></script>
+    <script type="module" src="app.js?v=2026-05-01-1755"></script>
   </body>
 </html>

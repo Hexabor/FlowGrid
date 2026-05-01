@@ -98,6 +98,8 @@ export const elements = {
   csvImportButton: document.querySelector("#csv-import-button"),
   csvImportStatus: document.querySelector("#csv-import-status"),
   csvPreview: document.querySelector("#csv-preview"),
+  csvExportButton: document.querySelector("#csv-export-button"),
+  csvExportStatus: document.querySelector("#csv-export-status"),
   backupExport: document.querySelector("#backup-export"),
   backupFile: document.querySelector("#backup-file"),
   backupImport: document.querySelector("#backup-import"),
@@ -105,6 +107,12 @@ export const elements = {
   wipeMovements: document.querySelector("#wipe-movements"),
   changelogList: document.querySelector("#changelog-list"),
   changelogCount: document.querySelector("#changelog-count"),
+  sharedCallout: document.querySelector("#shared-callout"),
+  feedbackForm: document.querySelector("#feedback-form"),
+  feedbackSubject: document.querySelector("#feedback-subject"),
+  feedbackMessage: document.querySelector("#feedback-message"),
+  feedbackSubmit: document.querySelector("#feedback-submit"),
+  feedbackStatus: document.querySelector("#feedback-status"),
 };
 
 export function openMovementModal() {

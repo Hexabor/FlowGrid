@@ -8,6 +8,7 @@ import { cloudHydrate } from "./core/cloud.js";
 import { showAuthGate, hideAuthGate, refreshSessionBadge } from "./ui/auth-gate.js";
 import "./features/csv.js";
 import "./features/backup.js";
+import "./features/feedback.js";
 
 let appBooted = false;
 
@@ -50,5 +51,42 @@ document.addEventListener("keydown", (event) => {
     toggleDatePicker(false);
     closeMovementModal();
     closePaymentModal();
+    document.querySelectorAll('.info-button[aria-expanded="true"]').forEach((button) => {
+      button.setAttribute("aria-expanded", "false");
+    });
+  }
+});
+
+// Persist the open/closed state of the Compartidos info callout. Default is
+// open; once the user collapses it, we remember that across reloads.
+elements.sharedCallout?.addEventListener("toggle", () => {
+  try {
+    localStorage.setItem(
+      "flowgrid.shared.callout.collapsed.v1",
+      elements.sharedCallout.open ? "0" : "1"
+    );
+  } catch {
+    // localStorage unavailable; ignore.
+  }
+});
+
+// Toggle for info tooltips: hover works via CSS on desktop; on mobile the
+// user taps and we flip aria-expanded so the tooltip stays open until they
+// tap outside or press Escape.
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".info-button");
+  if (button) {
+    event.preventDefault();
+    const wasOpen = button.getAttribute("aria-expanded") === "true";
+    document.querySelectorAll('.info-button[aria-expanded="true"]').forEach((other) => {
+      if (other !== button) other.setAttribute("aria-expanded", "false");
+    });
+    button.setAttribute("aria-expanded", wasOpen ? "false" : "true");
+    return;
+  }
+  if (!event.target.closest(".info-tooltip")) {
+    document.querySelectorAll('.info-button[aria-expanded="true"]').forEach((open) => {
+      open.setAttribute("aria-expanded", "false");
+    });
   }
 });

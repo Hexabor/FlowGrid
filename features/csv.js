@@ -9,6 +9,7 @@ import {
   labelFromSlug,
   parseEuroAmount,
   parseSheetDate,
+  toIsoDate,
 } from "../core/utils.js";
 import { getSignedAmount, renderMovements, syncMovementSelects } from "./movements.js";
 import { renderAnalysis } from "./analysis.js";
@@ -107,6 +108,57 @@ export function renderCsvPreview(items) {
 
   elements.csvPreview.textContent = preview;
 }
+
+function escapeCsvCell(value) {
+  const str = String(value ?? "");
+  if (/[";\r\n]/.test(str)) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function formatAmountForCsv(amount) {
+  // Spanish/European decimal: use comma. Excel ES respects this with `;` delimiter.
+  return amount.toFixed(2).replace(".", ",");
+}
+
+export function exportMovementsCsv() {
+  if (!state.movements.length) {
+    elements.csvExportStatus.textContent = "No hay movimientos que exportar.";
+    return;
+  }
+
+  const headers = ["Fecha", "Concepto", "Importe", "Tipo", "Categoria", "Emisor/Receptor", "Recurrencia", "Nota"];
+  const rows = [...state.movements]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((movement) => [
+      movement.date,
+      movement.concept,
+      formatAmountForCsv(getSignedAmount(movement)),
+      movement.type === "income" ? "Ingreso" : "Gasto",
+      labelFromSlug(movement.category),
+      movement.party || "",
+      movement.recurrence ? labelFromSlug(movement.recurrence) : "",
+      movement.note || "",
+    ]);
+
+  const csv = [headers, ...rows]
+    .map((row) => row.map(escapeCsvCell).join(";"))
+    .join("\r\n");
+
+  // BOM (﻿) so Excel detects UTF-8 and renders accents correctly.
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `flowgrid-movimientos-${toIsoDate(new Date())}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+
+  elements.csvExportStatus.textContent = `${state.movements.length} movimiento${state.movements.length === 1 ? "" : "s"} exportado${state.movements.length === 1 ? "" : "s"}.`;
+}
+
+elements.csvExportButton.addEventListener("click", exportMovementsCsv);
 
 elements.csvFile.addEventListener("change", async () => {
   const file = elements.csvFile.files[0];
