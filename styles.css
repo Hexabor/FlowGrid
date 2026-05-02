@@ -2363,6 +2363,74 @@ dt {
     display: none;
   }
 
+  /* Móvil: la tarjeta de saldo del contacto se aplana a 2 filas para
+     aprovechar el ancho del panel y reducir la altura. Antes era una
+     pila vertical (cabecera, importe, dos botones apilados); ahora la
+     cabecera + importe van en la primera fila y los dos botones
+     comparten la segunda. La rejilla del panel pasa a 1 columna para
+     que la card use todo el ancho disponible. */
+  .balance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "header   amount"
+      "actions  actions";
+    gap: 8px 12px;
+    align-items: center;
+    padding: 10px 12px;
+  }
+
+  .balance-card .balance-header {
+    grid-area: header;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .balance-card .balance-header strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  .balance-card .balance-amount {
+    grid-area: amount;
+    align-self: center;
+    justify-self: end;
+    font-size: 1.4rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .balance-card .balance-actions {
+    grid-area: actions;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .balance-card .balance-action {
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  /* En móvil, la subcadena "Raquel te paga / tú pagas a Raquel" se
+     omite para no apilar dos líneas en cada botón. La intención del
+     botón ya queda clara con el texto principal + el contexto del card. */
+  .balance-card .balance-action small {
+    display: none;
+  }
+
+  .balance-card .balance-action strong {
+    font-size: 0.82rem;
+  }
+
   .shared-entry {
     /* Mobile: 5 explicit columns. Amount on row 1 spans the three
        rightmost cells so col 5's width is only what the delete X
