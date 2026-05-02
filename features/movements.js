@@ -13,6 +13,7 @@ import {
   syncSharedFields,
 } from "./shared.js";
 import { getUserIdSync } from "../core/supabase.js";
+import { recordSharedEntryEdit } from "./edit-log.js";
 import { renderAnalysis } from "./analysis.js";
 import { setMovementDate } from "../ui/datepicker.js";
 
@@ -479,9 +480,16 @@ export function fillMovementForm(movement) {
 
   if (linkedEntry) {
     applySharedEntryToForm(linkedEntry);
+    // Editing a movement whose linked shared entry exists: show the
+    // optional "comentario sobre el cambio" so any tweak the user makes
+    // can be annotated for the audit trail.
+    elements.editCommentField.hidden = false;
+    elements.editComment.value = "";
   } else {
     elements.isShared.checked = false;
     syncSharedFields();
+    elements.editCommentField.hidden = true;
+    elements.editComment.value = "";
   }
 }
 
@@ -495,9 +503,13 @@ export function resetMovementForm(movement) {
   elements.sharedMyShare.value = "";
   elements.sharedTheirShare.value = "";
   elements.sharedUnevenFeedback.textContent = "";
+  elements.sharedContact.disabled = false;
+  elements.editCommentField.hidden = true;
+  elements.editComment.value = "";
   elements.submitLabel.textContent = "Anadir movimiento";
   state.editingMovementId = null;
   state.editingSharedEntryId = null;
+  state.editingPartnerEntry = false;
   syncMovementSelects();
   syncTypeToggle();
 }
@@ -734,10 +746,97 @@ elements.form.addEventListener("submit", (event) => {
   const totalAmount = Number(formData.get("amount"));
   const wasEditing = !!state.editingMovementId || !!state.editingSharedEntryId;
   const shouldShare = elements.isShared.checked && formData.get("type") === "expense";
+  const editingPartner = !!state.editingPartnerEntry;
+
+  // Partner-entry edit path: short-circuit the regular flow. We don't
+  // create a movement on this user's side (the source movement lives in
+  // the partner's account). We update the existing shared_entry in
+  // place — preserving id, ownerId, contactId, createdAt and the
+  // partner's sourceMovementId — and un-flip the form's MY-perspective
+  // values back to the OWNER's perspective so the cloud row stays
+  // consistent across both sides.
+  if (editingPartner && shouldShare) {
+    const oldEntry = state.sharedEntries.find((e) => e.id === state.editingSharedEntryId);
+    if (!oldEntry) {
+      elements.feedback.textContent = "Entrada no encontrada.";
+      return;
+    }
+    const modeKeyEdit = elements.sharedMode.value;
+    const mode = SHARED_MODES[modeKeyEdit];
+    if (!mode) {
+      elements.feedback.textContent = "Selecciona el modo del gasto compartido.";
+      return;
+    }
+    const { myShare, theirShare } = computeSharedShares(
+      totalAmount,
+      modeKeyEdit,
+      elements.sharedMyShare.value,
+      elements.sharedTheirShare.value
+    );
+    if (mode.split === "uneven") {
+      const sum = Math.round((myShare + theirShare) * 100) / 100;
+      if (Math.abs(sum - totalAmount) >= 0.005) {
+        elements.feedback.textContent = `Las partes (${formatMoney(sum)}) no coinciden con el total (${formatMoney(totalAmount)}).`;
+        return;
+      }
+    }
+
+    const concept = formData.get("concept");
+    const note = (formData.get("note") || "").trim();
+    const date = formData.get("date");
+
+    // Un-flip: form values are in MY perspective; the cloud row needs
+    // OWNER perspective. paid_by toggles, the shares swap.
+    const updatedEntry = {
+      ...oldEntry,
+      date,
+      concept,
+      note,
+      total: totalAmount,
+      paidBy: mode.paidBy === "me" ? "them" : "me",
+      splitMode: mode.split,
+      myShare: theirShare,
+      theirShare: myShare,
+      // settledAt, sourceMovementId, ownerId, id, contactId, createdAt
+      // all preserved by the spread.
+    };
+
+    state.sharedEntries = state.sharedEntries.map((e) =>
+      e.id === oldEntry.id ? updatedEntry : e
+    );
+
+    saveSharedEntries();
+    // Fire-and-forget audit log entry. The comment is read from the
+    // optional input shown only while editing a shared entry.
+    recordSharedEntryEdit(oldEntry, updatedEntry, formData.get("editComment"));
+    renderMovements();
+    renderAnalysis();
+    renderSharedView();
+    elements.feedback.textContent = "Cambios guardados en la entrada del otro usuario.";
+    resetMovementForm();
+    closeMovementModal();
+    return;
+  }
+
   const movement = createMovement(formData);
 
   let sharedEntry = null;
   let modeKey = null;
+  // Capture the pre-edit shared entry (if any) so we can preserve id +
+  // createdAt + settledAt across the save and so the audit-log call has
+  // both before/after to diff. Without preserving id, every edit would
+  // create a new shared_entry id and break the history thread.
+  let oldSharedEntry = null;
+  if (wasEditing) {
+    if (state.editingSharedEntryId) {
+      oldSharedEntry = state.sharedEntries.find((e) => e.id === state.editingSharedEntryId);
+    } else if (state.editingMovementId) {
+      const oldMov = state.movements.find((m) => m.id === state.editingMovementId);
+      if (oldMov?.sharedEntryId) {
+        oldSharedEntry = state.sharedEntries.find((e) => e.id === oldMov.sharedEntryId);
+      }
+    }
+  }
 
   if (shouldShare) {
     const contactId = elements.sharedContact.value;
@@ -775,6 +874,16 @@ elements.form.addEventListener("submit", (event) => {
       note: movement.note,
       sourceMovementId: movement.id,
     });
+
+    // Preserve invariants when editing an existing entry: id, createdAt
+    // and settledAt should not churn just because the user tweaked the
+    // amount. wasEditing ensures we've already captured oldSharedEntry.
+    if (oldSharedEntry) {
+      sharedEntry.id = oldSharedEntry.id;
+      sharedEntry.createdAt = oldSharedEntry.createdAt;
+      sharedEntry.settledAt = oldSharedEntry.settledAt ?? null;
+      if (oldSharedEntry.ownerId) sharedEntry.ownerId = oldSharedEntry.ownerId;
+    }
 
     movement.amount = myShare;
     movement.sharedEntryId = sharedEntry.id;
@@ -819,6 +928,14 @@ elements.form.addEventListener("submit", (event) => {
 
   saveMovements();
   saveSharedEntries();
+
+  // Audit log: every save that touches a shared entry — creation,
+  // edit, or movement-with-share edit — leaves a row. Comment is
+  // optional; the diff summary is derived from old vs new.
+  if (sharedEntry) {
+    recordSharedEntryEdit(oldSharedEntry, sharedEntry, formData.get("editComment"));
+  }
+
   renderMovements();
   renderAnalysis();
   if (sharedEntry || wasEditing) {

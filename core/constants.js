@@ -25,6 +25,12 @@ export const defaultCategories = [
   { value: "perdido", label: "Perdido", color: "#d8dce2", text: "#424a54" },
   { value: "ingreso", label: "Ingreso", color: "#dfc0ef", text: "#6b2b87" },
   { value: "ahorro", label: "Ahorro", color: "#c6e4c4", text: "#175c2e" },
+  // "Definir" es la categoría a la que caen los conceptos que aparecen
+  // en gastos compartidos del partner pero que el usuario aún no tiene
+  // catalogados en su propia lista. Color amarillo cálido para que se
+  // distinga visualmente y el usuario sepa que necesita asignar
+  // categoría real desde Configuración.
+  { value: "definir", label: "Definir", color: "#fff1b8", text: "#7a5500" },
 ];
 
 export const defaultConcepts = [

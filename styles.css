@@ -1098,6 +1098,86 @@ a.primary-action {
   color: var(--green);
 }
 
+/* ==== History modal (registro de cambios por gasto compartido) ==== */
+.history-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.history-item {
+  padding: 10px 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.history-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.history-meta strong {
+  font-size: 0.92rem;
+}
+
+.history-meta small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.history-summary {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.history-comment {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border-left: 2px solid var(--teal);
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Per-row history button (small clock icon) */
+.shared-entry-history {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.shared-entry-history:hover {
+  color: var(--text);
+  border-color: #b8c5cb;
+}
+
+/* Comment input shown only while editing a shared entry */
+.edit-comment-field[hidden] {
+  display: none;
+}
+
+.edit-comment-field input {
+  font-size: 0.92rem;
+}
+
 .label-hint {
   color: var(--muted);
   font-weight: 700;
@@ -1351,9 +1431,10 @@ a.primary-action {
 
 .shared-entry {
   display: grid;
-  /* date | main | amount | (settle) | (edit) | (delete) — up to 6 cols.
-     Trailing "auto" tracks collapse to 0 when the button isn't rendered. */
-  grid-template-columns: 82px minmax(0, 1fr) repeat(4, auto);
+  /* date | main | amount | (settle) | (history) | (edit) | (delete) —
+     up to 7 cols. Trailing "auto" tracks collapse to 0 when the button
+     isn't rendered. */
+  grid-template-columns: 82px minmax(0, 1fr) repeat(5, auto);
   gap: 10px;
   align-items: center;
   padding: 8px 10px;

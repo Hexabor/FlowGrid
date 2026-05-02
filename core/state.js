@@ -13,6 +13,11 @@ export const state = {
   movementSort: { key: "date", dir: "desc" },
   breakdownSort: { key: "balance", dir: "desc" },
   editingSharedEntryId: null,
+  // True while the form is editing a shared entry whose owner is a
+  // linked partner (not the current user). Drives the un-flip of the
+  // submitted form payload back to the owner's perspective and the
+  // contact-selector lock.
+  editingPartnerEntry: false,
   activeDateTarget: null,
   expandedMovementId: null,
 };

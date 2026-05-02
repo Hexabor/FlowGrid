@@ -5,6 +5,7 @@ import { closeMovementModal, elements, restoreLastView, setView } from "./core/d
 import { closePaymentModal } from "./features/shared.js";
 import { collapseExpandedCard } from "./features/movements.js";
 import { checkPendingInvitations, closeInvitationModal, runInvitationBackfills } from "./features/invitations.js";
+import { closeHistoryModal } from "./features/edit-log.js";
 import { onAuthChange } from "./core/supabase.js";
 import { cloudHydrate } from "./core/cloud.js";
 import { showAuthGate, hideAuthGate, refreshSessionBadge } from "./ui/auth-gate.js";
@@ -62,6 +63,7 @@ document.addEventListener("keydown", (event) => {
     closeMovementModal();
     closePaymentModal();
     closeInvitationModal();
+    closeHistoryModal();
     collapseExpandedCard();
     document.querySelectorAll('.info-button[aria-expanded="true"]').forEach((button) => {
       button.setAttribute("aria-expanded", "false");

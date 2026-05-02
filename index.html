@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2026-05-02-1547">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-1547">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-02-1716">
+    <link rel="stylesheet" href="styles.css?v=2026-05-02-1738">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -412,6 +412,11 @@
                   <p id="shared-uneven-feedback" class="shared-uneven-feedback"></p>
                 </div>
               </div>
+
+              <label id="edit-comment-field" class="edit-comment-field field-wide" hidden>
+                <span>Comentario sobre el cambio <small class="label-hint">(opcional)</small></span>
+                <input id="edit-comment" name="editComment" type="text" autocomplete="off" maxlength="280" placeholder="Ej: corregí el importe, era 12&nbsp;€">
+              </label>
 
               <button class="primary-action movement-submit" type="submit">
                 <span class="movement-submit-label">Anadir movimiento</span>
@@ -839,6 +844,17 @@
       </div>
     </div>
 
+    <div id="history-modal" class="modal" hidden>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="history-title">
+        <div class="section-heading">
+          <h2 id="history-title">Historial de cambios</h2>
+          <button id="close-history-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
+        </div>
+        <p class="callout-hint">Cada vez que t&uacute; o tu contacto cambi&aacute;is este gasto compartido, queda anotado aqu&iacute;. Es un registro permanente: nada se borra ni se modifica.</p>
+        <div id="history-list" class="history-list"></div>
+      </div>
+    </div>
+
     <template id="movement-template">
       <article class="movement-card">
         <div class="movement-main">
@@ -956,7 +972,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-02 17:16:17";
+      window.__FG_BUILD__ = "2026-05-02 17:38:18";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1014,6 +1030,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-02-1716"></script>
+    <script type="module" src="app.js?v=2026-05-02-1738"></script>
   </body>
 </html>

@@ -220,3 +220,65 @@ create trigger movements_set_updated_at      before update on public.movements  
 create trigger settings_set_updated_at       before update on public.settings       for each row execute function public.set_updated_at();
 create trigger contacts_set_updated_at       before update on public.contacts       for each row execute function public.set_updated_at();
 create trigger shared_entries_set_updated_at before update on public.shared_entries for each row execute function public.set_updated_at();
+
+-- =============================================================================
+-- SHARED ENTRY EDITS  (append-only audit log; see migrate-6-shared-entry-edits.sql)
+-- =============================================================================
+create table if not exists public.shared_entry_edits (
+  id            text primary key,
+  entry_id      text not null,
+  editor_id     uuid references auth.users(id) on delete set null,
+  editor_email  text not null default '',
+  edited_at     timestamptz not null default now(),
+  summary       text not null default '',
+  comment       text not null default '',
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists shared_entry_edits_entry_idx  on public.shared_entry_edits(entry_id);
+create index if not exists shared_entry_edits_editor_idx on public.shared_entry_edits(editor_id);
+
+alter table public.shared_entry_edits enable row level security;
+
+-- A user can read edit rows for entries they have visibility on via
+-- shared_entries' "owner or linked partner" rule. Append-only: we
+-- never expose UPDATE or DELETE policies, so the audit trail is
+-- tamper-resistant.
+drop policy if exists "shared_entry_edits: read by entry visibility" on public.shared_entry_edits;
+create policy "shared_entry_edits: read by entry visibility"
+  on public.shared_entry_edits for select
+  using (
+    exists (
+      select 1 from public.shared_entries e
+      where e.id = entry_id
+        and (
+          e.owner_id = auth.uid()
+          or exists (
+            select 1 from public.contacts c
+            where c.owner_id = e.owner_id
+              and c.id = e.contact_id
+              and c.auth_user_id = auth.uid()
+          )
+        )
+    )
+  );
+
+drop policy if exists "shared_entry_edits: insert by editor" on public.shared_entry_edits;
+create policy "shared_entry_edits: insert by editor"
+  on public.shared_entry_edits for insert
+  with check (
+    editor_id = auth.uid()
+    and exists (
+      select 1 from public.shared_entries e
+      where e.id = entry_id
+        and (
+          e.owner_id = auth.uid()
+          or exists (
+            select 1 from public.contacts c
+            where c.owner_id = e.owner_id
+              and c.id = e.contact_id
+              and c.auth_user_id = auth.uid()
+          )
+        )
+    )
+  );

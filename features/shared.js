@@ -7,6 +7,7 @@ import { getContactName, getSharedBalance, contactHasEntries, renderContacts } f
 import { renderMovements, syncMovementSelects, fillMovementForm } from "./movements.js";
 import { setMovementDate, setPaymentDate } from "../ui/datepicker.js";
 import { getUserIdSync } from "../core/supabase.js";
+import { openHistoryModal, recordSharedEntryEdit } from "./edit-log.js";
 
 // When the visiting user is a linked partner (the entry's ownerId is
 // not theirs), the row's paid_by / my_share / their_share are stored
@@ -240,7 +241,11 @@ export function openSharedEntryEdit(entry) {
     return;
   }
 
-  if (entry.sourceMovementId) {
+  const myUid = getUserIdSync();
+  const isPartnerEntry = entry.ownerId && myUid && entry.ownerId !== myUid;
+
+  if (entry.sourceMovementId && !isPartnerEntry) {
+    // Original flow: my own entry → edit via the linked movement.
     const movement = state.movements.find((candidate) => candidate.id === entry.sourceMovementId);
     if (!movement) {
       alert("Movimiento asociado no encontrado.");
@@ -248,24 +253,43 @@ export function openSharedEntryEdit(entry) {
     }
     state.editingMovementId = movement.id;
     state.editingSharedEntryId = null;
+    state.editingPartnerEntry = false;
     fillMovementForm(movement);
   } else {
+    // Either my own entry without a linked movement, OR a partner-owned
+    // entry being edited via the symmetric-edit shortcut. For partner
+    // entries we flip to my POV so the form prefills with the values
+    // the user actually sees on screen — the un-flip happens in the
+    // submit handler before saving.
     state.editingMovementId = null;
     state.editingSharedEntryId = entry.id;
+    state.editingPartnerEntry = isPartnerEntry;
+    const formEntry = isPartnerEntry ? entryAsMyPerspective(entry) : entry;
     elements.type.value = "expense";
     syncMovementSelects();
-    const concept = state.settings.concepts.find((c) => c.label === entry.concept);
-    elements.concept.value = entry.concept;
+    const concept = state.settings.concepts.find((c) => c.label === formEntry.concept);
+    elements.concept.value = formEntry.concept;
     elements.category.value = concept?.category ?? state.settings.categories[0]?.value ?? "extra";
-    setMovementDate(new Date(`${entry.date}T00:00:00`));
+    setMovementDate(new Date(`${formEntry.date}T00:00:00`));
     elements.party.value = "";
     elements.recurrence.value = "";
-    elements.note.value = entry.note || "";
-    applySharedEntryToForm(entry);
+    elements.note.value = formEntry.note || "";
+    applySharedEntryToForm(formEntry);
+    // Lock the contact selector when editing a partner entry: changing
+    // the contact would require updating a contact_id row that lives in
+    // the partner's account (which RLS doesn't let us touch).
+    elements.sharedContact.disabled = isPartnerEntry;
   }
 
+  // Editing any shared entry (own or partner) surfaces the optional
+  // "comentario sobre el cambio" field. Cleared on each open.
+  elements.editCommentField.hidden = false;
+  elements.editComment.value = "";
+
   elements.submitLabel.textContent = "Guardar cambios";
-  elements.feedback.textContent = "Editando entrada compartida.";
+  elements.feedback.textContent = isPartnerEntry
+    ? "Editando entrada compartida del otro usuario. Los cambios quedan registrados."
+    : "Editando entrada compartida.";
   openMovementModal();
 }
 
@@ -509,10 +533,28 @@ function buildSharedEntryRow(entry) {
     row.append(settleButton);
   }
 
-  // Edit/delete are scoped to my own entries for v1. Editing a partner
-  // entry is allowed by RLS but requires un-flipping the form payload
-  // before save — pending polish.
-  if (entry.type === "expense" && isMine) {
+  // History button on every expense row — opens a modal listing every
+  // change anyone has made to this entry. Both sides can read the log.
+  if (entry.type === "expense") {
+    const historyButton = document.createElement("button");
+    historyButton.type = "button";
+    historyButton.className = "icon-button shared-entry-history";
+    historyButton.dataset.action = "show-history";
+    historyButton.title = "Ver historial de cambios";
+    historyButton.setAttribute("aria-label", "Ver historial de cambios");
+    historyButton.innerHTML =
+      '<svg class="action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<circle cx="12" cy="12" r="9"></circle>' +
+        '<path d="M12 7v5l3 2"></path>' +
+      '</svg>';
+    row.append(historyButton);
+  }
+
+  // Edit is allowed on both sides (symmetric editing): the form un-flips
+  // values back to the owner's perspective on save. Delete stays scoped
+  // to my own entries — removing the partner's row is destructive enough
+  // that we keep it on the owner's side only for now.
+  if (entry.type === "expense") {
     const editButton = document.createElement("button");
     editButton.type = "button";
     editButton.className = "edit-action";
@@ -595,11 +637,18 @@ elements.sharedEntries.addEventListener("click", (event) => {
   }
 
   if (action === "toggle-settle") {
-    // Mutate in place so the cloud push picks up the new settledAt.
-    // Reversible: clicking the button toggles between liquidado and not.
+    // Capture the pre-toggle state so the audit log diff can pick up
+    // the settledAt transition.
+    const before = { ...entry };
     entry.settledAt = entry.settledAt ? null : new Date().toISOString();
     saveSharedEntries();
+    recordSharedEntryEdit(before, entry, "");
     renderSharedView();
+    return;
+  }
+
+  if (action === "show-history") {
+    openHistoryModal(entry.id);
     return;
   }
 

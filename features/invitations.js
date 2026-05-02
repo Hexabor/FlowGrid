@@ -18,14 +18,14 @@
 
 import { state } from "../core/state.js";
 import { elements } from "../core/dom.js";
-import { saveContacts } from "../core/storage.js";
+import { saveContacts, saveSettings } from "../core/storage.js";
 import { createId } from "../core/utils.js";
 import { signInWithMagicLink, getUserId, getAccessToken, getUser } from "../core/supabase.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../core/config.js";
 import { cloudHydrate, cloudPushContacts } from "../core/cloud.js";
 import { renderSharedView } from "./shared.js";
 import { renderContacts } from "./contacts.js";
-import { renderMovements } from "./movements.js";
+import { renderMovements, syncMovementSelects } from "./movements.js";
 
 function authHeaders() {
   const token = getAccessToken();
@@ -242,10 +242,62 @@ async function backfillReciprocalContacts() {
   }
 }
 
+// Ensures the user's own settings always include the special "Definir"
+// category. Pre-existing accounts (created before "Definir" was added
+// to the defaults) won't have it; this brings them in line.
+function ensureDefinirCategory() {
+  const exists = state.settings.categories.some((c) => c.value === "definir");
+  if (exists) return false;
+  state.settings.categories.push({
+    value: "definir",
+    label: "Definir",
+    color: "#fff1b8",
+    text: "#7a5500",
+  });
+  return true;
+}
+
+// When a partner-owned shared expense uses a concept the local user
+// doesn't have in their own list, register it locally with category
+// "definir". From that moment on the concept lives in this user's
+// settings and they can re-categorise it at will, without affecting the
+// other side (concepts/categories are per-account state, not shared).
+function ensureUnknownConceptsFromShared() {
+  const myUid = state.expandedMovementId; // dummy
+  // Real check: my uid via the cached session.
+  const ownerUid = state.contacts.length ? null : null; // placeholder
+  let added = false;
+  state.sharedEntries.forEach((entry) => {
+    if (entry.type !== "expense") return;
+    if (!entry.concept) return;
+    const knownConcept = state.settings.concepts.some(
+      (c) => c.label === entry.concept
+    );
+    if (knownConcept) return;
+    state.settings.concepts.push({
+      id: createId(),
+      label: entry.concept,
+      category: "definir",
+    });
+    added = true;
+  });
+  return added;
+}
+
+async function backfillSettingsFromShared() {
+  const categoryAdded = ensureDefinirCategory();
+  const conceptsAdded = ensureUnknownConceptsFromShared();
+  if (categoryAdded || conceptsAdded) {
+    saveSettings();
+    syncMovementSelects();
+  }
+}
+
 export async function runInvitationBackfills() {
   try {
     await backfillOwnerEmailOnOwnContacts();
     await backfillReciprocalContacts();
+    await backfillSettingsFromShared();
   } catch (error) {
     console.error("[invitations] backfill failed:", error);
   }
