@@ -23,6 +23,24 @@ function authHeaders() {
   };
 }
 
+function quoteShort(value) {
+  if (!value) return "(vacío)";
+  const s = String(value);
+  return s.length > 50 ? `"${s.slice(0, 47)}…"` : `"${s}"`;
+}
+
+function paidByLabel(paidBy) {
+  return paidBy === "me" ? "tú" : "el contacto";
+}
+
+function splitModeLabel(splitMode) {
+  if (splitMode === "equal") return "partes iguales";
+  if (splitMode === "uneven") return "partes desiguales";
+  if (splitMode === "full") return "deuda completa";
+  if (splitMode === "payment") return "pago";
+  return splitMode || "?";
+}
+
 function buildSummary(oldEntry, newEntry) {
   if (!oldEntry) return "Entrada creada";
   const changes = [];
@@ -30,22 +48,28 @@ function buildSummary(oldEntry, newEntry) {
     changes.push(`importe ${formatMoney(oldEntry.total)} → ${formatMoney(newEntry.total)}`);
   }
   if ((oldEntry.concept ?? "") !== (newEntry.concept ?? "")) {
-    changes.push(`concepto "${oldEntry.concept ?? ""}" → "${newEntry.concept ?? ""}"`);
+    changes.push(`concepto ${quoteShort(oldEntry.concept)} → ${quoteShort(newEntry.concept)}`);
   }
   if ((oldEntry.note ?? "") !== (newEntry.note ?? "")) {
-    changes.push("nota");
+    changes.push(`nota ${quoteShort(oldEntry.note)} → ${quoteShort(newEntry.note)}`);
   }
   if (oldEntry.date !== newEntry.date) {
     changes.push(`fecha ${oldEntry.date} → ${newEntry.date}`);
   }
-  if (oldEntry.paidBy !== newEntry.paidBy || oldEntry.splitMode !== newEntry.splitMode) {
-    changes.push("modo de reparto");
+  if (oldEntry.paidBy !== newEntry.paidBy) {
+    changes.push(`pagador: ${paidByLabel(oldEntry.paidBy)} → ${paidByLabel(newEntry.paidBy)}`);
   }
-  if (
-    Math.abs((oldEntry.myShare ?? 0) - (newEntry.myShare ?? 0)) > 0.005 ||
-    Math.abs((oldEntry.theirShare ?? 0) - (newEntry.theirShare ?? 0)) > 0.005
-  ) {
-    changes.push("reparto");
+  if (oldEntry.splitMode !== newEntry.splitMode) {
+    changes.push(`modo: ${splitModeLabel(oldEntry.splitMode)} → ${splitModeLabel(newEntry.splitMode)}`);
+  }
+  if (Math.abs((oldEntry.myShare ?? 0) - (newEntry.myShare ?? 0)) > 0.005) {
+    changes.push(`tu parte ${formatMoney(oldEntry.myShare)} → ${formatMoney(newEntry.myShare)}`);
+  }
+  if (Math.abs((oldEntry.theirShare ?? 0) - (newEntry.theirShare ?? 0)) > 0.005) {
+    changes.push(`su parte ${formatMoney(oldEntry.theirShare)} → ${formatMoney(newEntry.theirShare)}`);
+  }
+  if ((oldEntry.contactId ?? "") !== (newEntry.contactId ?? "")) {
+    changes.push("contacto");
   }
   if ((oldEntry.settledAt ?? null) !== (newEntry.settledAt ?? null)) {
     changes.push(newEntry.settledAt ? "marcado como liquidado" : "reabierto");
@@ -56,15 +80,17 @@ function buildSummary(oldEntry, newEntry) {
 export async function recordSharedEntryEdit(oldEntry, newEntry, comment) {
   const user = await getUser();
   if (!user) return;
+  const summary = buildSummary(oldEntry, newEntry);
   const row = {
     id: createId(),
     entry_id: newEntry.id,
     editor_id: user.id,
     editor_email: user.email ?? "",
     edited_at: new Date().toISOString(),
-    summary: buildSummary(oldEntry, newEntry),
+    summary,
     comment: (comment ?? "").trim(),
   };
+  console.log("[edit-log] recording", { entryId: newEntry.id, summary });
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/shared_entry_edits`, {
       method: "POST",
