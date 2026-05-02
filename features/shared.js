@@ -48,7 +48,7 @@ export function entryDescription(entry) {
   }
   const mode = entry.splitMode === "full"
     ? entry.paidBy === "me" ? `Prestado a ${contactName}` : `Cubierto por ${contactName}`
-    : entry.paidBy === "me" ? `Pagaste tu` : `Pago ${contactName}`;
+    : entry.paidBy === "me" ? `Pagaste tú` : `Pagó ${contactName}`;
   return `${entry.concept} — ${mode}`;
 }
 

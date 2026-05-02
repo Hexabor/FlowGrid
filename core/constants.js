@@ -9,11 +9,11 @@ export const CONTACTS_KEY = "flowgrid.contacts.v1";
 export const LEGACY_PEOPLE_KEY = "flowgrid.people.v1";
 
 export const SHARED_MODES = {
-  "me-equal": { paidBy: "me", split: "equal", label: "Tu pagaste, partes iguales" },
-  "me-uneven": { paidBy: "me", split: "uneven", label: "Tu pagaste, partes desiguales" },
+  "me-equal": { paidBy: "me", split: "equal", label: "Tú pagaste, partes iguales" },
+  "me-uneven": { paidBy: "me", split: "uneven", label: "Tú pagaste, partes desiguales" },
   "me-full": { paidBy: "me", split: "full", label: "Se te debe la cantidad total" },
-  "them-equal": { paidBy: "them", split: "equal", label: "{name} pago, partes iguales" },
-  "them-uneven": { paidBy: "them", split: "uneven", label: "{name} pago, partes desiguales" },
+  "them-equal": { paidBy: "them", split: "equal", label: "{name} pagó, partes iguales" },
+  "them-uneven": { paidBy: "them", split: "uneven", label: "{name} pagó, partes desiguales" },
   "them-full": { paidBy: "them", split: "full", label: "A {name} le debes la cantidad total" },
 };
 
