@@ -587,6 +587,12 @@ function refreshSearchButtonState() {
 }
 
 function clearSearchFilters() {
+  // Cancel any in-flight debounced render so we don't double-render
+  // right after the synchronous clear.
+  if (filterRenderTimer) {
+    clearTimeout(filterRenderTimer);
+    filterRenderTimer = null;
+  }
   elements.filterText.value = "";
   elements.filterFieldMobile.value = "all";
   elements.filterConcept.value = "all";
@@ -596,19 +602,29 @@ function clearSearchFilters() {
   refreshSearchButtonState();
 }
 
-// Live re-filter on every input/change event from any of the controls,
-// so the list updates as the user types or picks a dropdown — no submit.
+// Live re-filter on every input/change event from any of the controls.
+// Re-rendering ~1000 cards on every keystroke is heavy enough to feel
+// laggy while typing fast, so debounce the text input. Dropdowns are
+// single events (no rapid stream) so they re-render synchronously for
+// instant feedback.
+let filterRenderTimer = null;
+function scheduleFilterRender(delay) {
+  if (filterRenderTimer) clearTimeout(filterRenderTimer);
+  filterRenderTimer = setTimeout(() => {
+    filterRenderTimer = null;
+    renderMovements();
+    refreshSearchButtonState();
+  }, delay);
+}
+
+elements.filterText.addEventListener("input", () => scheduleFilterRender(140));
+elements.filterFieldMobile.addEventListener("change", () => scheduleFilterRender(0));
 [
-  elements.filterText,
-  elements.filterFieldMobile,
   elements.filterConcept,
   elements.categoryFilter,
   elements.typeFilter,
 ].forEach((control) => {
-  control.addEventListener("input", () => {
-    renderMovements();
-    refreshSearchButtonState();
-  });
+  control.addEventListener("change", () => scheduleFilterRender(0));
 });
 
 // Mobile-only: "Filtrar" toggles the inline filter row inside the sticky
