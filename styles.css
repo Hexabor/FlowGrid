@@ -2197,7 +2197,11 @@ dt {
     grid-template-areas:
       "concept amount"
       "meta    meta";
-    gap: 4px 12px;
+    /* Column-gap only — row spacing is delivered via margin-top on the
+       meta row and the expanded section so a collapsed expansion doesn't
+       leave a 4px ghost gap. */
+    column-gap: 12px;
+    row-gap: 0;
     align-items: center;
     min-width: 0;
     min-height: 0;
@@ -2242,7 +2246,7 @@ dt {
     flex-wrap: wrap;
     gap: 6px 8px;
     align-items: center;
-    margin: 0;
+    margin: 4px 0 0;
     min-width: 0;
   }
 
@@ -2321,6 +2325,134 @@ dt {
 
   .movement-card[data-shared="false"] .shared-cell {
     display: none;
+  }
+
+  /* Inline expansion: the section sits as a third row spanning both
+     columns. Collapse uses grid-template-rows 0fr→1fr so the height
+     transitions smoothly without measuring it. */
+  .movement-card .movement-expanded {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.28s ease-out;
+  }
+
+  .movement-card .movement-expanded-inner {
+    overflow: hidden;
+    min-height: 0;
+    opacity: 0;
+    transition: opacity 0.18s ease-out;
+  }
+
+  .movement-card.is-expanded .movement-expanded {
+    grid-template-rows: 1fr;
+  }
+
+  .movement-card.is-expanded .movement-expanded-inner {
+    opacity: 1;
+    transition: opacity 0.22s ease-in 0.06s;
+  }
+
+  /* When expanded, the card behaves like a panel: drop the tap-pointer
+     hint, slightly emphasise the border, and give the content room. */
+  .movement-card.is-expanded {
+    border-color: #b8c5cb;
+  }
+
+  .movement-card.is-expanded .movement-expanded-inner {
+    padding-top: 12px;
+    margin-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+
+  .movement-expanded-list {
+    margin: 0;
+    display: grid;
+    gap: 0;
+  }
+
+  .movement-expanded-list > div {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(216, 224, 228, 0.6);
+  }
+
+  .movement-expanded-list > div:last-child {
+    border-bottom: 0;
+  }
+
+  .movement-expanded-list > div[hidden] {
+    display: none;
+  }
+
+  .movement-expanded-list dt {
+    display: block;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .movement-expanded-list dd {
+    margin: 0;
+    font-size: 0.92rem;
+    word-break: break-word;
+  }
+
+  .movement-expanded-shared {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    background: rgba(124, 58, 237, 0.06);
+    border: 1px solid rgba(124, 58, 237, 0.18);
+    border-radius: 8px;
+  }
+
+  .movement-expanded-shared[hidden] {
+    display: none;
+  }
+
+  .movement-expanded-shared h4 {
+    margin: 0 0 4px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #5b21b6;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .movement-expanded-shared .movement-expanded-list > div {
+    border-bottom: 1px solid rgba(124, 58, 237, 0.14);
+  }
+
+  .movement-expanded-shared .movement-expanded-list > div:last-child {
+    border-bottom: 0;
+  }
+
+  .movement-expanded-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .movement-expanded-actions .primary-action,
+  .movement-expanded-actions .ghost-action {
+    flex: 1 1 88px;
+    min-height: 38px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  .movement-expanded-actions .exp-delete-action {
+    color: var(--red);
+  }
+
+  .movement-expanded-actions .exp-delete-action:hover {
+    color: #ffffff;
+    background: var(--red);
+    border-color: var(--red);
   }
 }
 
@@ -2648,146 +2780,10 @@ body.is-locked .shell {
   }
 }
 
-/* ==== Movement detail modal (móvil; se abre al tocar una card) ==== */
-.movement-detail-dialog {
-  width: min(100%, 460px);
-  padding: 16px 14px 14px;
-}
-
-.movement-detail-head {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: start;
-  gap: 4px 12px;
-  margin-bottom: 10px;
-  padding-right: 0;
-}
-
-.movement-detail-head .eyebrow {
-  grid-column: 1;
-  margin: 0 0 4px;
-}
-
-.movement-detail-head h2 {
-  grid-column: 1;
-  margin: 0;
-  font-size: 1.2rem;
-  line-height: 1.25;
-  word-break: break-word;
-}
-
-#close-movement-detail {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: start;
-}
-
-.movement-detail-amount-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 4px 0 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-}
-
-#movement-detail-amount {
-  font-size: 1.7rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.movement-detail-date {
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.movement-detail-list {
-  margin: 0;
-  display: grid;
-  gap: 0;
-}
-
-.movement-detail-list > div {
-  display: grid;
-  grid-template-columns: 110px 1fr;
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.movement-detail-list > div:last-child {
-  border-bottom: 0;
-}
-
-.movement-detail-list > div[hidden] {
+/* ==== Movement card inline expansion (móvil; se abre al tocar la card) ====
+   Hidden globally so desktop never paints it; the @media (max-width: 719px)
+   block below enables the smooth expand/collapse animation via the
+   grid-template-rows 0fr→1fr trick. */
+.movement-expanded {
   display: none;
-}
-
-.movement-detail-list dt {
-  display: block;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.movement-detail-list dd {
-  margin: 0;
-  font-size: 0.95rem;
-  word-break: break-word;
-}
-
-.movement-detail-shared {
-  margin: 14px 0 0;
-  padding: 10px 12px;
-  background: rgba(124, 58, 237, 0.05);
-  border: 1px solid rgba(124, 58, 237, 0.18);
-  border-radius: 8px;
-}
-
-.movement-detail-shared h3 {
-  margin: 0 0 4px;
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #5b21b6;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.movement-detail-shared .movement-detail-list > div {
-  border-bottom: 1px solid rgba(124, 58, 237, 0.12);
-}
-
-.movement-detail-shared .movement-detail-list > div:last-child {
-  border-bottom: 0;
-}
-
-.movement-detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.movement-detail-actions .primary-action,
-.movement-detail-actions .ghost-action {
-  flex: 1 1 90px;
-  min-height: 40px;
-  padding: 0 12px;
-  white-space: nowrap;
-}
-
-.movement-detail-delete-button {
-  color: var(--red);
-}
-
-.movement-detail-delete-button:hover {
-  color: #ffffff;
-  background: var(--red);
-  border-color: var(--red);
 }

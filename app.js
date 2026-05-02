@@ -3,7 +3,7 @@ import { setInitialDate, toggleDatePicker } from "./ui/datepicker.js";
 import { render } from "./ui/render.js";
 import { closeMovementModal, elements, restoreLastView, setView } from "./core/dom.js";
 import { closePaymentModal } from "./features/shared.js";
-import { closeMovementDetailModal } from "./features/movements.js";
+import { collapseExpandedCard } from "./features/movements.js";
 import { onAuthChange } from "./core/supabase.js";
 import { cloudHydrate } from "./core/cloud.js";
 import { showAuthGate, hideAuthGate, refreshSessionBadge } from "./ui/auth-gate.js";
@@ -52,7 +52,7 @@ document.addEventListener("keydown", (event) => {
     toggleDatePicker(false);
     closeMovementModal();
     closePaymentModal();
-    closeMovementDetailModal();
+    collapseExpandedCard();
     document.querySelectorAll('.info-button[aria-expanded="true"]').forEach((button) => {
       button.setAttribute("aria-expanded", "false");
     });

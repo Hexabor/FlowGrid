@@ -146,19 +146,32 @@ export function isSearchActive() {
   );
 }
 
+function getSharedModeLabel(entry, contactName) {
+  for (const [, mode] of Object.entries(SHARED_MODES)) {
+    if (mode.paidBy === entry.paidBy && mode.split === entry.splitMode) {
+      return mode.label.replace("{name}", contactName || "el contacto");
+    }
+  }
+  return "";
+}
+
 export function createMovementCard(movement, compact = false) {
   const card = elements.template.content.firstElementChild.cloneNode(true);
   const signedAmount = getSignedAmount(movement);
-  const recurrence = movement.recurrence || "Puntual";
+  const recurrenceRaw = movement.recurrence || "puntual";
+  const recurrenceLabel = recurrenceRaw[0].toUpperCase() + recurrenceRaw.slice(1);
   const sharedLabel = getMovementSharedLabel(movement);
 
   card.dataset.id = movement.id;
   // Drives the mobile CSS that hides the meta row when there is nothing
   // to show — so cards with neither a real recurrence nor a shared partner
   // collapse to a single row.
-  card.dataset.recurrence = (movement.recurrence || "puntual").toLowerCase();
+  card.dataset.recurrence = recurrenceRaw.toLowerCase();
   card.dataset.shared = sharedLabel ? "true" : "false";
   card.classList.toggle("is-compact", compact);
+  if (movement.id === state.expandedMovementId) {
+    card.classList.add("is-expanded");
+  }
   paintTag(card.querySelector(".tag"), movement.category);
   card.querySelector("h3").textContent = movement.concept;
   card.querySelector(".movement-note").textContent = movement.note || "";
@@ -166,8 +179,52 @@ export function createMovementCard(movement, compact = false) {
   card.querySelector(".amount").classList.add(movement.type);
   card.querySelector(".date").textContent = formatDate(movement.date);
   card.querySelector(".party").textContent = movement.party || "";
-  card.querySelector(".recurrence").textContent = recurrence[0].toUpperCase() + recurrence.slice(1);
+  card.querySelector(".recurrence").textContent = recurrenceLabel;
   card.querySelector(".shared-cell").textContent = sharedLabel;
+
+  // Expanded section (mobile only). All rows that would be empty are
+  // hidden via the `hidden` attribute so the dl collapses naturally.
+  card.querySelector(".exp-date").textContent = formatDate(movement.date);
+  card.querySelector(".exp-category").textContent = getCategoryLabel(movement.category);
+  card.querySelector(".exp-recurrence").textContent = recurrenceLabel;
+
+  const partyRow = card.querySelector('[data-row="party"]');
+  if (movement.party) {
+    card.querySelector(".exp-party").textContent = movement.party;
+    partyRow.hidden = false;
+  } else {
+    partyRow.hidden = true;
+  }
+
+  const noteRow = card.querySelector('[data-row="note"]');
+  if (movement.note) {
+    card.querySelector(".exp-note").textContent = movement.note;
+    noteRow.hidden = false;
+  } else {
+    noteRow.hidden = true;
+  }
+
+  const sharedSection = card.querySelector(".movement-expanded-shared");
+  const linkedEntry = movement.sharedEntryId
+    ? state.sharedEntries.find((entry) => entry.id === movement.sharedEntryId)
+    : null;
+
+  if (linkedEntry) {
+    const contactName = sharedLabel || "—";
+    card.querySelector(".exp-shared-contact").textContent = contactName;
+    card.querySelector(".exp-shared-mode").textContent = getSharedModeLabel(linkedEntry, contactName);
+    const sharesRow = card.querySelector('[data-row="shared-shares"]');
+    if (linkedEntry.splitMode === "uneven") {
+      card.querySelector(".exp-shared-shares").textContent =
+        `Tu parte ${formatMoney(linkedEntry.myShare)} · Su parte ${formatMoney(linkedEntry.theirShare)}`;
+      sharesRow.hidden = false;
+    } else {
+      sharesRow.hidden = true;
+    }
+    sharedSection.hidden = false;
+  } else {
+    sharedSection.hidden = true;
+  }
 
   if (compact) {
     card.querySelector(".delete-action").remove();
@@ -405,126 +462,63 @@ function deleteMovementById(id) {
   }
 }
 
-// Mobile-only: tapping the card body (away from any inline button) opens the
-// detail modal. Desktop keeps the inline edit/duplicate/delete affordances.
+// Mobile-only: tapping the card body (away from any button) toggles inline
+// expansion. Only one card can be expanded at a time. Desktop keeps the
+// inline edit/duplicate/delete affordances and ignores the toggle.
 const isMobileViewport = () => window.matchMedia("(max-width: 719px)").matches;
 
-elements.list.addEventListener("click", (event) => {
-  const editButton = event.target.closest(".edit-action");
-  const duplicateButton = event.target.closest(".duplicate-action");
-  const deleteButton = event.target.closest(".delete-action");
-  const card = event.target.closest(".movement-card");
+export function collapseExpandedCard() {
+  if (!state.expandedMovementId) return;
+  const previous = elements.list.querySelector(".movement-card.is-expanded");
+  if (previous) previous.classList.remove("is-expanded");
+  state.expandedMovementId = null;
+}
 
-  if (editButton && card) {
+function expandCard(card, movementId) {
+  collapseExpandedCard();
+  card.classList.add("is-expanded");
+  state.expandedMovementId = movementId;
+}
+
+elements.list.addEventListener("click", (event) => {
+  const card = event.target.closest(".movement-card");
+  if (!card) return;
+
+  // Inline action buttons inside the expanded section (mobile) and the
+  // historical desktop row buttons share the same class names. Either
+  // dispatches the same logic; the expanded card collapses on action.
+  const editButton = event.target.closest(".edit-action, .exp-edit-action");
+  const duplicateButton = event.target.closest(".duplicate-action, .exp-duplicate-action");
+  const deleteButton = event.target.closest(".delete-action, .exp-delete-action");
+
+  if (editButton) {
+    collapseExpandedCard();
     editMovementById(card.dataset.id);
     return;
   }
-  if (duplicateButton && card) {
+  if (duplicateButton) {
+    collapseExpandedCard();
     duplicateMovementById(card.dataset.id);
     return;
   }
-  if (deleteButton && card) {
+  if (deleteButton) {
+    collapseExpandedCard();
     deleteMovementById(card.dataset.id);
     return;
   }
 
-  if (card && isMobileViewport()) {
-    const movement = state.movements.find((candidate) => candidate.id === card.dataset.id);
-    if (movement) openMovementDetailModal(movement);
-  }
-});
+  if (!isMobileViewport()) return;
 
-function getSharedModeLabel(entry, contactName) {
-  for (const [, mode] of Object.entries(SHARED_MODES)) {
-    if (mode.paidBy === entry.paidBy && mode.split === entry.splitMode) {
-      return mode.label.replace("{name}", contactName || "el contacto");
-    }
-  }
-  return "";
-}
+  // Tapping inside the expanded body (note text, data values) shouldn't
+  // collapse the card — the user is reading. Only the always-visible
+  // top portion (concept/amount/meta badges) toggles.
+  if (event.target.closest(".movement-expanded")) return;
 
-export function openMovementDetailModal(movement) {
-  state.detailMovementId = movement.id;
-  const signedAmount = getSignedAmount(movement);
-  const recurrence = movement.recurrence || "Puntual";
-
-  elements.movementDetailTitle.textContent = movement.concept;
-  elements.movementDetailAmount.textContent = formatMoney(signedAmount);
-  elements.movementDetailAmount.classList.remove("expense", "income");
-  elements.movementDetailAmount.classList.add(movement.type);
-  elements.movementDetailDate.textContent = formatDate(movement.date);
-  elements.movementDetailCategory.textContent = getCategoryLabel(movement.category);
-
-  if (movement.recurrence) {
-    elements.movementDetailRecurrence.textContent = recurrence[0].toUpperCase() + recurrence.slice(1);
-    elements.movementDetailRecurrenceRow.hidden = false;
+  if (state.expandedMovementId === card.dataset.id) {
+    collapseExpandedCard();
   } else {
-    elements.movementDetailRecurrenceRow.hidden = true;
+    expandCard(card, card.dataset.id);
   }
-
-  if (movement.party) {
-    elements.movementDetailParty.textContent = movement.party;
-    elements.movementDetailPartyRow.hidden = false;
-  } else {
-    elements.movementDetailPartyRow.hidden = true;
-  }
-
-  if (movement.note) {
-    elements.movementDetailNote.textContent = movement.note;
-    elements.movementDetailNoteRow.hidden = false;
-  } else {
-    elements.movementDetailNoteRow.hidden = true;
-  }
-
-  const linkedEntry = movement.sharedEntryId
-    ? state.sharedEntries.find((entry) => entry.id === movement.sharedEntryId)
-    : null;
-
-  if (linkedEntry) {
-    const contactName = getMovementSharedLabel(movement) || "—";
-    elements.movementDetailSharedContact.textContent = contactName;
-    elements.movementDetailSharedMode.textContent = getSharedModeLabel(linkedEntry, contactName);
-    if (linkedEntry.splitMode === "uneven") {
-      elements.movementDetailSharedShares.textContent =
-        `Tu parte ${formatMoney(linkedEntry.myShare)} · Su parte ${formatMoney(linkedEntry.theirShare)}`;
-      elements.movementDetailSharedSharesRow.hidden = false;
-    } else {
-      elements.movementDetailSharedSharesRow.hidden = true;
-    }
-    elements.movementDetailShared.hidden = false;
-  } else {
-    elements.movementDetailShared.hidden = true;
-  }
-
-  elements.movementDetailModal.hidden = false;
-}
-
-export function closeMovementDetailModal() {
-  elements.movementDetailModal.hidden = true;
-  state.detailMovementId = null;
-}
-
-elements.closeMovementDetail.addEventListener("click", closeMovementDetailModal);
-elements.movementDetailModal.addEventListener("click", (event) => {
-  if (event.target === elements.movementDetailModal) closeMovementDetailModal();
-});
-
-elements.movementDetailEdit.addEventListener("click", () => {
-  const id = state.detailMovementId;
-  closeMovementDetailModal();
-  if (id) editMovementById(id);
-});
-
-elements.movementDetailDuplicate.addEventListener("click", () => {
-  const id = state.detailMovementId;
-  closeMovementDetailModal();
-  if (id) duplicateMovementById(id);
-});
-
-elements.movementDetailDelete.addEventListener("click", () => {
-  const id = state.detailMovementId;
-  closeMovementDetailModal();
-  if (id) deleteMovementById(id);
 });
 
 function refreshSearchButtonState() {
