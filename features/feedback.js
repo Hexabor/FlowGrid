@@ -2,7 +2,10 @@ import { elements } from "../core/dom.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../core/config.js";
 import { getAccessToken, getUser } from "../core/supabase.js";
 
-const ENDPOINT = `${SUPABASE_URL}/functions/v1/send-feedback`;
+// The function's display name in the Supabase dashboard is "send-feedback",
+// but the URL slug is permanent at creation time and can't be renamed — ours
+// got pinned to the dashboard's default ("super-endpoint") on first deploy.
+const ENDPOINT = `${SUPABASE_URL}/functions/v1/super-endpoint`;
 
 function setStatus(text, kind) {
   elements.feedbackStatus.textContent = text;
@@ -11,11 +14,6 @@ function setStatus(text, kind) {
 
 elements.feedbackForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-
-  if (elements.feedbackForm.classList.contains("is-coming-soon")) {
-    setStatus("El formulario aún no está operativo.", "error");
-    return;
-  }
 
   const subject = elements.feedbackSubject.value.trim();
   const message = elements.feedbackMessage.value.trim();

@@ -21,8 +21,10 @@ export function hideAuthGate() {
 
 export async function refreshSessionBadge() {
   const user = await getUser();
-  if (user) userBadge.textContent = user.email ?? "";
-  else userBadge.textContent = "";
+  const email = user?.email ?? "";
+  userBadge.textContent = email;
+  if (email) userBadge.title = email;
+  else userBadge.removeAttribute("title");
 }
 
 function surfaceUrlAuthInfo() {

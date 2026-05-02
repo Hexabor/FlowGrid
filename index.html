@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-01-1755">
+    <link rel="stylesheet" href="styles.css?v=2026-05-02-1304">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -97,6 +97,14 @@
               <path d="m3 18 .8.8 1.7-1.8"></path>
             </svg>
           </button>
+          <button class="nav-button" type="button" data-view-target="shared" aria-label="Compartidos">
+            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </button>
           <button class="nav-button" type="button" data-view-target="month" aria-label="Mes a mes">
             <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
               <path d="M4 5h16v15H4z"></path>
@@ -114,14 +122,6 @@
               <path d="M8 16v-5"></path>
               <path d="M12 16V8"></path>
               <path d="M16 16v-3"></path>
-            </svg>
-          </button>
-          <button class="nav-button" type="button" data-view-target="shared" aria-label="Compartidos">
-            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-              <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
           </button>
           <span class="nav-separator" aria-hidden="true"></span>
@@ -148,16 +148,14 @@
           </button>
         </nav>
 
-        <div class="session-footer">
-          <span id="auth-user" class="session-email"></span>
-          <button id="auth-logout" class="session-logout" type="button" title="Cerrar sesion" aria-label="Cerrar sesion">
-            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <path d="M16 17l5-5-5-5"></path>
-              <path d="M21 12H9"></path>
-            </svg>
-          </button>
-        </div>
+        <span id="auth-user" class="session-email" aria-live="polite"></span>
+        <button id="auth-logout" class="session-logout" type="button" title="Cerrar sesion" aria-label="Cerrar sesion">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <path d="M16 17l5-5-5-5"></path>
+            <path d="M21 12H9"></path>
+          </svg>
+        </button>
       </aside>
 
       <main class="app">
@@ -176,84 +174,87 @@
             <div class="module-groups">
               <section class="module-group">
                 <div class="module-grid">
-                  <button class="module-card" type="button" data-view-target="movements">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M8 6h13"></path>
-                  <path d="M8 12h13"></path>
-                  <path d="M8 18h13"></path>
-                  <path d="m3 6 .8.8L5.5 5"></path>
-                  <path d="m3 12 .8.8 1.7-1.8"></path>
-                  <path d="m3 18 .8.8 1.7-1.8"></path>
-                </svg>
-                <strong>Movimientos</strong>
-                <small>Ingresos, gastos, filtros y listado.</small>
+                  <button class="module-card module-card--accent" type="button" data-view-target="movements" data-color="blue">
+                    <span class="module-icon">
+                      <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M8 6h13"></path>
+                        <path d="M8 12h13"></path>
+                        <path d="M8 18h13"></path>
+                        <path d="m3 6 .8.8L5.5 5"></path>
+                        <path d="m3 12 .8.8 1.7-1.8"></path>
+                        <path d="m3 18 .8.8 1.7-1.8"></path>
+                      </svg>
+                    </span>
+                    <strong>Movimientos</strong>
+                    <small>Ingresos, gastos, filtros y listado.</small>
                   </button>
-                  <button class="module-card" type="button" data-view-target="month">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M4 5h16v15H4z"></path>
-                  <path d="M8 3v4"></path>
-                  <path d="M16 3v4"></path>
-                  <path d="M4 10h16"></path>
-                  <path d="M8 14h2"></path>
-                  <path d="M14 14h2"></path>
-                </svg>
-                <strong>Mes a mes</strong>
-                <small>Totales mensuales por concepto y categoria.</small>
+                  <button class="module-card module-card--accent" type="button" data-view-target="shared" data-color="violet">
+                    <span class="module-icon">
+                      <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                    </span>
+                    <strong>Compartidos</strong>
+                    <small>Gastos compartidos separados del espacio personal.</small>
                   </button>
-                  <button class="module-card" type="button" data-view-target="year">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M4 19V5"></path>
-                  <path d="M4 19h16"></path>
-                  <path d="M8 16v-5"></path>
-                  <path d="M12 16V8"></path>
-                  <path d="M16 16v-3"></path>
-                </svg>
-                <strong>A&ntilde;o a A&ntilde;o</strong>
-                <small>Totales anuales por concepto y categoria.</small>
+                  <button class="module-card module-card--accent" type="button" data-view-target="month" data-color="green">
+                    <span class="module-icon">
+                      <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M4 5h16v15H4z"></path>
+                        <path d="M8 3v4"></path>
+                        <path d="M16 3v4"></path>
+                        <path d="M4 10h16"></path>
+                        <path d="M8 14h2"></path>
+                        <path d="M14 14h2"></path>
+                      </svg>
+                    </span>
+                    <strong>Mes a mes</strong>
+                    <small>Totales mensuales por concepto y categoria.</small>
                   </button>
-                  <button class="module-card" type="button" data-view-target="shared">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                  <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-                <strong>Compartidos</strong>
-                <small>Gastos compartidos separados del espacio personal.</small>
-                  </button>
-                </div>
-              </section>
-              <section class="module-group">
-                <div class="module-grid">
-                  <button class="module-card" type="button" data-view-target="settings">
-                    <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-                      <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
-                      <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 0 1-2.97 2.97l-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.66V21a2.1 2.1 0 0 1-4.2 0v-.07a1.8 1.8 0 0 0-1.1-1.66 1.8 1.8 0 0 0-1.98.36l-.05.05a2.1 2.1 0 0 1-2.97-2.97l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.66-1.1H3a2.1 2.1 0 0 1 0-4.2h.07A1.8 1.8 0 0 0 4.73 8.6a1.8 1.8 0 0 0-.36-1.98l-.05-.05A2.1 2.1 0 0 1 7.29 3.6l.05.05a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.42 2.35V2a2.1 2.1 0 0 1 4.2 0v.07a1.8 1.8 0 0 0 1.1 1.66 1.8 1.8 0 0 0 1.98-.36l.05-.05a2.1 2.1 0 0 1 2.97 2.97l-.05.05a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.66 1.1H22a2.1 2.1 0 0 1 0 4.2h-.07A1.8 1.8 0 0 0 19.4 15Z"></path>
-                    </svg>
-                    <strong>Configuracion</strong>
-                    <small>Conceptos, categorias y estructura base.</small>
-                  </button>
-                  <button class="module-card" type="button" data-view-target="news">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M4 5h16v14H4z"></path>
-                  <path d="M8 9h8"></path>
-                  <path d="M8 13h8"></path>
-                  <path d="M8 17h5"></path>
-                </svg>
-                <strong>Novedades</strong>
-                <small>Implementaciones y fixes de cada sesion.</small>
-                  </button>
-                  <button class="module-card" type="button" data-view-target="roadmap">
-                <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M9 18h6"></path>
-                  <path d="M10 22h4"></path>
-                  <path d="M12 2a7 7 0 0 0-4 12.7c.6.4 1 1 1 1.7v.6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-.6c0-.7.4-1.3 1-1.7A7 7 0 0 0 12 2Z"></path>
-                </svg>
-                <strong>Pr&oacute;ximas mejoras</strong>
-                <small>Roadmap de lo que est&aacute; por venir y env&iacute;o de feedback.</small>
+                  <button class="module-card module-card--accent" type="button" data-view-target="year" data-color="amber">
+                    <span class="module-icon">
+                      <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M4 19V5"></path>
+                        <path d="M4 19h16"></path>
+                        <path d="M8 16v-5"></path>
+                        <path d="M12 16V8"></path>
+                        <path d="M16 16v-3"></path>
+                      </svg>
+                    </span>
+                    <strong>A&ntilde;o a A&ntilde;o</strong>
+                    <small>Totales anuales por concepto y categoria.</small>
                   </button>
                 </div>
               </section>
+              <nav class="meta-row" aria-label="Configuracion y novedades">
+                <button class="meta-link" type="button" data-view-target="settings">
+                  <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
+                    <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 0 1-2.97 2.97l-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.66V21a2.1 2.1 0 0 1-4.2 0v-.07a1.8 1.8 0 0 0-1.1-1.66 1.8 1.8 0 0 0-1.98.36l-.05.05a2.1 2.1 0 0 1-2.97-2.97l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.66-1.1H3a2.1 2.1 0 0 1 0-4.2h.07A1.8 1.8 0 0 0 4.73 8.6a1.8 1.8 0 0 0-.36-1.98l-.05-.05A2.1 2.1 0 0 1 7.29 3.6l.05.05a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.42 2.35V2a2.1 2.1 0 0 1 4.2 0v.07a1.8 1.8 0 0 0 1.1 1.66 1.8 1.8 0 0 0 1.98-.36l.05-.05a2.1 2.1 0 0 1 2.97 2.97l-.05.05a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.66 1.1H22a2.1 2.1 0 0 1 0 4.2h-.07A1.8 1.8 0 0 0 19.4 15Z"></path>
+                  </svg>
+                  <span>Configuraci&oacute;n</span>
+                </button>
+                <button class="meta-link" type="button" data-view-target="news">
+                  <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M4 5h16v14H4z"></path>
+                    <path d="M8 9h8"></path>
+                    <path d="M8 13h8"></path>
+                    <path d="M8 17h5"></path>
+                  </svg>
+                  <span>Novedades</span>
+                </button>
+                <button class="meta-link" type="button" data-view-target="roadmap">
+                  <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18h6"></path>
+                    <path d="M10 22h4"></path>
+                    <path d="M12 2a7 7 0 0 0-4 12.7c.6.4 1 1 1 1.7v.6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-.6c0-.7.4-1.3 1-1.7A7 7 0 0 0 12 2Z"></path>
+                  </svg>
+                  <span>Pr&oacute;ximas mejoras</span>
+                </button>
+              </nav>
             </div>
           </section>
         </section>
@@ -822,17 +823,16 @@
               <h2>&iquest;Tienes una idea o detectas un fallo?</h2>
             </div>
             <p>FlowGrid se hace mejor con tu feedback. Si echas algo en falta, encuentras un bug o se te ocurre una mejora, esc&iacute;beme &mdash; leo todos los mensajes.</p>
-            <p class="feedback-coming-soon-banner">El formulario estar&aacute; operativo <strong>muy pronto</strong>. Mientras tanto, si tienes feedback urgente, esc&iacute;beme a <a href="mailto:j.arc.main@gmail.com?subject=FlowGrid%20feedback">j.arc.main@gmail.com</a>.</p>
-            <form id="feedback-form" class="settings-form is-coming-soon" aria-disabled="true">
+            <form id="feedback-form" class="settings-form">
               <label>
                 <span>Asunto <small class="label-hint">(opcional)</small></span>
-                <input id="feedback-subject" name="subject" type="text" autocomplete="off" placeholder="Idea, fallo, sugerencia&hellip;" maxlength="120" disabled>
+                <input id="feedback-subject" name="subject" type="text" autocomplete="off" placeholder="Idea, fallo, sugerencia&hellip;" maxlength="120">
               </label>
               <label>
                 <span>Mensaje</span>
-                <textarea id="feedback-message" name="message" rows="6" minlength="10" maxlength="3000" placeholder="Cu&eacute;ntame en detalle&hellip;" required disabled></textarea>
+                <textarea id="feedback-message" name="message" rows="6" minlength="10" maxlength="3000" placeholder="Cu&eacute;ntame en detalle&hellip;" required></textarea>
               </label>
-              <button id="feedback-submit" class="primary-action" type="submit" disabled>Enviar feedback</button>
+              <button id="feedback-submit" class="primary-action" type="submit">Enviar feedback</button>
               <p id="feedback-status" class="feedback-status" role="status" aria-live="polite"></p>
             </form>
           </section>
@@ -902,10 +902,11 @@
     <script src="changelog.js"></script>
     <script>
       // Bumped on every commit so the user can tell at a glance that Pages
-      // has served a fresh deploy. Format: YYYY-MM-DD HH:mm (local clock at
-      // commit time). If the corner label still shows the old value after a
-      // hard reload, Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-01 17:55";
+      // has served a fresh deploy. Format: YYYY-MM-DD HH:mm:ss (local Madrid
+      // clock at commit time, with real seconds so a stale cache is obvious).
+      // If the corner label still shows the old value after a hard reload,
+      // Pages hasn't propagated yet.
+      window.__FG_BUILD__ = "2026-05-02 13:04:03";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -963,6 +964,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-01-1755"></script>
+    <script type="module" src="app.js?v=2026-05-02-1304"></script>
   </body>
 </html>
