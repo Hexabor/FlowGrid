@@ -66,10 +66,16 @@ export function syncMovementSelects() {
 
   elements.concept.innerHTML = optionMarkup(concepts, selectedConcept);
   elements.category.innerHTML = optionMarkup(state.settings.categories, getConcept(selectedConcept)?.category);
-  elements.categoryFilter.innerHTML = '<option value="all">Cualquier categoría</option>' + optionMarkup(state.settings.categories);
+  // Filter dropdown for category (desktop): preserve the current selection
+  // so a re-render mid-filter doesn't reset to "all" silently.
+  const previousCategoryFilter = elements.categoryFilter.value || "all";
+  elements.categoryFilter.innerHTML =
+    '<option value="all">Cualquier categoría</option>' + optionMarkup(state.settings.categories);
+  elements.categoryFilter.value = state.settings.categories.some((c) => c.value === previousCategoryFilter)
+    ? previousCategoryFilter
+    : "all";
   elements.newConceptCategory.innerHTML = optionMarkup(state.settings.categories);
   // Filter dropdown for concept (desktop): every concept, sorted alphabetically.
-  // Preserves the current selection so a re-render mid-filter doesn't reset it.
   const conceptOptions = state.settings.concepts
     .slice()
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }))
@@ -127,29 +133,44 @@ function compareMovements(a, b, key) {
 }
 
 // Filter model:
-// - filterText is a single text query that searches across one or more
-//   text fields (concept/note/party). On mobile the user picks the
-//   target field via filterFieldMobile (default "all" = any of the three).
-//   On desktop the field selector is hidden and stays at "all", so the
-//   text input naturally behaves as a multi-field search there.
+// - filterText is a single text query. On mobile the user picks the
+//   target field via filterFieldMobile (default "all" = search every
+//   text-typed property at once: concept, note, party, category label,
+//   type label, recurrence label and shared contact name). On desktop
+//   we always use "all" mode, since the field selector is hidden there.
 // - filterConcept, categoryFilter and typeFilter are dropdowns that on
 //   desktop sit alongside the text input. On mobile they're hidden and
 //   stay at their default ("all"), so they don't constrain anything.
+const isMobileViewport = () => window.matchMedia("(max-width: 719px)").matches;
+
+const TYPE_LABELS = { expense: "gasto", income: "ingreso" };
+
 function matchesTextField(movement, text, field) {
   if (!text) return true;
-  if (field === "concept") return (movement.concept || "").toLowerCase().includes(text);
-  if (field === "note") return (movement.note || "").toLowerCase().includes(text);
-  if (field === "party") return (movement.party || "").toLowerCase().includes(text);
-  return (
-    (movement.concept || "").toLowerCase().includes(text) ||
-    (movement.note || "").toLowerCase().includes(text) ||
-    (movement.party || "").toLowerCase().includes(text)
-  );
+  const concept = (movement.concept || "").toLowerCase();
+  const note = (movement.note || "").toLowerCase();
+  const party = (movement.party || "").toLowerCase();
+  if (field === "concept") return concept.includes(text);
+  if (field === "note") return note.includes(text);
+  if (field === "party") return party.includes(text);
+  // "all" mode: any text-typed property of the movement.
+  if (concept.includes(text) || note.includes(text) || party.includes(text)) return true;
+  if (getCategoryLabel(movement.category).toLowerCase().includes(text)) return true;
+  const recurrence = (movement.recurrence || "puntual").toLowerCase();
+  if (recurrence.includes(text)) return true;
+  if ((TYPE_LABELS[movement.type] || "").includes(text)) return true;
+  const sharedName = getMovementSharedLabel(movement).toLowerCase();
+  if (sharedName && sharedName.includes(text)) return true;
+  return false;
 }
 
 export function getFilteredMovements() {
   const text = elements.filterText.value.trim().toLowerCase();
-  const field = elements.filterFieldMobile.value;
+  // On desktop the mobile field selector is hidden, but its DOM value
+  // could still be a stale "concept"/"note"/"party" if the user touched
+  // it on mobile and resized. Force "all" so the desktop text input
+  // always behaves as the multi-field search the user expects.
+  const field = isMobileViewport() ? elements.filterFieldMobile.value : "all";
   const selectedConcept = elements.filterConcept.value;
   const selectedCategory = elements.categoryFilter.value;
   const selectedType = elements.typeFilter.value;
@@ -496,8 +517,6 @@ function deleteMovementById(id) {
 // Mobile-only: tapping the card body (away from any button) toggles inline
 // expansion. Only one card can be expanded at a time. Desktop keeps the
 // inline edit/duplicate/delete affordances and ignores the toggle.
-const isMobileViewport = () => window.matchMedia("(max-width: 719px)").matches;
-
 export function collapseExpandedCard() {
   if (!state.expandedMovementId) return;
   const previous = elements.list.querySelector(".movement-card.is-expanded");

@@ -2558,13 +2558,36 @@ dt {
   align-items: center;
 }
 
+/* The global `input, select { width: 100% }` rule would force each control
+   onto its own row in this flex layout. Override so each shrinks to its
+   natural width and the text input grows to fill the rest. */
+.filter-bar > select,
+.filter-bar > input {
+  width: auto;
+  flex: 0 0 auto;
+}
+
 .filter-bar .filter-text {
-  flex: 1 1 180px;
+  flex: 1 1 200px;
   min-width: 0;
 }
 
 .filter-bar select {
   min-height: 36px;
+}
+
+/* Sticky header en ambos viewports: titulo + botones + filter-bar siguen
+   al usuario al hacer scroll. Las medidas concretas se afinan dentro de
+   los media queries (margenes negativos para que el bar se extienda
+   flush con los bordes del panel, cuyo padding cambia). */
+#movements-view .ledger-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: -16px -16px 14px;
+  padding: 16px 16px 12px;
+  background: var(--surface);
+  box-shadow: 0 6px 12px -10px rgba(23, 32, 38, 0.18);
 }
 
 /* Mobile: bar collapses by default; "Filtrar" toggles it. The desktop-only
@@ -2586,19 +2609,12 @@ dt {
     max-width: 42%;
   }
 
-  /* Header sticky: el título + botones + filter-bar quedan congelados
-     en lo alto del viewport mientras se hace scroll por la lista. */
+  /* En móvil el panel tiene padding 10px (override en línea 1648),
+     así que ajustamos los márgenes negativos para que el sticky
+     siga sentado flush con los bordes del panel. */
   #movements-view .ledger-header {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    /* Negative side margins cancel the panel's 10px padding so the
-       sticky bar sits flush with the panel borders; the inner padding
-       restores the original visual spacing of its content. */
     margin: -10px -10px 10px;
     padding: 10px 10px 8px;
-    background: var(--surface);
-    box-shadow: 0 6px 12px -10px rgba(23, 32, 38, 0.18);
   }
 }
 
