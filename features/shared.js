@@ -358,13 +358,13 @@ function renderSharedBalances() {
   if (onMobile) {
     if (selectedId === "all") {
       elements.sharedBalances.innerHTML =
-        '<p class="empty-state">Selecciona un contacto del desplegable para ver su saldo y sus entradas.</p>';
+        '<p class="empty-state empty-state--inline">Elige un contacto arriba para ver su saldo.</p>';
       return;
     }
     toRender = contactsWithActivity.filter((c) => c.id === selectedId);
     if (!toRender.length) {
       elements.sharedBalances.innerHTML =
-        '<p class="empty-state">Sin actividad con este contacto.</p>';
+        '<p class="empty-state empty-state--inline">Sin actividad con este contacto.</p>';
       return;
     }
   }
