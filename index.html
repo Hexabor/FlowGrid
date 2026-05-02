@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-02-1524">
+    <link rel="stylesheet" href="styles.css?v=2026-05-02-1530">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -273,6 +273,7 @@
               <div class="ledger-header-top">
                 <h2 id="movement-count">0 movimientos</h2>
                 <div class="ledger-actions">
+                  <button id="reset-search-top" class="filter-clear-button filter-clear-button--top" data-role="reset" type="button" aria-label="Limpiar filtros" hidden>x</button>
                   <button id="open-filter" class="primary-action ledger-filter-toggle" type="button" aria-expanded="false" aria-controls="filter-bar">Filtrar</button>
                   <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
                 </div>
@@ -296,7 +297,7 @@
                   <option value="expense">Gastos</option>
                   <option value="income">Ingresos</option>
                 </select>
-                <button id="reset-search" class="filter-clear-button" type="button" aria-label="Limpiar filtros" hidden>x</button>
+                <button id="reset-search" class="filter-clear-button filter-clear-button--bar" data-role="reset" type="button" aria-label="Limpiar filtros" hidden>x</button>
               </div>
             </header>
 
@@ -933,7 +934,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-02 15:24:04";
+      window.__FG_BUILD__ = "2026-05-02 15:30:12";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -991,6 +992,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-02-1524"></script>
+    <script type="module" src="app.js?v=2026-05-02-1530"></script>
   </body>
 </html>

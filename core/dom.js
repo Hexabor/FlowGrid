@@ -41,7 +41,10 @@ export const elements = {
   filterConcept: document.querySelector("#filter-concept"),
   filterBar: document.querySelector("#filter-bar"),
   openFilter: document.querySelector("#open-filter"),
-  resetSearchButton: document.querySelector("#reset-search"),
+  // Two clear-filter buttons coexist in the DOM: the bar X (desktop) and
+  // the top X (mobile, sitting next to "Filtrar" so the filter bar itself
+  // never wraps to a second row when active). Both share data-role="reset".
+  resetSearchButtons: document.querySelectorAll('[data-role="reset"]'),
   list: document.querySelector("#movement-list"),
   template: document.querySelector("#movement-template"),
   currentPeriod: document.querySelector("#current-period"),

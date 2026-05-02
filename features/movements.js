@@ -572,7 +572,8 @@ elements.list.addEventListener("click", (event) => {
 });
 
 function refreshSearchButtonState() {
-  elements.resetSearchButton.hidden = !isSearchActive();
+  const active = isSearchActive();
+  elements.resetSearchButtons.forEach((btn) => { btn.hidden = !active; });
 }
 
 function clearSearchFilters() {
@@ -609,7 +610,9 @@ elements.openFilter.addEventListener("click", () => {
   if (!collapsed) elements.filterText.focus();
 });
 
-elements.resetSearchButton.addEventListener("click", clearSearchFilters);
+elements.resetSearchButtons.forEach((btn) => {
+  btn.addEventListener("click", clearSearchFilters);
+});
 
 refreshSearchButtonState();
 

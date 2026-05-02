@@ -2591,8 +2591,9 @@ dt {
 }
 
 /* Mobile: bar collapses by default; "Filtrar" toggles it. The desktop-only
-   controls (concepto/categoría/tipo dropdowns) are hidden — only the field
-   selector + text input + clear button remain. */
+   controls (concepto/categoría/tipo dropdowns) are hidden, and the bar's
+   own X button moves up to the ledger actions row (left of Filtrar) so the
+   bar stays at exactly one line when expanded. */
 @media (max-width: 719px) {
   .filter-bar.is-collapsed-mobile {
     display: none;
@@ -2609,6 +2610,25 @@ dt {
     max-width: 42%;
   }
 
+  /* The bar X is hidden on mobile; the top X (in .ledger-actions) takes
+     over so toggling the filter never grows the panel by an extra row. */
+  .filter-clear-button--bar {
+    display: none;
+  }
+
+  .filter-clear-button--top {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    font-size: 0.92rem;
+  }
+
+  /* Tighten the gap on the actions row so X + Filtrar + Nuevo movimiento
+     fit comfortably on phones at 360px. */
+  .ledger-actions {
+    gap: 6px;
+  }
+
   /* En móvil el panel tiene padding 10px (override en línea 1648),
      así que ajustamos los márgenes negativos para que el sticky
      siga sentado flush con los bordes del panel. */
@@ -2619,7 +2639,8 @@ dt {
 }
 
 /* Desktop: bar permanente (ignora cualquier toggle), Filtrar oculto, todos
-   los dropdowns visibles + el text input multi-campo. */
+   los dropdowns visibles + el text input multi-campo. La X del top no tiene
+   sentido aquí (la X del bar es lo que usa) así que la ocultamos. */
 @media (min-width: 720px) {
   .filter-bar.is-collapsed-mobile,
   .filter-bar {
@@ -2634,7 +2655,8 @@ dt {
     flex: 0 0 auto;
   }
 
-  .ledger-filter-toggle {
+  .ledger-filter-toggle,
+  .filter-clear-button--top {
     display: none;
   }
 }
