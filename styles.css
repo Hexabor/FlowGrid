@@ -3103,6 +3103,11 @@ dt {
     position: sticky;
     top: 108px;
     z-index: 4;
+    /* Altura exacta = 148px (top de .month-group) - 108px (top propio).
+       Sin esto el min-height: 28px deja un hueco transparente entre la
+       cabecera de columnas y el separador de mes por el que se ven las
+       filas scrolleando por detrás. */
+    min-height: 40px;
   }
 
   /* Cada .month-section es el "containing block" del sticky de su propia

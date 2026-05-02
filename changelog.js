@@ -1,6 +1,14 @@
 window.FlowGridChangelog = [
   {
     date: "2026-05-02",
+    commit: "main@HEAD",
+    title: "Movimientos desktop: tapar el hueco entre cabecera de columnas y separador de mes",
+    changes: [
+      "Al hacer scroll en la lista de movimientos en desktop, entre los títulos de columna (FECHA, CONCEPTO…) y la pastilla del mes (\"ABRIL DE 2026\") quedaba una franja transparente por la que se veían las filas pasando por detrás. La cabecera medía 28px pero el separador de mes se pegaba 40px más abajo, dejando 12px sin cubrir. Ahora la cabecera tiene la altura exacta del hueco y los dos elementos se besan limpiamente.",
+    ],
+  },
+  {
+    date: "2026-05-02",
     commit: "dev@HEAD",
     title: "Compartidos móvil: resumen tappable + tarjeta plana + ocultar Ver entradas",
     changes: [
