@@ -14,4 +14,5 @@ export const state = {
   breakdownSort: { key: "balance", dir: "desc" },
   editingSharedEntryId: null,
   activeDateTarget: null,
+  detailMovementId: null,
 };

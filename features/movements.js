@@ -150,8 +150,14 @@ export function createMovementCard(movement, compact = false) {
   const card = elements.template.content.firstElementChild.cloneNode(true);
   const signedAmount = getSignedAmount(movement);
   const recurrence = movement.recurrence || "Puntual";
+  const sharedLabel = getMovementSharedLabel(movement);
 
   card.dataset.id = movement.id;
+  // Drives the mobile CSS that hides the meta row when there is nothing
+  // to show — so cards with neither a real recurrence nor a shared partner
+  // collapse to a single row.
+  card.dataset.recurrence = (movement.recurrence || "puntual").toLowerCase();
+  card.dataset.shared = sharedLabel ? "true" : "false";
   card.classList.toggle("is-compact", compact);
   paintTag(card.querySelector(".tag"), movement.category);
   card.querySelector("h3").textContent = movement.concept;
@@ -161,7 +167,7 @@ export function createMovementCard(movement, compact = false) {
   card.querySelector(".date").textContent = formatDate(movement.date);
   card.querySelector(".party").textContent = movement.party || "";
   card.querySelector(".recurrence").textContent = recurrence[0].toUpperCase() + recurrence.slice(1);
-  card.querySelector(".shared-cell").textContent = getMovementSharedLabel(movement);
+  card.querySelector(".shared-cell").textContent = sharedLabel;
 
   if (compact) {
     card.querySelector(".delete-action").remove();
@@ -353,59 +359,172 @@ elements.list.addEventListener("click", (event) => {
   renderMovements();
 });
 
+function editMovementById(id) {
+  const movement = state.movements.find((candidate) => candidate.id === id);
+  if (!movement) return;
+  state.editingMovementId = movement.id;
+  fillMovementForm(movement);
+  elements.submitLabel.textContent = "Guardar cambios";
+  elements.feedback.textContent = "Editando movimiento.";
+  openMovementModal();
+  elements.concept.focus();
+}
+
+function duplicateMovementById(id) {
+  const movement = state.movements.find((candidate) => candidate.id === id);
+  if (!movement) return;
+  state.editingMovementId = null;
+  fillMovementForm(movement);
+  elements.submitLabel.textContent = "Anadir movimiento";
+  elements.feedback.textContent = "Copia preparada. Ajusta lo que cambie.";
+  openMovementModal();
+  elements.concept.focus();
+}
+
+function deleteMovementById(id) {
+  const movement = state.movements.find((candidate) => candidate.id === id);
+  if (!movement) return;
+  const linkedEntry = movement.sharedEntryId
+    ? state.sharedEntries.find((entry) => entry.id === movement.sharedEntryId)
+    : null;
+
+  if (!confirm(`Eliminar "${movement.concept}" del ${formatDate(movement.date)}?`)) {
+    return;
+  }
+
+  state.movements = state.movements.filter((candidate) => candidate.id !== movement.id);
+  if (linkedEntry) {
+    state.sharedEntries = state.sharedEntries.filter((entry) => entry.id !== linkedEntry.id);
+    saveSharedEntries();
+  }
+  saveMovements();
+  renderMovements();
+  renderAnalysis();
+  if (linkedEntry) {
+    renderSharedView();
+  }
+}
+
+// Mobile-only: tapping the card body (away from any inline button) opens the
+// detail modal. Desktop keeps the inline edit/duplicate/delete affordances.
+const isMobileViewport = () => window.matchMedia("(max-width: 719px)").matches;
+
 elements.list.addEventListener("click", (event) => {
   const editButton = event.target.closest(".edit-action");
   const duplicateButton = event.target.closest(".duplicate-action");
   const deleteButton = event.target.closest(".delete-action");
-
-  if (!editButton && !duplicateButton && !deleteButton) {
-    return;
-  }
-
   const card = event.target.closest(".movement-card");
-  const movement = state.movements.find((candidate) => candidate.id === card.dataset.id);
 
-  if (!movement) {
+  if (editButton && card) {
+    editMovementById(card.dataset.id);
+    return;
+  }
+  if (duplicateButton && card) {
+    duplicateMovementById(card.dataset.id);
+    return;
+  }
+  if (deleteButton && card) {
+    deleteMovementById(card.dataset.id);
     return;
   }
 
-  if (editButton) {
-    state.editingMovementId = movement.id;
-    fillMovementForm(movement);
-    elements.submitLabel.textContent = "Guardar cambios";
-    elements.feedback.textContent = "Editando movimiento.";
-    openMovementModal();
-    elements.concept.focus();
-    return;
+  if (card && isMobileViewport()) {
+    const movement = state.movements.find((candidate) => candidate.id === card.dataset.id);
+    if (movement) openMovementDetailModal(movement);
+  }
+});
+
+function getSharedModeLabel(entry, contactName) {
+  for (const [, mode] of Object.entries(SHARED_MODES)) {
+    if (mode.paidBy === entry.paidBy && mode.split === entry.splitMode) {
+      return mode.label.replace("{name}", contactName || "el contacto");
+    }
+  }
+  return "";
+}
+
+export function openMovementDetailModal(movement) {
+  state.detailMovementId = movement.id;
+  const signedAmount = getSignedAmount(movement);
+  const recurrence = movement.recurrence || "Puntual";
+
+  elements.movementDetailTitle.textContent = movement.concept;
+  elements.movementDetailAmount.textContent = formatMoney(signedAmount);
+  elements.movementDetailAmount.classList.remove("expense", "income");
+  elements.movementDetailAmount.classList.add(movement.type);
+  elements.movementDetailDate.textContent = formatDate(movement.date);
+  elements.movementDetailCategory.textContent = getCategoryLabel(movement.category);
+
+  if (movement.recurrence) {
+    elements.movementDetailRecurrence.textContent = recurrence[0].toUpperCase() + recurrence.slice(1);
+    elements.movementDetailRecurrenceRow.hidden = false;
+  } else {
+    elements.movementDetailRecurrenceRow.hidden = true;
   }
 
-  if (duplicateButton) {
-    state.editingMovementId = null;
-    fillMovementForm(movement);
-    elements.submitLabel.textContent = "Anadir movimiento";
-    elements.feedback.textContent = "Copia preparada. Ajusta lo que cambie.";
-    openMovementModal();
-    elements.concept.focus();
-    return;
+  if (movement.party) {
+    elements.movementDetailParty.textContent = movement.party;
+    elements.movementDetailPartyRow.hidden = false;
+  } else {
+    elements.movementDetailPartyRow.hidden = true;
+  }
+
+  if (movement.note) {
+    elements.movementDetailNote.textContent = movement.note;
+    elements.movementDetailNoteRow.hidden = false;
+  } else {
+    elements.movementDetailNoteRow.hidden = true;
   }
 
   const linkedEntry = movement.sharedEntryId
     ? state.sharedEntries.find((entry) => entry.id === movement.sharedEntryId)
     : null;
 
-  if (confirm(`Eliminar "${movement.concept}" del ${formatDate(movement.date)}?`)) {
-    state.movements = state.movements.filter((candidate) => candidate.id !== movement.id);
-    if (linkedEntry) {
-      state.sharedEntries = state.sharedEntries.filter((entry) => entry.id !== linkedEntry.id);
-      saveSharedEntries();
+  if (linkedEntry) {
+    const contactName = getMovementSharedLabel(movement) || "—";
+    elements.movementDetailSharedContact.textContent = contactName;
+    elements.movementDetailSharedMode.textContent = getSharedModeLabel(linkedEntry, contactName);
+    if (linkedEntry.splitMode === "uneven") {
+      elements.movementDetailSharedShares.textContent =
+        `Tu parte ${formatMoney(linkedEntry.myShare)} · Su parte ${formatMoney(linkedEntry.theirShare)}`;
+      elements.movementDetailSharedSharesRow.hidden = false;
+    } else {
+      elements.movementDetailSharedSharesRow.hidden = true;
     }
-    saveMovements();
-    renderMovements();
-    renderAnalysis();
-    if (linkedEntry) {
-      renderSharedView();
-    }
+    elements.movementDetailShared.hidden = false;
+  } else {
+    elements.movementDetailShared.hidden = true;
   }
+
+  elements.movementDetailModal.hidden = false;
+}
+
+export function closeMovementDetailModal() {
+  elements.movementDetailModal.hidden = true;
+  state.detailMovementId = null;
+}
+
+elements.closeMovementDetail.addEventListener("click", closeMovementDetailModal);
+elements.movementDetailModal.addEventListener("click", (event) => {
+  if (event.target === elements.movementDetailModal) closeMovementDetailModal();
+});
+
+elements.movementDetailEdit.addEventListener("click", () => {
+  const id = state.detailMovementId;
+  closeMovementDetailModal();
+  if (id) editMovementById(id);
+});
+
+elements.movementDetailDuplicate.addEventListener("click", () => {
+  const id = state.detailMovementId;
+  closeMovementDetailModal();
+  if (id) duplicateMovementById(id);
+});
+
+elements.movementDetailDelete.addEventListener("click", () => {
+  const id = state.detailMovementId;
+  closeMovementDetailModal();
+  if (id) deleteMovementById(id);
 });
 
 function refreshSearchButtonState() {

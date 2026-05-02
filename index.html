@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-02-1337">
+    <link rel="stylesheet" href="styles.css?v=2026-05-02-1431">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -607,6 +607,60 @@
           </div>
         </div>
 
+        <div id="movement-detail-modal" class="modal" hidden>
+          <div class="modal-dialog movement-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="movement-detail-title">
+            <header class="movement-detail-head">
+              <p class="eyebrow">Detalle</p>
+              <h2 id="movement-detail-title"></h2>
+              <button id="close-movement-detail" class="delete-action" type="button" aria-label="Cerrar">x</button>
+            </header>
+            <div class="movement-detail-amount-row">
+              <strong id="movement-detail-amount" class="amount"></strong>
+              <span id="movement-detail-date" class="movement-detail-date"></span>
+            </div>
+            <dl class="movement-detail-list">
+              <div>
+                <dt>Categor&iacute;a</dt>
+                <dd id="movement-detail-category"></dd>
+              </div>
+              <div id="movement-detail-recurrence-row">
+                <dt>Recurrencia</dt>
+                <dd id="movement-detail-recurrence"></dd>
+              </div>
+              <div id="movement-detail-party-row">
+                <dt>Emisor / receptor</dt>
+                <dd id="movement-detail-party"></dd>
+              </div>
+              <div id="movement-detail-note-row">
+                <dt>Nota</dt>
+                <dd id="movement-detail-note"></dd>
+              </div>
+            </dl>
+            <section id="movement-detail-shared" class="movement-detail-shared" hidden>
+              <h3>Gasto compartido</h3>
+              <dl class="movement-detail-list">
+                <div>
+                  <dt>Contacto</dt>
+                  <dd id="movement-detail-shared-contact"></dd>
+                </div>
+                <div>
+                  <dt>Modo de reparto</dt>
+                  <dd id="movement-detail-shared-mode"></dd>
+                </div>
+                <div id="movement-detail-shared-shares-row">
+                  <dt>Reparto</dt>
+                  <dd id="movement-detail-shared-shares"></dd>
+                </div>
+              </dl>
+            </section>
+            <div class="movement-detail-actions">
+              <button id="movement-detail-edit" type="button" class="primary-action">Editar</button>
+              <button id="movement-detail-duplicate" type="button" class="ghost-action">Duplicar</button>
+              <button id="movement-detail-delete" type="button" class="ghost-action movement-detail-delete-button">Eliminar</button>
+            </div>
+          </div>
+        </div>
+
         <section class="view" id="settings-view" data-view="settings" aria-labelledby="settings-title">
           <header class="topbar">
             <div>
@@ -860,8 +914,11 @@
             <dt>Recurrencia</dt>
             <dd class="recurrence"></dd>
           </div>
+          <div>
+            <dt>Compartido</dt>
+            <dd class="shared-cell"></dd>
+          </div>
         </dl>
-        <span class="shared-cell"></span>
         <div class="movement-actions">
           <button class="edit-action" type="button" aria-label="Editar movimiento" title="Editar">
             <svg class="action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -906,7 +963,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-02 13:37:57";
+      window.__FG_BUILD__ = "2026-05-02 14:31:16";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -964,6 +1021,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-02-1337"></script>
+    <script type="module" src="app.js?v=2026-05-02-1431"></script>
   </body>
 </html>

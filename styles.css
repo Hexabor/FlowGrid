@@ -2187,139 +2187,140 @@ dt {
     margin-top: 0;
   }
 
-  /* Mobile card. Top two rows hold the headline data: concept +
-     recurrencia stacked left, importe centred in its fixed-width
-     column rows 1-2, party top-right (row 1 only). Bottom row:
-     nota grows sideways across cols 1-2 glued to the card bottom,
-     while the action buttons own the bottom-right cell. */
+  /* Simplified mobile card. Row 1: concepto (truncado) + importe.
+     Row 2: badges inline (recurrencia si !puntual + compartido si aplica).
+     La row 2 colapsa cuando no hay nada que mostrar. La card entera es
+     tappable y abre el modal de detalle (gestionado en JS por viewport). */
   .movement-card {
-    grid-template-columns: minmax(0, 1fr) 140px auto;
-    grid-template-rows: auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     grid-template-areas:
-      "concept    amount party"
-      "recurrence amount  .   "
-      "note       note    actions";
-    gap: 2px 10px;
-    align-items: stretch;
+      "concept amount"
+      "meta    meta";
+    gap: 4px 12px;
+    align-items: center;
     min-width: 0;
     min-height: 0;
-    padding: 8px 10px;
+    padding: 10px 12px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 10px;
     box-shadow: var(--shadow);
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(15, 118, 110, 0.08);
   }
 
-  /* Flatten the structural wrappers so concept/note/party/recurrence
-     become direct grid items and can each be placed by name. */
-  .movement-card .movement-main,
-  .movement-card .movement-meta,
-  .movement-card .movement-meta div {
+  .movement-card:active {
+    background: #fbfcfd;
+  }
+
+  /* Caso común (puntual + no compartido): segunda fila desaparece. */
+  .movement-card[data-recurrence="puntual"][data-shared="false"] {
+    grid-template-rows: auto;
+    grid-template-areas: "concept amount";
+  }
+
+  .movement-card[data-recurrence="puntual"][data-shared="false"] .movement-meta {
+    display: none;
+  }
+
+  .movement-card .movement-main {
     display: contents;
   }
 
   .movement-card .movement-side {
     grid-area: amount;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
+  }
+
+  .movement-card .movement-meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+    margin: 0;
+    min-width: 0;
   }
 
   .movement-card .movement-meta div {
     display: contents;
   }
 
-  .movement-card .movement-actions {
-    grid-area: actions;
-    display: flex;
-    gap: 6px;
-    justify-content: flex-end;
-    align-items: center;
-    align-self: end;
-  }
-
+  /* Datos que solo viven en el modal de detalle en mobile. */
+  .movement-card .movement-note,
+  .movement-card .party,
+  .movement-card .movement-actions,
   .movement-card .tag,
   .movement-card .date,
-  .movement-card dt,
-  .movement-card .shared-cell {
+  .movement-card dt {
     display: none;
   }
 
   .movement-card h3 {
     grid-area: concept;
-    align-self: end;
     margin: 0;
-    font-size: 1rem;
-    font-weight: 800;
-    white-space: normal;
-  }
-
-  .movement-card .movement-note {
-    grid-area: note;
-    align-self: end;
-    margin: 6px 0 0;
-    color: var(--muted);
-    font-size: 0.78rem;
-    white-space: normal;
-  }
-
-  .movement-card .movement-note:empty {
-    display: none;
+    font-size: 0.98rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 
   .movement-card .amount {
     margin: 0;
-    font-size: 1.8rem;
+    font-size: 1.05rem;
     font-weight: 700;
     white-space: nowrap;
   }
 
-  .movement-card .party {
-    grid-area: party;
-    justify-self: end;
-    align-self: center;
+  .movement-card .recurrence {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
     color: var(--muted);
-    font-size: 0.82rem;
+    background: rgba(101, 114, 123, 0.1);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 22ch;
   }
 
-  .movement-card .party:empty {
+  .movement-card[data-recurrence="puntual"] .recurrence {
     display: none;
   }
 
-  .movement-card .recurrence {
-    grid-area: recurrence;
-    align-self: start;
-    color: var(--muted);
-    font-size: 0.72rem;
-    text-transform: uppercase;
+  .movement-card .shared-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 9px 1px 7px;
+    color: #5b21b6;
+    background: rgba(124, 58, 237, 0.1);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 18ch;
   }
 
-  .movement-card .edit-action,
-  .movement-card .duplicate-action {
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 32px;
-    padding: 0;
+  .movement-card .shared-cell::before {
+    content: "👥";
+    font-size: 0.85em;
+    margin-right: 1px;
+    filter: grayscale(0.2);
   }
 
-  .movement-card .edit-action .action-icon,
-  .movement-card .duplicate-action .action-icon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .movement-card .delete-action {
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 32px;
+  .movement-card[data-shared="false"] .shared-cell {
+    display: none;
   }
 }
 
@@ -2645,4 +2646,148 @@ body.is-locked .shell {
     width: 34px;
     align-self: center;
   }
+}
+
+/* ==== Movement detail modal (móvil; se abre al tocar una card) ==== */
+.movement-detail-dialog {
+  width: min(100%, 460px);
+  padding: 16px 14px 14px;
+}
+
+.movement-detail-head {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 4px 12px;
+  margin-bottom: 10px;
+  padding-right: 0;
+}
+
+.movement-detail-head .eyebrow {
+  grid-column: 1;
+  margin: 0 0 4px;
+}
+
+.movement-detail-head h2 {
+  grid-column: 1;
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+#close-movement-detail {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+.movement-detail-amount-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+#movement-detail-amount {
+  font-size: 1.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.movement-detail-date {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.movement-detail-list {
+  margin: 0;
+  display: grid;
+  gap: 0;
+}
+
+.movement-detail-list > div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.movement-detail-list > div:last-child {
+  border-bottom: 0;
+}
+
+.movement-detail-list > div[hidden] {
+  display: none;
+}
+
+.movement-detail-list dt {
+  display: block;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.movement-detail-list dd {
+  margin: 0;
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.movement-detail-shared {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  background: rgba(124, 58, 237, 0.05);
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  border-radius: 8px;
+}
+
+.movement-detail-shared h3 {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #5b21b6;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.movement-detail-shared .movement-detail-list > div {
+  border-bottom: 1px solid rgba(124, 58, 237, 0.12);
+}
+
+.movement-detail-shared .movement-detail-list > div:last-child {
+  border-bottom: 0;
+}
+
+.movement-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.movement-detail-actions .primary-action,
+.movement-detail-actions .ghost-action {
+  flex: 1 1 90px;
+  min-height: 40px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.movement-detail-delete-button {
+  color: var(--red);
+}
+
+.movement-detail-delete-button:hover {
+  color: #ffffff;
+  background: var(--red);
+  border-color: var(--red);
 }
