@@ -2611,12 +2611,15 @@ dt {
   }
 
   /* The bar X is hidden on mobile; the top X (in .ledger-actions) takes
-     over so toggling the filter never grows the panel by an extra row. */
-  .filter-clear-button--bar {
+     over so toggling the filter never grows the panel by an extra row.
+     Specificity is bumped via the parent class so this beats the global
+     `.filter-clear-button { display: grid }` rule that sits later in the
+     stylesheet. */
+  .filter-bar .filter-clear-button--bar {
     display: none;
   }
 
-  .filter-clear-button--top {
+  .ledger-actions .filter-clear-button--top {
     width: 32px;
     height: 32px;
     min-height: 32px;
@@ -2655,9 +2658,45 @@ dt {
     flex: 0 0 auto;
   }
 
-  .ledger-filter-toggle,
-  .filter-clear-button--top {
+  .ledger-filter-toggle {
     display: none;
+  }
+
+  .ledger-actions .filter-clear-button--top {
+    display: none;
+  }
+
+  /* Cabeceras de la lista congeladas en desktop:
+     - .ledger-header (panel header) ya está sticky en top: 0, ~108px de alto.
+     - .movement-header (titulos de columnas) sticky justo debajo.
+     - .month-group sticky justo debajo del column-header, scopeado a su
+       propia .month-section para que al pasar al siguiente mes el nuevo
+       empuje al anterior fuera de la vista de forma natural.
+     Para que sticky funcione hay que descartar el overflow-x: auto del list
+     (creaba un scroll-container que rompía el sticky). En narrow desktops
+     (~720-980px) la tabla puede causar scroll horizontal de la página; en
+     anchos normales (≥980, donde el panel max-width: 1040 entra) cabe sin
+     problema. */
+  .movement-list {
+    overflow-x: visible;
+  }
+
+  .movement-header {
+    position: sticky;
+    top: 108px;
+    z-index: 4;
+  }
+
+  /* Cada .month-section es el "containing block" del sticky de su propia
+     .month-group: cuando la sección termina (siguiente mes empieza), el
+     header se desadhiere de forma natural en lugar de quedar pegado
+     indefinidamente y solapar con el siguiente. */
+  .month-group {
+    position: sticky;
+    top: 148px;
+    z-index: 3;
+    margin-top: 0;
+    background: var(--surface);
   }
 }
 

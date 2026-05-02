@@ -347,14 +347,22 @@ export function renderMovementList(container, items, compact = false) {
 
   let lastDate = null;
   let lastMonthKey = null;
+  let monthSection = null; // wrapper for the current month's cards so the
+                           // sticky month-group header is scoped to its
+                           // own section on desktop (lets it un-stick when
+                           // scrolling into the next month).
+
   items.forEach((movement) => {
     if (!compact && showDateGroups) {
       const monthKey = movement.date.slice(0, 7);
       if (monthKey !== lastMonthKey) {
+        monthSection = document.createElement("section");
+        monthSection.className = "month-section";
         const monthHeader = document.createElement("div");
         monthHeader.className = "month-group";
         monthHeader.textContent = formatMonthLabel(movement.date);
-        fragment.append(monthHeader);
+        monthSection.append(monthHeader);
+        fragment.append(monthSection);
         lastMonthKey = monthKey;
         lastDate = null;
       }
@@ -362,11 +370,13 @@ export function renderMovementList(container, items, compact = false) {
         const groupHeader = document.createElement("div");
         groupHeader.className = "date-group";
         groupHeader.textContent = formatDate(movement.date);
-        fragment.append(groupHeader);
+        monthSection.append(groupHeader);
         lastDate = movement.date;
       }
+      monthSection.append(createMovementCard(movement, compact));
+    } else {
+      fragment.append(createMovementCard(movement, compact));
     }
-    fragment.append(createMovementCard(movement, compact));
   });
   container.append(fragment);
 }
