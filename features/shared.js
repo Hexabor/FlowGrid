@@ -327,6 +327,54 @@ export function renderSharedView() {
   renderSharedEntries();
 }
 
+function renderMobileBalanceSummary(contactsWithActivity) {
+  elements.sharedBalances.innerHTML = "";
+  if (!contactsWithActivity.length) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "balance-summary";
+
+  const title = document.createElement("p");
+  title.className = "balance-summary-title";
+  title.textContent = "Toca un contacto para ver detalle y liquidar:";
+  wrapper.append(title);
+
+  const list = document.createElement("ul");
+  list.className = "balance-summary-list";
+
+  contactsWithActivity
+    .map((contact) => ({ contact, balance: getSharedBalance(contact.id) }))
+    .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+    .forEach(({ contact, balance }) => {
+      const row = document.createElement("li");
+      row.className = "balance-summary-row";
+      row.dataset.contactId = contact.id;
+      if (balance > 0.005) row.classList.add("is-positive");
+      else if (balance < -0.005) row.classList.add("is-negative");
+      else row.classList.add("is-zero");
+
+      const name = document.createElement("strong");
+      name.className = "balance-summary-name";
+      name.textContent = contact.name;
+
+      const direction = document.createElement("span");
+      direction.className = "balance-summary-direction";
+      if (Math.abs(balance) < 0.005) direction.textContent = "Saldado";
+      else if (balance > 0) direction.textContent = "te debe";
+      else direction.textContent = "le debes";
+
+      const amount = document.createElement("span");
+      amount.className = "balance-summary-amount";
+      amount.textContent = formatMoney(Math.abs(balance));
+
+      row.append(name, direction, amount);
+      list.append(row);
+    });
+
+  wrapper.append(list);
+  elements.sharedBalances.append(wrapper);
+}
+
 function renderSharedBalances() {
   const contactsWithActivity = state.contacts.filter(
     (contact) => contactHasEntries(contact.id)
@@ -357,8 +405,10 @@ function renderSharedBalances() {
 
   if (onMobile) {
     if (selectedId === "all") {
-      elements.sharedBalances.innerHTML =
-        '<p class="empty-state empty-state--inline">Elige un contacto arriba para ver su saldo.</p>';
+      // Resumen tappable: un listado plano de todos los contactos con
+      // saldo actual. Clicar uno equivale a seleccionarlo en el
+      // dropdown — abre la card detallada y filtra los movimientos.
+      renderMobileBalanceSummary(contactsWithActivity);
       return;
     }
     toRender = contactsWithActivity.filter((c) => c.id === selectedId);
@@ -736,8 +786,16 @@ elements.sharedBalances.addEventListener("click", (event) => {
 
   state.sharedFilterContactId = contactId;
   elements.sharedContactFilter.value = state.sharedFilterContactId;
+  elements.sharedMobileContactPicker.value = state.sharedFilterContactId;
+  // Re-render balances too (in móvil cambia el resumen a la card
+  // detallada del contacto recién seleccionado).
+  renderSharedBalances();
   renderSharedEntries();
-  document.querySelector("#shared-entries")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // Scroll al panel de movimientos solo en desktop. En móvil la card
+  // detallada aparece en el sitio del resumen, no necesita salto.
+  if (!window.matchMedia("(max-width: 719px)").matches) {
+    document.querySelector("#shared-entries")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 });
 
 elements.closePaymentModal.addEventListener("click", closePaymentModal);

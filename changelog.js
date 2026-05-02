@@ -2,6 +2,17 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-02",
     commit: "dev@HEAD",
+    title: "Compartidos móvil: resumen tappable + tarjeta plana + ocultar Ver entradas",
+    changes: [
+      "En móvil, cuando el desplegable está en \"Todos\", el panel Saldos muestra un mini resumen tappable con cada colaborador en una línea: nombre, dirección (te debe / le debes / saldado) e importe en color. Tocar una fila equivale a seleccionar ese contacto en el desplegable — el resumen se sustituye por la tarjeta detallada y los movimientos compartidos abajo se filtran al instante. Responde a \"¿con quién debo o me deben?\" sin tener que abrir cada uno.",
+      "Tarjeta de saldo del colaborador en móvil aplanada a 2 filas: nombre + etiqueta arriba a la izquierda, importe grande arriba a la derecha; el botón Liquidar saldo abajo. Antes el card era casi cuadrado y ocupaba media pantalla.",
+      "Botón \"Ver entradas\" oculto en móvil — el desplegable del Saldos ya filtra los movimientos compartidos justo debajo, así que pulsarlo solo hubiera scrolleado a algo ya visible. Liquidar saldo queda solo en su fila.",
+      "Empty-state \"Selecciona un contacto…\" pasa a banner horizontal compacto en lugar de un cuadro alto con padding generoso.",
+    ],
+  },
+  {
+    date: "2026-05-02",
+    commit: "dev@HEAD",
     title: "Compartidos en móvil: selector de contacto y arreglos de historial",
     changes: [
       "En móvil, el panel \"Saldos\" muestra ahora solo la tarjeta del contacto seleccionado en un nuevo desplegable arriba del panel. Antes se apilaban todas las tarjetas y ocupaban toda la pantalla, dejando los movimientos fuera de vista. En desktop la rejilla con todas las tarjetas sigue intacta.",

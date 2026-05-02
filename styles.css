@@ -1415,6 +1415,90 @@ a.primary-action {
   font-weight: 800;
 }
 
+/* Resumen tappable de saldos en móvil cuando el filtro está en "Todos".
+   Cada fila muestra nombre + dirección (te debe / le debes / saldado) +
+   importe. Al tocar, el card detallado de ese contacto reemplaza el
+   resumen y los movimientos compartidos abajo se filtran a su entrada. */
+.balance-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.balance-summary-title {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.balance-summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.balance-summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(15, 118, 110, 0.08);
+}
+
+.balance-summary-row:hover {
+  border-color: #b8c5cb;
+}
+
+.balance-summary-row.is-positive {
+  border-left-color: var(--green);
+}
+
+.balance-summary-row.is-negative {
+  border-left-color: var(--red);
+}
+
+.balance-summary-row.is-zero {
+  opacity: 0.7;
+}
+
+.balance-summary-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.balance-summary-direction {
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.balance-summary-amount {
+  font-size: 0.98rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.balance-summary-row.is-positive .balance-summary-amount {
+  color: var(--green);
+}
+
+.balance-summary-row.is-negative .balance-summary-amount {
+  color: var(--red);
+}
+
 .balance-card.is-positive .balance-amount {
   color: var(--green);
 }
