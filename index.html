@@ -4,16 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <!-- Iconos. Los archivos viven en el raíz del repo; al cambiarlos
-         conviene bumpear el query-string ?v= para forzar refresh en
-         clientes con caché agresivo (favicons en especial). -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico?v=2026-05-02-1547">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=2026-05-02-1547">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=2026-05-02-1547">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2026-05-02-1547">
-    <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-1547">
+    <!-- Iconos. Los archivos viven en /icons; al cambiarlos conviene
+         bumpear el query-string ?v= para forzar refresh en clientes con
+         caché agresivo (favicons en especial). -->
+    <link rel="icon" type="image/x-icon" href="icons/favicon.ico?v=2026-05-02-1931">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png?v=2026-05-02-1931">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png?v=2026-05-02-1931">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-1931">
+    <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-1931">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-02-1901">
+    <link rel="stylesheet" href="styles.css?v=2026-05-02-1931">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -978,7 +978,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-02 19:01:44";
+      window.__FG_BUILD__ = "2026-05-02 19:31:06";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1036,6 +1036,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-02-1901"></script>
+    <script type="module" src="app.js?v=2026-05-02-1931"></script>
   </body>
 </html>
