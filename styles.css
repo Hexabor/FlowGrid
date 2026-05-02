@@ -1401,6 +1401,51 @@ a.primary-action {
   color: var(--red);
 }
 
+/* Settled rows: dim the whole row + strike the amount, so the user
+   sees them in the list as historical / closed but the entry itself
+   stays accessible (concept, breakdown, etc. remain readable). */
+.shared-entry.is-settled {
+  opacity: 0.55;
+}
+
+.shared-entry.is-settled .shared-entry-amount {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.shared-entry-settled-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 2px;
+  padding: 1px 7px;
+  background: rgba(24, 121, 78, 0.12);
+  color: var(--green);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.shared-entry-settled-tag::before {
+  content: "✓";
+  margin-right: 3px;
+  font-weight: 900;
+}
+
+.shared-entry-settle {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.shared-entry.is-partner {
+  /* A subtle accent on the left edge tells the user this row originated
+     in their partner's account (read-only edits in v1). */
+  border-left: 3px solid rgba(124, 58, 237, 0.4);
+}
+
 .month-group {
   margin-top: 12px;
   padding: 6px 4px 4px;
@@ -2220,7 +2265,8 @@ dt {
   }
 
   .shared-entry .edit-action,
-  .shared-entry .delete-action {
+  .shared-entry .delete-action,
+  .shared-entry .shared-entry-settle {
     grid-area: actions;
     justify-self: end;
   }

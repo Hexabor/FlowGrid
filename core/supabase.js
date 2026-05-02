@@ -38,6 +38,13 @@ export async function getUserId() {
   return cachedSession?.user?.id ?? null;
 }
 
+// Sync variant for code paths that run on every render (perspective flip,
+// balance calculation) and don't want to await on every call. Returns
+// null until the first auth event lands; callers must tolerate that.
+export function getUserIdSync() {
+  return cachedSession?.user?.id ?? null;
+}
+
 export function getAccessToken() {
   return cachedSession?.access_token ?? null;
 }

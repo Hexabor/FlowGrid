@@ -58,6 +58,11 @@ function contactToCloud(c, ownerId) {
     email: c.email ?? "",
     invited_at: c.invitedAt ?? null,
     auth_user_id: c.authUserId ?? null,
+    // owner_email is normally maintained by the BEFORE-INSERT/UPDATE
+    // trigger on the server (set_contacts_owner_email). We send our
+    // local copy back so re-pushes keep the column populated even if
+    // the trigger ever gets disabled.
+    owner_email: c.ownerEmail ?? null,
     created_at: c.createdAt ?? new Date().toISOString(),
   };
 }
@@ -69,6 +74,7 @@ function contactFromCloud(row) {
     email: row.email ?? "",
     invitedAt: row.invited_at ?? null,
     authUserId: row.auth_user_id ?? null,
+    ownerEmail: row.owner_email ?? null,
     createdAt: row.created_at,
   };
 }

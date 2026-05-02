@@ -19,6 +19,7 @@
 import { state } from "../core/state.js";
 import { elements } from "../core/dom.js";
 import { saveContacts } from "../core/storage.js";
+import { createId } from "../core/utils.js";
 import { signInWithMagicLink, getUserId, getAccessToken, getUser } from "../core/supabase.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../core/config.js";
 import { cloudHydrate } from "../core/cloud.js";
@@ -98,14 +99,21 @@ function renderInvitationList(invitations) {
     const item = document.createElement("li");
     item.className = "invitation-item";
     item.dataset.contactId = invitation.id;
+    // Cache the inviter info on the DOM node so the click handler can
+    // build the reciprocal contact without re-fetching.
+    item.dataset.ownerId = invitation.owner_id;
+    item.dataset.ownerEmail = invitation.owner_email ?? "";
+    item.dataset.invitationName = invitation.name ?? "";
 
     const text = document.createElement("div");
     text.className = "invitation-item-text";
     const headline = document.createElement("strong");
-    headline.textContent = `Te han invitado como "${invitation.name}"`;
+    headline.textContent = invitation.owner_email
+      ? `${invitation.owner_email} te ha invitado`
+      : `Te han invitado como "${invitation.name}"`;
     const sub = document.createElement("small");
     sub.textContent = invitation.invited_at
-      ? `Invitado el ${new Date(invitation.invited_at).toLocaleDateString("es-ES")}`
+      ? `Enviada el ${new Date(invitation.invited_at).toLocaleDateString("es-ES")}`
       : "Pendiente de aceptar";
     text.append(headline, sub);
 
@@ -149,12 +157,36 @@ elements.invitationModal.addEventListener("click", (event) => {
   }
 });
 
+function nameFromEmail(email) {
+  if (!email) return "Cuenta vinculada";
+  const local = String(email).split("@")[0];
+  return local || email;
+}
+
+function ensureReciprocalContact({ ownerId, ownerEmail }) {
+  // Skip if the invitee already has a contact pointing at this user.
+  if (state.contacts.some((c) => c.authUserId === ownerId)) return;
+  const reciprocal = {
+    id: createId(),
+    name: nameFromEmail(ownerEmail),
+    email: ownerEmail || "",
+    invitedAt: null,
+    authUserId: ownerId,
+    ownerEmail: null, // owner is ME (the invitee); the trigger will fill this
+    createdAt: new Date().toISOString(),
+  };
+  state.contacts = [...state.contacts, reciprocal];
+  saveContacts();
+}
+
 elements.invitationList.addEventListener("click", async (event) => {
   const button = event.target.closest('[data-action="accept-invitation"]');
   if (!button) return;
   const item = button.closest("[data-contact-id]");
   if (!item) return;
   const contactId = item.dataset.contactId;
+  const ownerId = item.dataset.ownerId;
+  const ownerEmail = item.dataset.ownerEmail || "";
 
   button.disabled = true;
   setInvitationFeedback("Aceptando…", "loading");
@@ -165,6 +197,11 @@ elements.invitationList.addEventListener("click", async (event) => {
       "Invitación aceptada. Cargando datos compartidos…",
       "success"
     );
+    // Auto-create a reciprocal contact in the invitee's account so the
+    // inviter shows up in their contacts list and shared entries can be
+    // displayed under that name. Pre-fills name from the email's local
+    // part; the user can rename later.
+    ensureReciprocalContact({ ownerId, ownerEmail });
     // Re-hydrate so the newly-visible shared_entries from the inviter
     // (now reachable via the linked-partner RLS clause) land in state.
     await cloudHydrate();

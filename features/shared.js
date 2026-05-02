@@ -6,6 +6,30 @@ import { createId, formatDate, formatMoney, formatMonthLabel } from "../core/uti
 import { getContactName, getSharedBalance, contactHasEntries, renderContacts } from "./contacts.js";
 import { renderMovements, syncMovementSelects, fillMovementForm } from "./movements.js";
 import { setMovementDate, setPaymentDate } from "../ui/datepicker.js";
+import { getUserIdSync } from "../core/supabase.js";
+
+// When the visiting user is a linked partner (the entry's ownerId is
+// not theirs), the row's paid_by / my_share / their_share are stored
+// in the OWNER's perspective. Flip everything to my point of view for
+// display and balance arithmetic. Also remap contactId to my reciprocal
+// contact for that owner so the entry shows up under "Juan" in my list
+// instead of under the inviter's contact id (which doesn't exist locally
+// for me). The flip is its own inverse, so the cloud row stays raw and
+// only the consumed-for-render copy is flipped.
+export function entryAsMyPerspective(entry) {
+  const myUid = getUserIdSync();
+  if (!entry.ownerId || !myUid || entry.ownerId === myUid) {
+    return entry;
+  }
+  const myReciprocal = state.contacts.find((c) => c.authUserId === entry.ownerId);
+  return {
+    ...entry,
+    contactId: myReciprocal?.id ?? entry.contactId,
+    paidBy: entry.paidBy === "me" ? "them" : "me",
+    myShare: entry.theirShare,
+    theirShare: entry.myShare,
+  };
+}
 
 export function entryBalanceImpact(entry) {
   if (entry.type === "expense") {
@@ -35,7 +59,10 @@ export function getMovementSharedLabel(movement) {
   if (!entry) {
     return "";
   }
-  return getContactName(entry.contactId);
+  // Movements always live in the same account as their linked entry, so
+  // flipping is normally a no-op here, but call it through anyway in
+  // case a partner-owned entry sneaks in via cross-account UI.
+  return getContactName(entryAsMyPerspective(entry).contactId);
 }
 
 export function inferSharedModeKey(entry) {
@@ -372,7 +399,10 @@ function renderSharedFilterOptions() {
 function renderSharedEntries() {
   const contactId = state.sharedFilterContactId;
 
-  let entries = [...state.sharedEntries];
+  // Flip every entry to my perspective up front so the contactId filter
+  // and the row builder both see entries as "from my point of view".
+  // The original raw entries stay in state.sharedEntries untouched.
+  let entries = state.sharedEntries.map(entryAsMyPerspective);
 
   if (contactId !== "all") {
     entries = entries.filter((entry) => entry.contactId === contactId);
@@ -406,10 +436,16 @@ function renderSharedEntries() {
 }
 
 function buildSharedEntryRow(entry) {
+  const myUid = getUserIdSync();
+  const isMine = !entry.ownerId || entry.ownerId === myUid;
+  const isSettled = Boolean(entry.settledAt);
+
   const row = document.createElement("article");
   row.className = "shared-entry";
   row.dataset.id = entry.id;
   row.dataset.type = entry.type;
+  if (isSettled) row.classList.add("is-settled");
+  if (!isMine) row.classList.add("is-partner");
 
   const date = document.createElement("span");
   date.className = "shared-entry-date";
@@ -436,6 +472,13 @@ function buildSharedEntryRow(entry) {
     main.append(breakdown);
   }
 
+  if (isSettled) {
+    const settledTag = document.createElement("span");
+    settledTag.className = "shared-entry-settled-tag";
+    settledTag.textContent = `Liquidado el ${formatDate(entry.settledAt.slice(0, 10))}`;
+    main.append(settledTag);
+  }
+
   const impact = entryBalanceImpact(entry);
   const amount = document.createElement("span");
   amount.className = "shared-entry-amount";
@@ -451,7 +494,25 @@ function buildSharedEntryRow(entry) {
 
   row.append(date, main, amount);
 
+  // Per-entry liquidate toggle. Available on expenses (settling a
+  // payment row makes no sense — payments already cancel a balance).
+  // Both sides can toggle, last-write-wins via RLS WITH CHECK.
   if (entry.type === "expense") {
+    const settleButton = document.createElement("button");
+    settleButton.type = "button";
+    settleButton.className = "ghost-action shared-entry-settle";
+    settleButton.dataset.action = "toggle-settle";
+    settleButton.textContent = isSettled ? "Reabrir" : "Marcar liquidado";
+    settleButton.title = isSettled
+      ? "Volver a sumar al saldo"
+      : "Quitar este gasto del saldo total";
+    row.append(settleButton);
+  }
+
+  // Edit/delete are scoped to my own entries for v1. Editing a partner
+  // entry is allowed by RLS but requires un-flipping the form payload
+  // before save — pending polish.
+  if (entry.type === "expense" && isMine) {
     const editButton = document.createElement("button");
     editButton.type = "button";
     editButton.className = "edit-action";
@@ -461,13 +522,15 @@ function buildSharedEntryRow(entry) {
     row.append(editButton);
   }
 
-  const deleteButton = document.createElement("button");
-  deleteButton.type = "button";
-  deleteButton.className = "delete-action";
-  deleteButton.dataset.action = "delete-shared";
-  deleteButton.title = "Eliminar";
-  deleteButton.textContent = "x";
-  row.append(deleteButton);
+  if (isMine) {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-action";
+    deleteButton.dataset.action = "delete-shared";
+    deleteButton.title = "Eliminar";
+    deleteButton.textContent = "x";
+    row.append(deleteButton);
+  }
 
   return row;
 }
@@ -510,18 +573,14 @@ elements.sharedContactAdd.addEventListener("click", () => {
 });
 
 elements.sharedEntries.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-action='delete-shared']");
-
-  if (!button) {
-    return;
-  }
+  const button = event.target.closest("[data-action]");
+  if (!button) return;
 
   const row = event.target.closest("[data-id]");
-  const entry = state.sharedEntries.find((candidate) => candidate.id === row.dataset.id);
+  if (!row) return;
 
-  if (!entry) {
-    return;
-  }
+  const entry = state.sharedEntries.find((candidate) => candidate.id === row.dataset.id);
+  if (!entry) return;
 
   const action = button.dataset.action;
 
@@ -530,20 +589,33 @@ elements.sharedEntries.addEventListener("click", (event) => {
     return;
   }
 
-  if (!confirm(`Eliminar entrada "${entry.concept}" con ${getContactName(entry.contactId)}?`)) {
+  if (action === "toggle-settle") {
+    // Mutate in place so the cloud push picks up the new settledAt.
+    // Reversible: clicking the button toggles between liquidado and not.
+    entry.settledAt = entry.settledAt ? null : new Date().toISOString();
+    saveSharedEntries();
+    renderSharedView();
     return;
   }
 
-  state.sharedEntries = state.sharedEntries.filter((candidate) => candidate.id !== entry.id);
-  if (entry.sourceMovementId) {
-    state.movements = state.movements.map((movement) =>
-      movement.id === entry.sourceMovementId ? { ...movement, sharedEntryId: null } : movement
-    );
-    saveMovements();
+  if (action === "delete-shared") {
+    // Display name uses the perspective-flipped contactId so the prompt
+    // matches what the user sees on screen.
+    const displayContactId = entryAsMyPerspective(entry).contactId;
+    if (!confirm(`Eliminar entrada "${entry.concept}" con ${getContactName(displayContactId)}?`)) {
+      return;
+    }
+    state.sharedEntries = state.sharedEntries.filter((candidate) => candidate.id !== entry.id);
+    if (entry.sourceMovementId) {
+      state.movements = state.movements.map((movement) =>
+        movement.id === entry.sourceMovementId ? { ...movement, sharedEntryId: null } : movement
+      );
+      saveMovements();
+    }
+    saveSharedEntries();
+    renderSharedView();
+    renderMovements();
   }
-  saveSharedEntries();
-  renderSharedView();
-  renderMovements();
 });
 
 elements.sharedContactFilter.addEventListener("change", () => {

@@ -61,6 +61,11 @@ create table if not exists public.contacts (
   email         text not null default '',
   invited_at    timestamptz,
   auth_user_id  uuid references auth.users(id) on delete set null,
+  -- Snapshot of the row owner's verified email at insert/update time.
+  -- Lets an invitee build a reciprocal contact pre-filled with the
+  -- inviter's email without needing direct access to auth.users. A
+  -- BEFORE INSERT/UPDATE trigger maintains it (see below).
+  owner_email   text,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -75,6 +80,27 @@ create policy "contacts: owner full access"
   on public.contacts for all
   using (owner_id = auth.uid())
   with check (owner_id = auth.uid());
+
+-- Trigger: populate owner_email from the JWT email when the row's
+-- actual owner is the caller. Skips the invitee's claim-PATCH because
+-- there owner_id != auth.uid().
+create or replace function public.set_contacts_owner_email()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if new.owner_id = auth.uid() and (new.owner_email is null or new.owner_email = '') then
+    new.owner_email := auth.jwt() ->> 'email';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists contacts_set_owner_email on public.contacts;
+create trigger contacts_set_owner_email
+  before insert or update on public.contacts
+  for each row execute function public.set_contacts_owner_email();
 
 -- Extra SELECT policy: a user can read contacts where they are the linked
 -- partner, regardless of who owns the row. Required so the cross-account
@@ -146,8 +172,9 @@ alter table public.shared_entries enable row level security;
 
 -- Owner has full access AND a linked partner (a user matched as
 -- contact.auth_user_id in the entry's owner account) gets symmetric
--- read/write access. This is what makes shared expenses appear and stay
--- editable on both sides after an invitation is accepted.
+-- read/write access. The contact must be the SPECIFIC contact_id of
+-- the entry, otherwise an invitee linked to one contact would also
+-- see the inviter's shared entries with everyone else.
 drop policy if exists "shared_entries: owner full access" on public.shared_entries;
 drop policy if exists "shared_entries: owner or linked partner" on public.shared_entries;
 create policy "shared_entries: owner or linked partner"
@@ -157,6 +184,7 @@ create policy "shared_entries: owner or linked partner"
     or exists (
       select 1 from public.contacts c
       where c.owner_id = shared_entries.owner_id
+        and c.id = shared_entries.contact_id
         and c.auth_user_id = auth.uid()
     )
   )
@@ -165,6 +193,7 @@ create policy "shared_entries: owner or linked partner"
     or exists (
       select 1 from public.contacts c
       where c.owner_id = shared_entries.owner_id
+        and c.id = shared_entries.contact_id
         and c.auth_user_id = auth.uid()
     )
   );

@@ -2,7 +2,7 @@ import { state } from "../core/state.js";
 import { elements } from "../core/dom.js";
 import { saveContacts } from "../core/storage.js";
 import { createId } from "../core/utils.js";
-import { entryBalanceImpact, renderSharedView, syncSharedContactOptions, syncSharedModeLabels } from "./shared.js";
+import { entryBalanceImpact, entryAsMyPerspective, renderSharedView, syncSharedContactOptions, syncSharedModeLabels } from "./shared.js";
 import { sendInvitation } from "./invitations.js";
 
 export function getContact(id) {
@@ -14,12 +14,23 @@ export function getContactName(id) {
 }
 
 export function contactHasEntries(id) {
-  return state.sharedEntries.some((entry) => entry.contactId === id);
+  // Flip to my perspective so partner-owned entries (which live under the
+  // inviter's contact_id in the cloud row) get attributed to my reciprocal
+  // contact for that inviter — that's the contact the user sees in their
+  // own list, and it's what callers ask about.
+  return state.sharedEntries.some(
+    (entry) => entryAsMyPerspective(entry).contactId === id
+  );
 }
 
 export function getSharedBalance(contactId) {
   return state.sharedEntries
+    .map(entryAsMyPerspective)
     .filter((entry) => entry.contactId === contactId)
+    // Settled entries are excluded from the live balance: that's the whole
+    // point of marking one as liquidado. They still show in the entries
+    // list with a visual cue, just don't contribute to the running total.
+    .filter((entry) => !entry.settledAt)
     .reduce((balance, entry) => balance + entryBalanceImpact(entry), 0);
 }
 
