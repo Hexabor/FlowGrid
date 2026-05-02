@@ -51,19 +51,22 @@ create policy "settings: owner full access"
 
 -- =============================================================================
 -- CONTACTS  (renamed from "people" in Fase 3; existing projects must run
--- supabase/migrate-3-people-to-contacts.sql once)
+-- supabase/migrate-3-people-to-contacts.sql once. The auth_user_id column
+-- is the link target for accepted invitations — see migrate-4-invitations.sql)
 -- =============================================================================
 create table if not exists public.contacts (
-  id          text primary key,
-  owner_id    uuid not null references auth.users(id) on delete cascade,
-  name        text not null,
-  email       text not null default '',  -- ready for Fase 3 invitations
-  invited_at  timestamptz,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  id            text primary key,
+  owner_id      uuid not null references auth.users(id) on delete cascade,
+  name          text not null,
+  email         text not null default '',
+  invited_at    timestamptz,
+  auth_user_id  uuid references auth.users(id) on delete set null,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 
-create index if not exists contacts_owner_idx on public.contacts(owner_id);
+create index if not exists contacts_owner_idx     on public.contacts(owner_id);
+create index if not exists contacts_auth_user_idx on public.contacts(auth_user_id);
 
 alter table public.contacts enable row level security;
 
@@ -72,6 +75,42 @@ create policy "contacts: owner full access"
   on public.contacts for all
   using (owner_id = auth.uid())
   with check (owner_id = auth.uid());
+
+-- Extra SELECT policy: a user can read contacts where they are the linked
+-- partner, regardless of who owns the row. Required so the cross-account
+-- subquery in shared_entries' policy finds the linking contact.
+drop policy if exists "contacts: linked partner can read" on public.contacts;
+create policy "contacts: linked partner can read"
+  on public.contacts for select
+  using (auth_user_id = auth.uid());
+
+-- Extra SELECT policy: a user can read pending invitations (contact rows
+-- with their verified email and no link yet), so the client can surface
+-- "X invited you" at first login.
+drop policy if exists "contacts: invitee can read by email" on public.contacts;
+create policy "contacts: invitee can read by email"
+  on public.contacts for select
+  using (
+    auth_user_id is null
+    and email <> ''
+    and email = (auth.jwt() ->> 'email')
+  );
+
+-- Extra UPDATE policy: a user can claim a pending invitation addressed
+-- to their email by writing their own uid into auth_user_id. The WITH
+-- CHECK locks the destination to the visitor's own uid.
+drop policy if exists "contacts: invitee can claim by email" on public.contacts;
+create policy "contacts: invitee can claim by email"
+  on public.contacts for update
+  using (
+    auth_user_id is null
+    and email <> ''
+    and email = (auth.jwt() ->> 'email')
+  )
+  with check (
+    auth_user_id = auth.uid()
+    and email = (auth.jwt() ->> 'email')
+  );
 
 -- =============================================================================
 -- SHARED ENTRIES
@@ -90,20 +129,45 @@ create table if not exists public.shared_entries (
   my_share           numeric(12,2) not null default 0,
   their_share        numeric(12,2) not null default 0,
   source_movement_id text,
+  -- When set, the entry is excluded from the live balance: it represents
+  -- a per-entry settlement (e.g. the user received the exact Bizum for
+  -- this YouTube subscription and marked the row as liquidado without
+  -- waiting to settle the global balance). See migrate-4-invitations.sql.
+  settled_at         timestamptz,
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now()
 );
 
 create index if not exists shared_entries_owner_idx          on public.shared_entries(owner_id);
 create index if not exists shared_entries_owner_contact_idx  on public.shared_entries(owner_id, contact_id);
+create index if not exists shared_entries_owner_settled_idx  on public.shared_entries(owner_id, settled_at);
 
 alter table public.shared_entries enable row level security;
 
+-- Owner has full access AND a linked partner (a user matched as
+-- contact.auth_user_id in the entry's owner account) gets symmetric
+-- read/write access. This is what makes shared expenses appear and stay
+-- editable on both sides after an invitation is accepted.
 drop policy if exists "shared_entries: owner full access" on public.shared_entries;
-create policy "shared_entries: owner full access"
+drop policy if exists "shared_entries: owner or linked partner" on public.shared_entries;
+create policy "shared_entries: owner or linked partner"
   on public.shared_entries for all
-  using (owner_id = auth.uid())
-  with check (owner_id = auth.uid());
+  using (
+    owner_id = auth.uid()
+    or exists (
+      select 1 from public.contacts c
+      where c.owner_id = shared_entries.owner_id
+        and c.auth_user_id = auth.uid()
+    )
+  )
+  with check (
+    owner_id = auth.uid()
+    or exists (
+      select 1 from public.contacts c
+      where c.owner_id = shared_entries.owner_id
+        and c.auth_user_id = auth.uid()
+    )
+  );
 
 -- =============================================================================
 -- updated_at auto-trigger (so the client can rely on it for last-write-wins)
