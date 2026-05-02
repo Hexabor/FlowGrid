@@ -149,6 +149,83 @@ export async function checkPendingInvitations() {
   }
 }
 
+// Backfills run on every boot so prior invitations (accepted before the
+// reciprocal-contact auto-create existed) and contacts saved before the
+// owner_email column landed self-heal without any user action.
+
+async function backfillOwnerEmailOnOwnContacts() {
+  const user = await getUser();
+  if (!user?.email) return;
+  const needsBackfill = state.contacts.filter((c) => !c.ownerEmail);
+  if (!needsBackfill.length) return;
+  needsBackfill.forEach((c) => {
+    c.ownerEmail = user.email;
+  });
+  saveContacts();
+}
+
+async function backfillReciprocalContacts() {
+  const myUid = await getUserId();
+  if (!myUid) return;
+  const partnerIds = new Set(
+    state.sharedEntries
+      .filter((e) => e.ownerId && e.ownerId !== myUid)
+      .map((e) => e.ownerId)
+  );
+  if (!partnerIds.size) return;
+
+  let created = false;
+  for (const partnerId of partnerIds) {
+    if (state.contacts.some((c) => c.authUserId === partnerId)) continue;
+
+    // Look up the partner's contact (the one that links me) via the
+    // "linked partner can read" RLS policy. This row sits in the
+    // partner's account; we read it cross-account purely to pull out
+    // their owner_email.
+    let partnerEmail = "";
+    try {
+      const url =
+        `${SUPABASE_URL}/rest/v1/contacts` +
+        `?owner_id=eq.${partnerId}&auth_user_id=eq.${myUid}` +
+        `&select=owner_email,name`;
+      const res = await fetch(url, { headers: authHeaders() });
+      if (res.ok) {
+        const rows = await res.json();
+        partnerEmail = rows[0]?.owner_email ?? "";
+      }
+    } catch (error) {
+      console.warn("[invitations] reciprocal lookup failed:", error);
+    }
+
+    state.contacts.push({
+      id: createId(),
+      name: nameFromEmail(partnerEmail) || "Vinculado",
+      email: partnerEmail,
+      invitedAt: null,
+      authUserId: partnerId,
+      ownerEmail: null,
+      createdAt: new Date().toISOString(),
+    });
+    created = true;
+  }
+
+  if (created) {
+    saveContacts();
+    renderContacts();
+    renderSharedView();
+    renderMovements();
+  }
+}
+
+export async function runInvitationBackfills() {
+  try {
+    await backfillOwnerEmailOnOwnContacts();
+    await backfillReciprocalContacts();
+  } catch (error) {
+    console.error("[invitations] backfill failed:", error);
+  }
+}
+
 elements.closeInvitationModal.addEventListener("click", closeInvitationModal);
 
 elements.invitationModal.addEventListener("click", (event) => {
