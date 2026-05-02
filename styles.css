@@ -2410,7 +2410,11 @@ dt {
 
   .balance-card .balance-actions {
     grid-area: actions;
-    grid-template-columns: 1fr 1fr;
+    /* Solo una columna porque "Ver entradas" se oculta en móvil — el
+       dropdown del Saldos ya filtra los movimientos abajo, así que el
+       botón sería redundante (scrollear ≠ acción). Dejamos solo
+       Liquidar saldo a ancho completo. */
+    grid-template-columns: 1fr;
     gap: 8px;
     margin-top: 0;
   }
@@ -2418,6 +2422,10 @@ dt {
   .balance-card .balance-action {
     padding: 8px 10px;
     text-align: center;
+  }
+
+  .balance-card .balance-action.ghost {
+    display: none;
   }
 
   /* En móvil, la subcadena "Raquel te paga / tú pagas a Raquel" se
