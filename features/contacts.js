@@ -3,6 +3,7 @@ import { elements } from "../core/dom.js";
 import { saveContacts } from "../core/storage.js";
 import { createId } from "../core/utils.js";
 import { entryBalanceImpact, renderSharedView, syncSharedContactOptions, syncSharedModeLabels } from "./shared.js";
+import { sendInvitation } from "./invitations.js";
 
 export function getContact(id) {
   return state.contacts.find((contact) => contact.id === id);
@@ -37,6 +38,7 @@ export function renderContacts() {
     const item = document.createElement("article");
     const name = document.createElement("input");
     const email = document.createElement("input");
+    const inviteButton = document.createElement("button");
     const saveButton = document.createElement("button");
     const deleteButton = document.createElement("button");
 
@@ -50,6 +52,30 @@ export function renderContacts() {
     email.placeholder = "email (opcional)";
     email.setAttribute("aria-label", "Email del contacto");
     email.dataset.field = "email";
+
+    // Invite slot: shows nothing for contacts without email; "Vinculado"
+    // (read-only) once the contact has accepted; "Invitar" or "Reinvitar"
+    // otherwise. The flow itself (sendInvitation) is in invitations.js.
+    inviteButton.type = "button";
+    inviteButton.dataset.action = "invite-contact";
+    inviteButton.className = "ghost-action contact-invite-button";
+    if (contact.authUserId) {
+      inviteButton.textContent = "Vinculado";
+      inviteButton.disabled = true;
+      inviteButton.title = "El contacto ya aceptó la invitación";
+      inviteButton.classList.add("is-linked");
+    } else if (!contact.email) {
+      inviteButton.textContent = "Invitar";
+      inviteButton.disabled = true;
+      inviteButton.title = "Necesitas el email del contacto para poder invitarlo";
+    } else if (contact.invitedAt) {
+      inviteButton.textContent = "Reinvitar";
+      inviteButton.title = `Última invitación: ${new Date(contact.invitedAt).toLocaleDateString("es-ES")}`;
+    } else {
+      inviteButton.textContent = "Invitar";
+      inviteButton.title = "Enviar invitación por email";
+    }
+
     saveButton.type = "button";
     saveButton.className = "save-action";
     saveButton.dataset.action = "save-contact";
@@ -64,7 +90,7 @@ export function renderContacts() {
     deleteButton.textContent = "x";
     deleteButton.disabled = contactHasEntries(contact.id);
 
-    item.append(name, email, saveButton, deleteButton);
+    item.append(name, email, inviteButton, saveButton, deleteButton);
     fragment.append(item);
   });
 
@@ -141,5 +167,30 @@ elements.contactsList.addEventListener("click", (event) => {
     renderContacts();
     renderSharedView();
     syncSharedContactOptions();
+    return;
+  }
+
+  if (button.dataset.action === "invite-contact") {
+    if (!contact.email) {
+      alert(`Añade primero un email a ${contact.name} para poder invitarle.`);
+      return;
+    }
+    if (contact.authUserId) {
+      // Defensive: button should be disabled when linked, but never trust UI.
+      return;
+    }
+    button.disabled = true;
+    const previousText = button.textContent;
+    button.textContent = "Enviando…";
+    sendInvitation(contact)
+      .then(() => {
+        // sendInvitation re-renders contacts, so we don't restore manually.
+      })
+      .catch((error) => {
+        console.error("[contacts] invite failed:", error);
+        alert(`No se pudo enviar la invitación: ${error.message ?? error}`);
+        button.textContent = previousText;
+        button.disabled = false;
+      });
   }
 });

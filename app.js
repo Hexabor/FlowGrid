@@ -4,6 +4,7 @@ import { render } from "./ui/render.js";
 import { closeMovementModal, elements, restoreLastView, setView } from "./core/dom.js";
 import { closePaymentModal } from "./features/shared.js";
 import { collapseExpandedCard } from "./features/movements.js";
+import { checkPendingInvitations, closeInvitationModal } from "./features/invitations.js";
 import { onAuthChange } from "./core/supabase.js";
 import { cloudHydrate } from "./core/cloud.js";
 import { showAuthGate, hideAuthGate, refreshSessionBadge } from "./ui/auth-gate.js";
@@ -27,6 +28,9 @@ async function bootApp() {
   render();
   refreshSessionBadge();
   restoreLastView();
+  // Surface any pending invitations addressed to this user's email. Runs
+  // last so the rest of the app is already painted underneath the modal.
+  checkPendingInvitations();
   console.log("[app] boot complete");
 }
 
@@ -52,6 +56,7 @@ document.addEventListener("keydown", (event) => {
     toggleDatePicker(false);
     closeMovementModal();
     closePaymentModal();
+    closeInvitationModal();
     collapseExpandedCard();
     document.querySelectorAll('.info-button[aria-expanded="true"]').forEach((button) => {
       button.setAttribute("aria-expanded", "false");

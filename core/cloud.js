@@ -57,6 +57,7 @@ function contactToCloud(c, ownerId) {
     name: c.name,
     email: c.email ?? "",
     invited_at: c.invitedAt ?? null,
+    auth_user_id: c.authUserId ?? null,
     created_at: c.createdAt ?? new Date().toISOString(),
   };
 }
@@ -67,14 +68,19 @@ function contactFromCloud(row) {
     name: row.name,
     email: row.email ?? "",
     invitedAt: row.invited_at ?? null,
+    authUserId: row.auth_user_id ?? null,
     createdAt: row.created_at,
   };
 }
 
+// `ownerId` here is the row's owner (inviter when partner edits a shared
+// entry that belongs to the inviter). Local entries created by the user
+// inherit the current user's id; entries hydrated from a linked partner
+// keep the partner's id, so a re-push doesn't accidentally re-home them.
 function sharedToCloud(e, ownerId) {
   return {
     id: e.id,
-    owner_id: ownerId,
+    owner_id: e.ownerId ?? ownerId,
     contact_id: e.contactId,
     type: e.type,
     date: e.date,
@@ -86,6 +92,7 @@ function sharedToCloud(e, ownerId) {
     my_share: e.myShare ?? 0,
     their_share: e.theirShare ?? 0,
     source_movement_id: e.sourceMovementId ?? null,
+    settled_at: e.settledAt ?? null,
     created_at: e.createdAt ?? new Date().toISOString(),
   };
 }
@@ -93,6 +100,7 @@ function sharedToCloud(e, ownerId) {
 function sharedFromCloud(row) {
   return {
     id: row.id,
+    ownerId: row.owner_id,
     type: row.type,
     contactId: row.contact_id,
     date: row.date,
@@ -104,6 +112,7 @@ function sharedFromCloud(row) {
     myShare: Number(row.my_share),
     theirShare: Number(row.their_share),
     sourceMovementId: row.source_movement_id ?? null,
+    settledAt: row.settled_at ?? null,
     createdAt: row.created_at,
   };
 }
@@ -179,7 +188,32 @@ export async function cloudPushContacts() {
 export async function cloudPushSharedEntries() {
   const ownerId = await getUserId();
   if (!ownerId) return;
-  await syncTable("shared_entries", ownerId, state.sharedEntries, sharedToCloud);
+
+  // Diff-delete is scoped to MY entries: the cloud GET filters owner_id =
+  // me, so partner-owned entries (visible to me via RLS) are excluded
+  // from the deletion candidate set and can't be wiped by my push when
+  // they sit normally in my local state. localIds here is restricted to
+  // my-owned entries too, so the diff stays apples-to-apples.
+  const myEntries = state.sharedEntries.filter(
+    (e) => (e.ownerId ?? ownerId) === ownerId
+  );
+  const existing = await restGet(
+    `shared_entries?owner_id=eq.${ownerId}&select=id&limit=${ROW_LIMIT}`
+  );
+  const localIds = new Set(myEntries.map((e) => e.id));
+  const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
+  await restDelete("shared_entries", toDelete);
+
+  // Upsert ALL local entries (mine + linked-partner edits). The mapper
+  // preserves each entry's original owner_id; the RLS WITH CHECK clause
+  // accepts both the owner case and the linked-partner case, so partner
+  // edits get persisted under the partner's owner_id intact.
+  if (state.sharedEntries.length) {
+    await restUpsert(
+      "shared_entries",
+      state.sharedEntries.map((e) => sharedToCloud(e, ownerId))
+    );
+  }
 }
 
 export async function cloudPushSettings() {
@@ -215,14 +249,24 @@ export async function cloudHydrate() {
     restGet(`movements?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
     restGet(`settings?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
     restGet(`contacts?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
-    restGet(`shared_entries?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
+    // shared_entries: NO owner_id filter — RLS already returns my own
+    // entries plus those owned by linked partners (contacts where the
+    // partner has set me as auth_user_id). We hydrate them as a single
+    // pool keyed by ownerId so the UI can display them seamlessly.
+    restGet(`shared_entries?select=*&limit=${ROW_LIMIT}`),
   ]);
 
   const settingsRow = settingsData[0] ?? null;
+  // Restrict the empty-cloud check to MY data only. With the linked-partner
+  // RLS, sharedData now includes entries owned by other users (the inviter
+  // that linked me), so we must not let those count as "this user has data
+  // already" — otherwise a brand-new invitee skips the local-to-cloud seed
+  // step and ends up missing their default categories/concepts.
+  const myShared = sharedData.filter((row) => row.owner_id === ownerId);
   const cloudIsEmpty =
     !movementsData.length &&
     !contactsData.length &&
-    !sharedData.length &&
+    !myShared.length &&
     !settingsRow;
 
   if (cloudIsEmpty) {

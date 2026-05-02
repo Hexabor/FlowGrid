@@ -45,6 +45,10 @@ export const elements = {
   // the top X (mobile, sitting next to "Filtrar" so the filter bar itself
   // never wraps to a second row when active). Both share data-role="reset".
   resetSearchButtons: document.querySelectorAll('[data-role="reset"]'),
+  invitationModal: document.querySelector("#invitation-modal"),
+  closeInvitationModal: document.querySelector("#close-invitation-modal"),
+  invitationList: document.querySelector("#invitation-list"),
+  invitationFeedback: document.querySelector("#invitation-feedback"),
   list: document.querySelector("#movement-list"),
   template: document.querySelector("#movement-template"),
   currentPeriod: document.querySelector("#current-period"),
