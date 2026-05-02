@@ -1,7 +1,7 @@
 import { state } from "../core/state.js";
 import { elements } from "../core/dom.js";
 import { APP_LOCALE, formatMoney } from "../core/utils.js";
-import { getCategoryLabel } from "./movements.js";
+import { getCategoryLabel, getAllMovements } from "./movements.js";
 
 export function getPeriodRange(type) {
   if (type === "month") {
@@ -18,7 +18,10 @@ export function getPeriodRange(type) {
 export function getMovementsInRange(type) {
   const { start, end } = getPeriodRange(type);
 
-  return state.movements.filter((movement) => {
+  // getAllMovements = los movimientos reales del usuario + los "virtuales"
+  // que vienen de gastos compartidos donde el otro pagó (su parte sigue
+  // contando como gasto suyo aunque no haya soltado dinero todavía).
+  return getAllMovements().filter((movement) => {
     const date = new Date(`${movement.date}T00:00:00`);
     return date >= start && date < end;
   });
