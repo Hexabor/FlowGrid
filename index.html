@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
-    <link rel="stylesheet" href="styles.css?v=2026-05-02-1445">
+    <link rel="stylesheet" href="styles.css?v=2026-05-02-1511">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -269,65 +269,40 @@
           </header>
 
           <section class="panel" aria-labelledby="movement-count">
-            <div class="section-heading">
-              <h2 id="movement-count">0 movimientos</h2>
-              <div class="ledger-actions">
-                <button id="reset-search" class="filter-clear-button" type="button" aria-label="Limpiar filtros" hidden>x</button>
-                <button id="open-search-modal" class="primary-action" type="button">Filtrar</button>
-                <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
+            <header class="ledger-header">
+              <div class="ledger-header-top">
+                <h2 id="movement-count">0 movimientos</h2>
+                <div class="ledger-actions">
+                  <button id="open-filter" class="primary-action ledger-filter-toggle" type="button" aria-expanded="false" aria-controls="filter-bar">Filtrar</button>
+                  <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
+                </div>
               </div>
-            </div>
+              <div id="filter-bar" class="filter-bar is-collapsed-mobile">
+                <select id="filter-field-mobile" class="filter-field-mobile" aria-label="Campo a filtrar">
+                  <option value="all">Todos</option>
+                  <option value="concept">Concepto</option>
+                  <option value="note">Nota</option>
+                  <option value="party">Emisor / receptor</option>
+                </select>
+                <input id="filter-text" class="filter-text" type="search" autocomplete="off" placeholder="Buscar texto&hellip;" aria-label="Texto a filtrar">
+                <select id="filter-concept" class="filter-concept-desktop" aria-label="Filtrar por concepto">
+                  <option value="all">Cualquier concepto</option>
+                </select>
+                <select id="category-filter" class="filter-category-desktop" aria-label="Filtrar por categor&iacute;a">
+                  <option value="all">Cualquier categor&iacute;a</option>
+                </select>
+                <select id="type-filter" class="filter-type-desktop" aria-label="Filtrar por tipo">
+                  <option value="all">Cualquier tipo</option>
+                  <option value="expense">Gastos</option>
+                  <option value="income">Ingresos</option>
+                </select>
+                <button id="reset-search" class="filter-clear-button" type="button" aria-label="Limpiar filtros" hidden>x</button>
+              </div>
+            </header>
 
             <div id="movement-list" class="movement-list"></div>
           </section>
         </section>
-
-        <div id="search-modal" class="modal" hidden>
-          <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="search-title">
-            <div class="section-heading">
-              <h2 id="search-title">Filtrar movimientos</h2>
-              <button id="close-search-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
-            </div>
-
-            <form id="search-form" class="search-form">
-              <label>
-                <span>Concepto</span>
-                <input id="search-concept" name="concept" type="search" autocomplete="off" placeholder="Cualquier concepto">
-              </label>
-
-              <label>
-                <span>Nota</span>
-                <input id="search-note" name="note" type="search" autocomplete="off" placeholder="Cualquier nota">
-              </label>
-
-              <label>
-                <span>Emisor / receptor</span>
-                <input id="search-party" name="party" type="search" autocomplete="off" placeholder="Cualquier emisor o receptor">
-              </label>
-
-              <label>
-                <span>Categoria</span>
-                <select id="category-filter" name="category">
-                  <option value="all">Todas</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Tipo</span>
-                <select id="type-filter" name="type">
-                  <option value="all">Todos</option>
-                  <option value="expense">Gastos</option>
-                  <option value="income">Ingresos</option>
-                </select>
-              </label>
-
-              <p id="filter-count" class="filter-count" aria-live="polite"></p>
-
-              <button class="primary-action" type="submit">Aplicar filtros</button>
-              <button id="search-clear" class="ghost-action" type="button">Limpiar</button>
-            </form>
-          </div>
-        </div>
 
         <div id="movement-modal" class="modal" hidden>
           <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="form-title">
@@ -958,7 +933,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-02 14:45:10";
+      window.__FG_BUILD__ = "2026-05-02 15:11:43";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1016,6 +991,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-02-1445"></script>
+    <script type="module" src="app.js?v=2026-05-02-1511"></script>
   </body>
 </html>

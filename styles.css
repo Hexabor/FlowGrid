@@ -2521,42 +2521,106 @@ dt {
   border-color: var(--green);
 }
 
-/* ==== Search modal form ==== */
-.search-form {
-  display: grid;
-  gap: 10px;
+/* ==== Ledger header (panel de movimientos) ====
+   Móvil: el header completo (top + filter-bar) queda sticky, así "N
+   movimientos", el botón Filtrar y "Nuevo movimiento" siguen accesibles
+   al hacer scroll por la lista. Desktop: header normal en flujo, con
+   filter-bar permanente debajo (sin toggle). */
+.ledger-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
-.filter-count {
-  margin: 4px 0 0;
-  padding: 8px 12px;
-  background: var(--surface-soft);
-  border-radius: 6px;
-  color: var(--text);
-  font-weight: 700;
-  text-align: center;
+.ledger-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
 }
 
-@media (min-width: 720px) {
-  .search-form {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .search-form > label:nth-of-type(1),
-  .search-form > label:nth-of-type(2) {
-    grid-column: 1 / -1;
-  }
-
-  .search-form > button,
-  .search-form > .filter-count {
-    grid-column: 1 / -1;
-  }
+.ledger-header-top h2 {
+  margin: 0;
 }
 
-/* ==== Ledger header actions (Buscar + Nuevo movimiento) ==== */
 .ledger-actions {
   display: flex;
   gap: 8px;
+}
+
+/* ==== Filter bar inline ==== */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-bar .filter-text {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.filter-bar select {
+  min-height: 36px;
+}
+
+/* Mobile: bar collapses by default; "Filtrar" toggles it. The desktop-only
+   controls (concepto/categoría/tipo dropdowns) are hidden — only the field
+   selector + text input + clear button remain. */
+@media (max-width: 719px) {
+  .filter-bar.is-collapsed-mobile {
+    display: none;
+  }
+
+  .filter-bar .filter-concept-desktop,
+  .filter-bar .filter-category-desktop,
+  .filter-bar .filter-type-desktop {
+    display: none;
+  }
+
+  .filter-bar .filter-field-mobile {
+    flex: 0 0 auto;
+    max-width: 42%;
+  }
+
+  /* Header sticky: el título + botones + filter-bar quedan congelados
+     en lo alto del viewport mientras se hace scroll por la lista. */
+  #movements-view .ledger-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    /* Negative side margins cancel the panel's 10px padding so the
+       sticky bar sits flush with the panel borders; the inner padding
+       restores the original visual spacing of its content. */
+    margin: -10px -10px 10px;
+    padding: 10px 10px 8px;
+    background: var(--surface);
+    box-shadow: 0 6px 12px -10px rgba(23, 32, 38, 0.18);
+  }
+}
+
+/* Desktop: bar permanente (ignora cualquier toggle), Filtrar oculto, todos
+   los dropdowns visibles + el text input multi-campo. */
+@media (min-width: 720px) {
+  .filter-bar.is-collapsed-mobile,
+  .filter-bar {
+    display: flex;
+  }
+
+  .filter-bar .filter-field-mobile {
+    display: none;
+  }
+
+  .filter-bar select {
+    flex: 0 0 auto;
+  }
+
+  .ledger-filter-toggle {
+    display: none;
+  }
 }
 
 .ghost-action {

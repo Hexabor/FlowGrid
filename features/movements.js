@@ -66,8 +66,20 @@ export function syncMovementSelects() {
 
   elements.concept.innerHTML = optionMarkup(concepts, selectedConcept);
   elements.category.innerHTML = optionMarkup(state.settings.categories, getConcept(selectedConcept)?.category);
-  elements.categoryFilter.innerHTML = '<option value="all">Todas</option>' + optionMarkup(state.settings.categories);
+  elements.categoryFilter.innerHTML = '<option value="all">Cualquier categoría</option>' + optionMarkup(state.settings.categories);
   elements.newConceptCategory.innerHTML = optionMarkup(state.settings.categories);
+  // Filter dropdown for concept (desktop): every concept, sorted alphabetically.
+  // Preserves the current selection so a re-render mid-filter doesn't reset it.
+  const conceptOptions = state.settings.concepts
+    .slice()
+    .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }))
+    .map((concept) => ({ value: concept.label, label: concept.label }));
+  const previousFilterConcept = elements.filterConcept.value || "all";
+  elements.filterConcept.innerHTML =
+    '<option value="all">Cualquier concepto</option>' + optionMarkup(conceptOptions);
+  elements.filterConcept.value = state.settings.concepts.some((c) => c.label === previousFilterConcept)
+    ? previousFilterConcept
+    : "all";
   syncCategoryFromConcept();
 }
 
@@ -114,10 +126,31 @@ function compareMovements(a, b, key) {
   }
 }
 
+// Filter model:
+// - filterText is a single text query that searches across one or more
+//   text fields (concept/note/party). On mobile the user picks the
+//   target field via filterFieldMobile (default "all" = any of the three).
+//   On desktop the field selector is hidden and stays at "all", so the
+//   text input naturally behaves as a multi-field search there.
+// - filterConcept, categoryFilter and typeFilter are dropdowns that on
+//   desktop sit alongside the text input. On mobile they're hidden and
+//   stay at their default ("all"), so they don't constrain anything.
+function matchesTextField(movement, text, field) {
+  if (!text) return true;
+  if (field === "concept") return (movement.concept || "").toLowerCase().includes(text);
+  if (field === "note") return (movement.note || "").toLowerCase().includes(text);
+  if (field === "party") return (movement.party || "").toLowerCase().includes(text);
+  return (
+    (movement.concept || "").toLowerCase().includes(text) ||
+    (movement.note || "").toLowerCase().includes(text) ||
+    (movement.party || "").toLowerCase().includes(text)
+  );
+}
+
 export function getFilteredMovements() {
-  const conceptQuery = elements.searchConcept.value.trim().toLowerCase();
-  const noteQuery = elements.searchNote.value.trim().toLowerCase();
-  const partyQuery = elements.searchParty.value.trim().toLowerCase();
+  const text = elements.filterText.value.trim().toLowerCase();
+  const field = elements.filterFieldMobile.value;
+  const selectedConcept = elements.filterConcept.value;
   const selectedCategory = elements.categoryFilter.value;
   const selectedType = elements.typeFilter.value;
   const { key, dir } = state.movementSort;
@@ -125,9 +158,8 @@ export function getFilteredMovements() {
   return state.movements
     .filter((movement) => selectedType === "all" || movement.type === selectedType)
     .filter((movement) => selectedCategory === "all" || movement.category === selectedCategory)
-    .filter((movement) => !conceptQuery || (movement.concept || "").toLowerCase().includes(conceptQuery))
-    .filter((movement) => !noteQuery || (movement.note || "").toLowerCase().includes(noteQuery))
-    .filter((movement) => !partyQuery || (movement.party || "").toLowerCase().includes(partyQuery))
+    .filter((movement) => selectedConcept === "all" || movement.concept === selectedConcept)
+    .filter((movement) => matchesTextField(movement, text, field))
     .sort((a, b) => {
       const cmp = compareMovements(a, b, key);
       // Tie-break by date desc + id so equal-key rows have a stable order.
@@ -138,9 +170,8 @@ export function getFilteredMovements() {
 
 export function isSearchActive() {
   return Boolean(
-    elements.searchConcept.value.trim() ||
-      elements.searchNote.value.trim() ||
-      elements.searchParty.value.trim() ||
+    elements.filterText.value.trim() ||
+      elements.filterConcept.value !== "all" ||
       elements.categoryFilter.value !== "all" ||
       elements.typeFilter.value !== "all"
   );
@@ -525,60 +556,38 @@ function refreshSearchButtonState() {
   elements.resetSearchButton.hidden = !isSearchActive();
 }
 
-function refreshFilterCount() {
-  const count = getFilteredMovements().length;
-  elements.filterCount.textContent =
-    count === 1 ? "1 movimiento coincide" : `${count} movimientos coinciden`;
-}
-
 function clearSearchFilters() {
-  elements.searchConcept.value = "";
-  elements.searchNote.value = "";
-  elements.searchParty.value = "";
+  elements.filterText.value = "";
+  elements.filterFieldMobile.value = "all";
+  elements.filterConcept.value = "all";
   elements.categoryFilter.value = "all";
   elements.typeFilter.value = "all";
   renderMovements();
   refreshSearchButtonState();
-  refreshFilterCount();
 }
 
+// Live re-filter on every input/change event from any of the controls,
+// so the list updates as the user types or picks a dropdown — no submit.
 [
-  elements.searchConcept,
-  elements.searchNote,
-  elements.searchParty,
+  elements.filterText,
+  elements.filterFieldMobile,
+  elements.filterConcept,
   elements.categoryFilter,
   elements.typeFilter,
 ].forEach((control) => {
-  control.addEventListener("input", refreshFilterCount);
+  control.addEventListener("input", () => {
+    renderMovements();
+    refreshSearchButtonState();
+  });
 });
 
-elements.openSearchModal.addEventListener("click", () => {
-  elements.searchModal.hidden = false;
-  refreshFilterCount();
-  elements.searchConcept.focus();
-});
-
-function closeSearchModal() {
-  elements.searchModal.hidden = true;
-}
-
-elements.closeSearchModal.addEventListener("click", closeSearchModal);
-
-elements.searchModal.addEventListener("click", (event) => {
-  if (event.target === elements.searchModal) {
-    closeSearchModal();
-  }
-});
-
-elements.searchForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  closeSearchModal();
-  renderMovements();
-  refreshSearchButtonState();
-});
-
-elements.searchClear.addEventListener("click", () => {
-  clearSearchFilters();
+// Mobile-only: "Filtrar" toggles the inline filter row inside the sticky
+// header. Class-based so the desktop CSS can keep the bar permanently
+// visible without fighting the [hidden] attribute.
+elements.openFilter.addEventListener("click", () => {
+  const collapsed = elements.filterBar.classList.toggle("is-collapsed-mobile");
+  elements.openFilter.setAttribute("aria-expanded", String(!collapsed));
+  if (!collapsed) elements.filterText.focus();
 });
 
 elements.resetSearchButton.addEventListener("click", clearSearchFilters);
