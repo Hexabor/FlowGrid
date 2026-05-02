@@ -1,5 +1,54 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-05-02",
+    commit: "dev@HEAD",
+    title: "Compartidos paso 3: invitaciones, edición simétrica y registro de cambios",
+    changes: [
+      "Invitar a un contacto: en Configuración → Contactos cualquier contacto con email muestra un botón \"Invitar\". Al pulsarlo se manda un magic-link al email del contacto vía Resend. Cuando acepta, ambos lados ven los gastos compartidos comunes; tu UI muestra una etiqueta verde \"Vinculado\" donde antes estaba el botón.",
+      "Recíproco automático: al aceptar la invitación, FlowGrid crea en la cuenta del invitado un contacto que apunta al inviter (con su email pre-rellenado), para que ambos lados puedan registrar nuevos gastos en común desde el principio.",
+      "Edición simétrica: ahora puedes editar gastos compartidos del otro usuario directamente desde la lista de Compartidos. El formulario se abre con tu perspectiva (quién pagó, tu parte) y al guardar se aplica la inversión inversa para que el otro lado siga viéndolo coherente. El selector de contacto queda bloqueado al editar entradas del partner.",
+      "Registro de cambios por entrada: un icono de reloj en cada fila abre un modal con el historial completo (quién, cuándo, qué cambió y comentario opcional). El registro es permanente: nada se borra ni se modifica. Útil para auditar cambios entre cuentas vinculadas.",
+      "Liquidación por gasto concreto: además del \"Liquidar saldo\" global, ahora puedes marcar un gasto individual como liquidado con un botón en su fila. La entrada se atenúa, el importe se tacha y deja de contar al saldo. Reversible con un click (\"Reabrir\").",
+      "Categoría \"Definir\" amarilla: cuando un gasto compartido del partner usa un concepto que no tienes catalogado, FlowGrid lo añade a tu lista con esta categoría de aviso. Tú decides en Configuración a qué categoría real lo asignas, sin afectar al otro usuario.",
+      "Movimientos virtuales: la parte del partner se ve también como movimiento en tu lista personal y cuenta en tu análisis (Mes a mes, Año a año), aunque no hayas pagado el cash todavía. Lo que asumes es gasto tuyo igualmente; liquidar solo cierra el saldo en Compartidos, no añade ni quita movimientos.",
+      "Tildes pulidas: \"Tu pagaste\" → \"Tú pagaste\", \"Contacto pago\" → \"Contacto pagó\", y orden de palabras correcto en el resumen de cada gasto compartido.",
+    ],
+  },
+  {
+    date: "2026-05-02",
+    commit: "dev@HEAD",
+    title: "Movimientos en móvil: card expandible al tocar y filtro inline congelado",
+    changes: [
+      "Card móvil simplificada: por defecto solo se ve concepto + importe + (badges de recurrencia y compartido si aplican). Al tocar la card, crece orgánicamente abajo con todos los datos del movimiento: fecha, categoría, recurrencia completa, emisor/receptor, nota, gasto compartido si aplica, y botones de acción (Editar / Duplicar / Eliminar).",
+      "Filtro inline en lugar de modal. En móvil, \"Filtrar\" expande la cabecera con un selector de campo (Todos / Concepto / Nota / Emisor) y un input de búsqueda. En desktop, la barra de filtros es permanente con dropdowns combinables para Concepto, Categoría, Tipo + un input de texto que busca en TODOS los campos a la vez (concepto, nota, emisor, categoría, tipo, recurrencia y contacto compartido).",
+      "Cabeceras congeladas al hacer scroll en desktop: la barra de filtro, los títulos de columnas (sortables) y el separador del mes que estás viendo. Al cruzar al siguiente mes, su separador empuja al anterior fuera de vista.",
+      "Live-filter al teclear con debounce de 140ms para que la lista no se recalcule en cada pulsación cuando tienes mil movimientos.",
+      "Botón de cerrar filtro reposicionado: en móvil va al lado del botón \"Filtrar\" (la fila del filtro queda en una sola línea), en desktop sigue dentro de la barra de filtros.",
+    ],
+  },
+  {
+    date: "2026-05-02",
+    commit: "dev@HEAD",
+    title: "Home con jerarquía visual + sidebar reorganizado + iconos PWA",
+    changes: [
+      "Las cuatro tarjetas principales del Home (Movimientos, Compartidos, Mes a mes, Año a año) tienen ahora un cuadradito de color detrás del icono — azul, violeta, verde, ámbar — con un tinte suave de fondo. Configuración, Novedades y Próximas mejoras pasan a una fila inferior compacta de \"links secundarios\" con menos peso visual.",
+      "En móvil, los links secundarios aparecen solo como iconos (sin texto) para no apretar la pantalla.",
+      "Sidebar y barra inferior móvil reordenadas en el mismo orden que las tarjetas (Movimientos · Compartidos · Mes a mes · Año a año). Botón de salir de sesión movido al rincón inferior. El email del usuario aparece a su lado como un chivato (texto, no botón).",
+      "FlowGrid tiene icono propio en la pestaña del navegador y en \"Añadir a pantalla de inicio\" en iOS, Android, y al instalarla como app en cualquier sistema operativo. Color de tema verde teal coherente con el resto de la app.",
+      "Build label arriba a la derecha incluye segundos (formato YYYY-MM-DD HH:mm:ss) para que sea trivial saber si tienes la última versión cacheada o una propagación pendiente.",
+    ],
+  },
+  {
+    date: "2026-05-02",
+    commit: "dev@HEAD",
+    title: "Botón de feedback operativo",
+    changes: [
+      "El formulario de \"¿Tienes una idea o detectas un fallo?\" en la vista Próximas mejoras ya envía mensajes de verdad. El correo llega con el remitente noreply@arcdev.app (mismo SMTP de Resend que los magic-links) y reply-to apuntando al email del usuario, para poder contestarle directamente.",
+      "Estado live: \"Enviando…\" / \"¡Gracias! Tu feedback ha llegado bien.\" / mensaje de error si algo va mal.",
+      "Backend: Edge Function en Supabase verificando el JWT del usuario y reenviando vía Resend.",
+    ],
+  },
+  {
     date: "2026-05-01",
     commit: "dev@HEAD",
     title: "Exportar a CSV, onboarding en Compartidos y formulario de feedback",

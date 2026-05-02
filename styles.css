@@ -2339,15 +2339,15 @@ dt {
   }
 
   .shared-entry {
-    /* Mobile: 5 explicit columns so every action button on row 3 sits
-       in its own cell instead of stacking on top of each other in a
-       single "actions" area. Empty cells collapse to 0 width when the
-       button isn't rendered (payment rows have no settle/history/edit). */
+    /* Mobile: 5 explicit columns. Row 3 packs all action buttons
+       together on the right edge — col 1 (1fr) absorbs the slack so
+       settle/history/edit/delete sit grouped and consistent across
+       rows, even when one of them isn't rendered (payment rows). */
     grid-template-columns: minmax(0, 1fr) auto auto auto auto;
     grid-template-areas:
       "date    .        .        .        amount"
       "main    main     main     main     main"
-      "settle  history  .        edit     delete";
+      ".       settle   history  edit     delete";
     align-items: center;
     gap: 6px;
   }
@@ -2361,25 +2361,10 @@ dt {
 
   .shared-entry-main { grid-area: main; }
 
-  .shared-entry .shared-entry-settle {
-    grid-area: settle;
-    justify-self: start;
-  }
-
-  .shared-entry .shared-entry-history {
-    grid-area: history;
-    justify-self: start;
-  }
-
-  .shared-entry .edit-action {
-    grid-area: edit;
-    justify-self: end;
-  }
-
-  .shared-entry .delete-action {
-    grid-area: delete;
-    justify-self: end;
-  }
+  .shared-entry .shared-entry-settle { grid-area: settle; }
+  .shared-entry .shared-entry-history { grid-area: history; }
+  .shared-entry .edit-action { grid-area: edit; }
+  .shared-entry .delete-action { grid-area: delete; }
 
   .movement-list {
     gap: 8px;
