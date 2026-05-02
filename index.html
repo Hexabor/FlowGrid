@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=2026-05-02-1547">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-1547">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-02-1646">
+    <link rel="stylesheet" href="styles.css?v=2026-05-02-1701">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -531,6 +531,7 @@
             <div class="callout-body">
               <p>Marca cualquier gasto como <strong>compartido</strong> y FlowGrid lo divide entre t&uacute; y la otra persona. En tus gastos solo cuenta <strong>tu parte</strong>; la otra queda como saldo pendiente con tu contacto.</p>
               <p class="callout-example"><strong>Ejemplo:</strong> cena 30&nbsp;&euro;, pagas t&uacute;, partes iguales &rarr; tus gastos del mes suben 15&nbsp;&euro;, y aparece <strong>+15&nbsp;&euro;</strong> que tu contacto te debe. Cuando os liquid&eacute;is, el saldo se cierra.</p>
+              <p class="callout-hint">Si tu contacto tiene cuenta y acepta tu invitaci&oacute;n, ambos veis los mismos gastos compartidos. Tu parte aparece en tus <strong>movimientos</strong> aunque no hayas pagado t&uacute;: lo que debes es un gasto tuyo igualmente. <strong>Liquidar</strong> un gasto solo cierra el saldo aqu&iacute; &mdash; no a&ntilde;ade ni quita movimientos personales.</p>
               <p class="callout-hint">Funciona como <em>Splitwise</em>, pero integrado con tu propia lista de gastos: as&iacute; tu balance personal refleja siempre lo que de verdad has gastado.</p>
             </div>
           </details>
@@ -955,7 +956,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-02 16:46:13";
+      window.__FG_BUILD__ = "2026-05-02 17:01:16";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1013,6 +1014,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-02-1646"></script>
+    <script type="module" src="app.js?v=2026-05-02-1701"></script>
   </body>
 </html>

@@ -22,7 +22,7 @@ import { saveContacts } from "../core/storage.js";
 import { createId } from "../core/utils.js";
 import { signInWithMagicLink, getUserId, getAccessToken, getUser } from "../core/supabase.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../core/config.js";
-import { cloudHydrate } from "../core/cloud.js";
+import { cloudHydrate, cloudPushContacts } from "../core/cloud.js";
 import { renderSharedView } from "./shared.js";
 import { renderContacts } from "./contacts.js";
 import { renderMovements } from "./movements.js";
@@ -161,7 +161,32 @@ async function backfillOwnerEmailOnOwnContacts() {
   needsBackfill.forEach((c) => {
     c.ownerEmail = user.email;
   });
+  // Save synchronously to localStorage AND await the cloud push directly
+  // so that, when this user's session is also the inviter someone is
+  // about to read on the partner side, the owner_email is in the cloud
+  // before the partner's reciprocal lookup queries it.
   saveContacts();
+  try {
+    await cloudPushContacts();
+  } catch (error) {
+    console.warn("[invitations] owner_email push failed:", error);
+  }
+}
+
+async function lookupPartnerEmail(partnerId, myUid) {
+  try {
+    const url =
+      `${SUPABASE_URL}/rest/v1/contacts` +
+      `?owner_id=eq.${partnerId}&auth_user_id=eq.${myUid}` +
+      `&select=owner_email`;
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) return "";
+    const rows = await res.json();
+    return rows[0]?.owner_email ?? "";
+  } catch (error) {
+    console.warn("[invitations] reciprocal lookup failed:", error);
+    return "";
+  }
 }
 
 async function backfillReciprocalContacts() {
@@ -174,42 +199,42 @@ async function backfillReciprocalContacts() {
   );
   if (!partnerIds.size) return;
 
-  let created = false;
+  let modified = false;
   for (const partnerId of partnerIds) {
-    if (state.contacts.some((c) => c.authUserId === partnerId)) continue;
+    const existing = state.contacts.find((c) => c.authUserId === partnerId);
+    const partnerEmail = await lookupPartnerEmail(partnerId, myUid);
 
-    // Look up the partner's contact (the one that links me) via the
-    // "linked partner can read" RLS policy. This row sits in the
-    // partner's account; we read it cross-account purely to pull out
-    // their owner_email.
-    let partnerEmail = "";
-    try {
-      const url =
-        `${SUPABASE_URL}/rest/v1/contacts` +
-        `?owner_id=eq.${partnerId}&auth_user_id=eq.${myUid}` +
-        `&select=owner_email,name`;
-      const res = await fetch(url, { headers: authHeaders() });
-      if (res.ok) {
-        const rows = await res.json();
-        partnerEmail = rows[0]?.owner_email ?? "";
-      }
-    } catch (error) {
-      console.warn("[invitations] reciprocal lookup failed:", error);
+    if (!existing) {
+      state.contacts.push({
+        id: createId(),
+        name: nameFromEmail(partnerEmail) || "Vinculado",
+        email: partnerEmail,
+        invitedAt: null,
+        authUserId: partnerId,
+        ownerEmail: null,
+        createdAt: new Date().toISOString(),
+      });
+      modified = true;
+      continue;
     }
 
-    state.contacts.push({
-      id: createId(),
-      name: nameFromEmail(partnerEmail) || "Vinculado",
-      email: partnerEmail,
-      invitedAt: null,
-      authUserId: partnerId,
-      ownerEmail: null,
-      createdAt: new Date().toISOString(),
-    });
-    created = true;
+    // Existing reciprocal — fill in any blanks the partner has now
+    // populated since last boot. Common case: the inviter pushed
+    // owner_email after we created the reciprocal in a prior boot
+    // (race), so the email + display name are still empty here.
+    if (partnerEmail && !existing.email) {
+      existing.email = partnerEmail;
+      modified = true;
+    }
+    const placeholderName =
+      existing.name === "Vinculado" || existing.name === "Cuenta vinculada";
+    if (placeholderName && partnerEmail) {
+      existing.name = nameFromEmail(partnerEmail);
+      modified = true;
+    }
   }
 
-  if (created) {
+  if (modified) {
     saveContacts();
     renderContacts();
     renderSharedView();

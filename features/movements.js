@@ -7,10 +7,12 @@ import {
   applySharedEntryToForm,
   buildSharedExpenseEntry,
   computeSharedShares,
+  entryAsMyPerspective,
   getMovementSharedLabel,
   renderSharedView,
   syncSharedFields,
 } from "./shared.js";
+import { getUserIdSync } from "../core/supabase.js";
 import { renderAnalysis } from "./analysis.js";
 import { setMovementDate } from "../ui/datepicker.js";
 
@@ -164,6 +166,43 @@ function matchesTextField(movement, text, field) {
   return false;
 }
 
+// Virtual movements: when the user is a linked partner of a shared
+// expense, the obligation is rendered as a movement on their side too,
+// regardless of who actually paid. This keeps both sides visually
+// symmetric ("you owe me €5" appears as a -€5 movement for the debtor)
+// without writing anything to the cloud — these rows are derived from
+// shared_entries at render time and do not exist in state.movements.
+// Settling a shared entry doesn't add or remove movements; it just
+// closes the obligation in Compartidos.
+function getVirtualMovementsFromShared() {
+  const myUid = getUserIdSync();
+  if (!myUid) return [];
+  return state.sharedEntries
+    .filter((e) => e.ownerId && e.ownerId !== myUid && e.type === "expense")
+    .map((entry) => {
+      const flipped = entryAsMyPerspective(entry);
+      const reciprocal = state.contacts.find((c) => c.authUserId === entry.ownerId);
+      const conceptDef = state.settings.concepts.find((c) => c.label === entry.concept);
+      return {
+        id: `virtual-${entry.id}`,
+        type: "expense",
+        date: entry.date,
+        concept: entry.concept,
+        amount: flipped.myShare,
+        category: conceptDef?.category ?? "perdido",
+        party: reciprocal?.name ?? "Vinculado",
+        recurrence: "",
+        note: entry.note ?? "",
+        sharedEntryId: entry.id,
+        isVirtual: true,
+      };
+    });
+}
+
+export function getAllMovements() {
+  return [...state.movements, ...getVirtualMovementsFromShared()];
+}
+
 export function getFilteredMovements() {
   const text = elements.filterText.value.trim().toLowerCase();
   // On desktop the mobile field selector is hidden, but its DOM value
@@ -176,7 +215,7 @@ export function getFilteredMovements() {
   const selectedType = elements.typeFilter.value;
   const { key, dir } = state.movementSort;
 
-  return state.movements
+  return getAllMovements()
     .filter((movement) => selectedType === "all" || movement.type === selectedType)
     .filter((movement) => selectedCategory === "all" || movement.category === selectedCategory)
     .filter((movement) => selectedConcept === "all" || movement.concept === selectedConcept)
@@ -220,6 +259,9 @@ export function createMovementCard(movement, compact = false) {
   // collapse to a single row.
   card.dataset.recurrence = recurrenceRaw.toLowerCase();
   card.dataset.shared = sharedLabel ? "true" : "false";
+  if (movement.isVirtual) {
+    card.dataset.virtual = "true";
+  }
   card.classList.toggle("is-compact", compact);
   if (movement.id === state.expandedMovementId) {
     card.classList.add("is-expanded");
@@ -257,9 +299,12 @@ export function createMovementCard(movement, compact = false) {
   }
 
   const sharedSection = card.querySelector(".movement-expanded-shared");
-  const linkedEntry = movement.sharedEntryId
+  const linkedEntryRaw = movement.sharedEntryId
     ? state.sharedEntries.find((entry) => entry.id === movement.sharedEntryId)
     : null;
+  // Flip to MY perspective so the expanded labels (modo de reparto,
+  // partes) read correctly when the linked entry is owned by a partner.
+  const linkedEntry = linkedEntryRaw ? entryAsMyPerspective(linkedEntryRaw) : null;
 
   if (linkedEntry) {
     const contactName = sharedLabel || "—";
@@ -280,6 +325,21 @@ export function createMovementCard(movement, compact = false) {
 
   if (compact) {
     card.querySelector(".delete-action").remove();
+  }
+
+  // Virtual movements: replace the edit/duplicate/delete row in the
+  // expanded section with a hint pointing to Compartidos, where the
+  // underlying shared_entry actually lives.
+  if (movement.isVirtual) {
+    const actions = card.querySelector(".movement-expanded-actions");
+    if (actions) {
+      actions.innerHTML = "";
+      const hint = document.createElement("p");
+      hint.className = "movement-expanded-virtual-hint";
+      hint.textContent =
+        "Esta entrada refleja un gasto compartido. Para editarla o liquidarla, ve a Compartidos.";
+      actions.append(hint);
+    }
   }
 
   return card;

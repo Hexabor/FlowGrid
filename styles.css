@@ -2576,6 +2576,32 @@ dt {
     background: var(--red);
     border-color: var(--red);
   }
+
+  /* Hint that replaces the action row inside the expanded section for
+     virtual movements (rows derived from a partner-owned shared_entry). */
+  .movement-expanded-virtual-hint {
+    margin: 0;
+    padding: 10px 12px;
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-style: italic;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    line-height: 1.4;
+  }
+}
+
+/* Virtual movements derived from a partner-owned shared_entry: the
+   action buttons (edit/duplicate/delete) don't apply because the row
+   doesn't live in this user's movements table — it's rendered from
+   the linked shared_entry. Hide them in both viewports. visibility
+   keeps the desktop grid columns intact so the row layout doesn't
+   shift. */
+.movement-card[data-virtual="true"] .edit-action,
+.movement-card[data-virtual="true"] .duplicate-action,
+.movement-card[data-virtual="true"] .delete-action {
+  visibility: hidden;
 }
 
 /* ==== Importe with € suffix ==== */
