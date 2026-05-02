@@ -343,13 +343,35 @@ function renderSharedBalances() {
 
   if (!contactsWithActivity.length) {
     elements.sharedBalances.innerHTML =
-      '<p class="empty-state">Sin actividad. Anade un gasto compartido desde Movimientos.</p>';
+      '<p class="empty-state">Sin actividad. Añade un gasto compartido desde Movimientos.</p>';
     return;
+  }
+
+  // En móvil, mostramos solo la tarjeta del contacto seleccionado para
+  // que el panel no se coma la pantalla. Si el filtro está en "Todos",
+  // mostramos un mensaje guía. En desktop renderizamos la rejilla
+  // entera como hasta ahora.
+  const onMobile = window.matchMedia("(max-width: 719px)").matches;
+  const selectedId = state.sharedFilterContactId;
+  let toRender = contactsWithActivity;
+
+  if (onMobile) {
+    if (selectedId === "all") {
+      elements.sharedBalances.innerHTML =
+        '<p class="empty-state">Selecciona un contacto del desplegable para ver su saldo y sus entradas.</p>';
+      return;
+    }
+    toRender = contactsWithActivity.filter((c) => c.id === selectedId);
+    if (!toRender.length) {
+      elements.sharedBalances.innerHTML =
+        '<p class="empty-state">Sin actividad con este contacto.</p>';
+      return;
+    }
   }
 
   const fragment = document.createDocumentFragment();
 
-  contactsWithActivity
+  toRender
     .map((contact) => ({ contact, balance: getSharedBalance(contact.id) }))
     .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
     .forEach(({ contact, balance }) => {
@@ -412,12 +434,16 @@ function renderSharedBalances() {
 
 function renderSharedFilterOptions() {
   const selected = state.sharedFilterContactId;
-  const options = ['<option value="all">Todos</option>'].concat(
-    state.contacts.map((contact) => `<option value="${contact.id}">${contact.name}</option>`)
-  );
-  elements.sharedContactFilter.innerHTML = options.join("");
-  elements.sharedContactFilter.value = state.contacts.some((contact) => contact.id === selected) ? selected : "all";
-  state.sharedFilterContactId = elements.sharedContactFilter.value;
+  const optionsMarkup = ['<option value="all">Todos</option>']
+    .concat(state.contacts.map((contact) => `<option value="${contact.id}">${contact.name}</option>`))
+    .join("");
+  elements.sharedContactFilter.innerHTML = optionsMarkup;
+  elements.sharedMobileContactPicker.innerHTML = optionsMarkup;
+
+  const validSelected = state.contacts.some((contact) => contact.id === selected) ? selected : "all";
+  elements.sharedContactFilter.value = validSelected;
+  elements.sharedMobileContactPicker.value = validSelected;
+  state.sharedFilterContactId = validSelected;
 }
 
 function renderSharedEntries() {
@@ -619,7 +645,7 @@ elements.sharedContactAdd.addEventListener("click", () => {
   renderContacts();
 });
 
-elements.sharedEntries.addEventListener("click", (event) => {
+elements.sharedEntries.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-action]");
   if (!button) return;
 
@@ -642,7 +668,9 @@ elements.sharedEntries.addEventListener("click", (event) => {
     const before = { ...entry };
     entry.settledAt = entry.settledAt ? null : new Date().toISOString();
     saveSharedEntries();
-    recordSharedEntryEdit(before, entry, "");
+    // Awaited so opening the history modal right after toggling shows
+    // the new row instead of racing with the in-flight insert.
+    await recordSharedEntryEdit(before, entry, "");
     renderSharedView();
     return;
   }
@@ -674,6 +702,20 @@ elements.sharedEntries.addEventListener("click", (event) => {
 
 elements.sharedContactFilter.addEventListener("change", () => {
   state.sharedFilterContactId = elements.sharedContactFilter.value;
+  // Keep the mobile picker in sync with the desktop filter so they
+  // never drift even if the user resizes between viewports.
+  elements.sharedMobileContactPicker.value = state.sharedFilterContactId;
+  renderSharedBalances();
+  renderSharedEntries();
+});
+
+// Mobile-only picker at the top of the Saldos panel: drives both the
+// balance card visibility and the entries filter below. Same state
+// field as the desktop dropdown.
+elements.sharedMobileContactPicker.addEventListener("change", () => {
+  state.sharedFilterContactId = elements.sharedMobileContactPicker.value;
+  elements.sharedContactFilter.value = state.sharedFilterContactId;
+  renderSharedBalances();
   renderSharedEntries();
 });
 

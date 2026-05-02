@@ -74,6 +74,7 @@ export const elements = {
   sharedBalances: document.querySelector("#shared-balances"),
   sharedContactsCount: document.querySelector("#shared-contacts-count"),
   sharedContactFilter: document.querySelector("#shared-contact-filter"),
+  sharedMobileContactPicker: document.querySelector("#shared-mobile-contact-picker"),
   sharedEntries: document.querySelector("#shared-entries"),
   paymentModal: document.querySelector("#payment-modal"),
   closePaymentModal: document.querySelector("#close-payment-modal"),

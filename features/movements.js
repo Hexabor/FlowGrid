@@ -739,7 +739,7 @@ elements.isShared.addEventListener("change", () => {
   syncSharedFields();
 });
 
-elements.form.addEventListener("submit", (event) => {
+elements.form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const formData = new FormData(elements.form);
@@ -806,9 +806,10 @@ elements.form.addEventListener("submit", (event) => {
     );
 
     saveSharedEntries();
-    // Fire-and-forget audit log entry. The comment is read from the
-    // optional input shown only while editing a shared entry.
-    recordSharedEntryEdit(oldEntry, updatedEntry, formData.get("editComment"));
+    // Await the audit-log POST so by the time the form closes the row
+    // is in the cloud. Otherwise opening the history modal right after
+    // a save races with the in-flight insert and shows N-1 entries.
+    await recordSharedEntryEdit(oldEntry, updatedEntry, formData.get("editComment"));
     renderMovements();
     renderAnalysis();
     renderSharedView();
@@ -930,10 +931,11 @@ elements.form.addEventListener("submit", (event) => {
   saveSharedEntries();
 
   // Audit log: every save that touches a shared entry — creation,
-  // edit, or movement-with-share edit — leaves a row. Comment is
-  // optional; the diff summary is derived from old vs new.
+  // edit, or movement-with-share edit — leaves a row. Awaited so the
+  // history modal opened right after a save sees the new row instead
+  // of racing with the in-flight insert.
   if (sharedEntry) {
-    recordSharedEntryEdit(oldSharedEntry, sharedEntry, formData.get("editComment"));
+    await recordSharedEntryEdit(oldSharedEntry, sharedEntry, formData.get("editComment"));
   }
 
   renderMovements();

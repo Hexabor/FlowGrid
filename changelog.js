@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-02",
     commit: "dev@HEAD",
+    title: "Compartidos en móvil: selector de contacto y arreglos de historial",
+    changes: [
+      "En móvil, el panel \"Saldos\" muestra ahora solo la tarjeta del contacto seleccionado en un nuevo desplegable arriba del panel. Antes se apilaban todas las tarjetas y ocupaban toda la pantalla, dejando los movimientos fuera de vista. En desktop la rejilla con todas las tarjetas sigue intacta.",
+      "Cuando el desplegable está en \"Todos\" en móvil, aparece un mensaje guía pidiendo que selecciones un contacto. Cualquier cambio en este desplegable también filtra la lista de movimientos compartidos justo debajo (un solo control para los dos paneles).",
+      "Historial de cambios ahora muestra TAMBIÉN la última edición que acabas de hacer. Antes había una carrera entre el guardado del cambio y la grabación del log: el formulario se cerraba antes de que la línea de log llegara al cloud, así que al abrir el reloj inmediatamente después se veía un historial \"con un cambio de retraso\". Ahora el formulario espera a que la línea de log esté guardada antes de cerrarse.",
+    ],
+  },
+  {
+    date: "2026-05-02",
+    commit: "dev@HEAD",
     title: "Compartidos paso 3: invitaciones, edición simétrica y registro de cambios",
     changes: [
       "Invitar a un contacto: en Configuración → Contactos cualquier contacto con email muestra un botón \"Invitar\". Al pulsarlo se manda un magic-link al email del contacto vía Resend. Cuando acepta, ambos lados ven los gastos compartidos comunes; tu UI muestra una etiqueta verde \"Vinculado\" donde antes estaba el botón.",

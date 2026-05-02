@@ -1412,6 +1412,21 @@ a.primary-action {
   color: var(--red);
 }
 
+/* Mobile-only contact picker en la cabecera del panel Saldos — no se ve
+   en desktop. Su valor está sincronizado con el dropdown de la sección
+   "Movimientos compartidos" para que ambos viewports compartan estado. */
+.shared-mobile-picker {
+  display: none;
+}
+
+@media (max-width: 719px) {
+  .shared-mobile-picker {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+}
+
 .shared-toolbar {
   display: flex;
   gap: 12px;
@@ -2330,12 +2345,11 @@ dt {
   }
 
   .shared-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .shared-toolbar label {
-    flex: 1 1 auto;
+    /* Mobile: el dropdown del panel Movimientos compartidos queda oculto
+       — la selección del contacto la lleva el picker que sale al inicio
+       del panel Saldos (.shared-mobile-picker). Ambos están sincronizados
+       vía estado, así que basta con uno visible. */
+    display: none;
   }
 
   .shared-entry {
