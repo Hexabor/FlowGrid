@@ -2339,13 +2339,16 @@ dt {
   }
 
   .shared-entry {
-    /* Mobile: 5 explicit columns. Row 3 packs all action buttons
-       together on the right edge — col 1 (1fr) absorbs the slack so
-       settle/history/edit/delete sit grouped and consistent across
-       rows, even when one of them isn't rendered (payment rows). */
+    /* Mobile: 5 explicit columns. Amount on row 1 spans the three
+       rightmost cells so col 5's width is only what the delete X
+       button needs (26px) — otherwise the amount text would widen
+       col 5 to ~70px and push the delete button visually away from
+       the right edge of the card. With this span, the four action
+       buttons in row 3 pack flush against the right edge, with the
+       1fr col 1 absorbing all slack. */
     grid-template-columns: minmax(0, 1fr) auto auto auto auto;
     grid-template-areas:
-      "date    .        .        .        amount"
+      "date    .        amount   amount   amount"
       "main    main     main     main     main"
       ".       settle   history  edit     delete";
     align-items: center;
