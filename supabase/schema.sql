@@ -187,18 +187,46 @@ create unique index if not exists group_members_unique_user_per_group
 
 alter table public.group_members enable row level security;
 
+-- ---- helpers SECURITY DEFINER (rompen la recursión RLS entre groups
+-- y group_members; ver migrate-9-groups-rls-fix.sql) ----
+create or replace function public.is_group_owner(p_group_id text, p_user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.groups
+    where id = p_group_id and owner_id = p_user_id
+  );
+$$;
+
+create or replace function public.is_group_member(p_group_id text, p_user_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.group_members
+    where group_id = p_group_id
+      and auth_user_id = p_user_id
+      and left_at is null
+  );
+$$;
+
+grant execute on function public.is_group_owner(text, uuid) to authenticated;
+grant execute on function public.is_group_member(text, uuid) to authenticated;
+
 -- ---- policies: groups ----
 drop policy if exists "groups: owner or member can read" on public.groups;
 create policy "groups: owner or member can read"
   on public.groups for select
   using (
     owner_id = auth.uid()
-    or exists (
-      select 1 from public.group_members gm
-      where gm.group_id = id
-        and gm.auth_user_id = auth.uid()
-        and gm.left_at is null
-    )
+    or public.is_group_member(id, auth.uid())
   );
 
 drop policy if exists "groups: anyone can create" on public.groups;
@@ -222,55 +250,31 @@ create policy "group_members: members can read"
   on public.group_members for select
   using (
     auth_user_id = auth.uid()
-    or exists (
-      select 1 from public.groups g
-      where g.id = group_id and g.owner_id = auth.uid()
-    )
-    or exists (
-      select 1 from public.group_members me
-      where me.group_id = group_members.group_id
-        and me.auth_user_id = auth.uid()
-        and me.left_at is null
-    )
+    or public.is_group_owner(group_id, auth.uid())
+    or public.is_group_member(group_id, auth.uid())
   );
 
 drop policy if exists "group_members: owner adds" on public.group_members;
 create policy "group_members: owner adds"
   on public.group_members for insert
-  with check (
-    exists (
-      select 1 from public.groups g
-      where g.id = group_id and g.owner_id = auth.uid()
-    )
-  );
+  with check (public.is_group_owner(group_id, auth.uid()));
 
 drop policy if exists "group_members: owner or self update" on public.group_members;
 create policy "group_members: owner or self update"
   on public.group_members for update
   using (
     auth_user_id = auth.uid()
-    or exists (
-      select 1 from public.groups g
-      where g.id = group_id and g.owner_id = auth.uid()
-    )
+    or public.is_group_owner(group_id, auth.uid())
   )
   with check (
     auth_user_id = auth.uid()
-    or exists (
-      select 1 from public.groups g
-      where g.id = group_id and g.owner_id = auth.uid()
-    )
+    or public.is_group_owner(group_id, auth.uid())
   );
 
 drop policy if exists "group_members: owner deletes" on public.group_members;
 create policy "group_members: owner deletes"
   on public.group_members for delete
-  using (
-    exists (
-      select 1 from public.groups g
-      where g.id = group_id and g.owner_id = auth.uid()
-    )
-  );
+  using (public.is_group_owner(group_id, auth.uid()));
 
 -- =============================================================================
 -- SHARED ENTRIES
@@ -334,12 +338,7 @@ create policy "shared_entries: owner, linked partner or group member"
     )
     or (
       group_id is not null
-      and exists (
-        select 1 from public.group_members gm
-        where gm.group_id = shared_entries.group_id
-          and gm.auth_user_id = auth.uid()
-          and gm.left_at is null
-      )
+      and public.is_group_member(group_id, auth.uid())
     )
   )
   with check (
@@ -352,12 +351,7 @@ create policy "shared_entries: owner, linked partner or group member"
     )
     or (
       group_id is not null
-      and exists (
-        select 1 from public.group_members gm
-        where gm.group_id = shared_entries.group_id
-          and gm.auth_user_id = auth.uid()
-          and gm.left_at is null
-      )
+      and public.is_group_member(group_id, auth.uid())
     )
   );
 
