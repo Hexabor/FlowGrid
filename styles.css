@@ -222,9 +222,10 @@ h2 {
 .module-grid {
   display: grid;
   gap: 10px;
-  /* Móvil por defecto: 2 columnas (5 tiles → 2+2+1, la última fila
-     queda solo media — aceptable y es el patrón habitual). */
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Móvil por defecto: 1 columna (5 tiles apilados verticalmente).
+     En desktop pasa a 5 cols con cada tile en aspect-ratio 3:4 — ver
+     el @media (min-width: 720px) más abajo. */
+  grid-template-columns: 1fr;
 }
 
 .module-groups {
@@ -364,6 +365,91 @@ h2 {
 .module-card[data-color="rose"] {
   --module-tile-bg: var(--mod-rose-bg);
   --module-tile-fg: var(--mod-rose);
+}
+
+/* ==== Novedades destacadas (panel debajo del grid del Home) ====
+   Cards informativas que resaltan las grandes features recientes.
+   Cada una tinta del color de su feature; click navega a la vista.
+   Móvil: apiladas; desktop: 3 columnas en una fila. */
+.home-highlights {
+  margin-top: 14px;
+}
+
+.highlight-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .highlight-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.highlight-card {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 4px 14px;
+  padding: 16px;
+  text-align: left;
+  background: var(--hl-bg, var(--surface-soft));
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--hl-fg, var(--mod-violet));
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--text);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.highlight-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(23, 32, 38, 0.08);
+}
+
+.highlight-card[data-color="orange"] {
+  --hl-bg: var(--mod-orange-bg);
+  --hl-fg: var(--mod-orange);
+}
+
+.highlight-card[data-color="violet"] {
+  --hl-bg: var(--mod-violet-bg);
+  --hl-fg: var(--mod-violet);
+}
+
+.highlight-card[data-color="rose"] {
+  --hl-bg: var(--mod-rose-bg);
+  --hl-fg: var(--mod-rose);
+}
+
+.highlight-icon {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--hl-fg);
+}
+
+.highlight-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.highlight-card strong {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--hl-fg);
+  line-height: 1.2;
+}
+
+.highlight-card p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text);
+  line-height: 1.4;
 }
 
 /* Fila de accesos secundarios (Configuración, Novedades, Roadmap) bajo
