@@ -4,7 +4,9 @@
 // esta capa es solo presentación.
 
 import { state } from "../core/state.js";
-import { elements } from "../core/dom.js";
+import { elements, setContactsMode } from "../core/dom.js";
+import { saveContacts } from "../core/storage.js";
+import { createId } from "../core/utils.js";
 import {
   getMyGroups,
   getGroupById,
@@ -280,6 +282,66 @@ elements.groupAddMemberForm?.addEventListener("submit", (event) => {
   });
   renderGroupsList();
   openGroupModal(editingGroupId);
+});
+
+// Crear un contacto nuevo desde el modal del grupo y añadirlo de
+// inmediato como miembro. Evita la fricción de salir a Configuración
+// → Contactos, crearlo, volver. Si el nombre ya existe en mis
+// contactos, reusa esa fila en vez de duplicar.
+elements.groupNewContactForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!editingGroupId) return;
+  const name = (elements.groupNewContactName.value || "").trim();
+  if (!name) return;
+  const email = (elements.groupNewContactEmail.value || "").trim();
+
+  const existing = state.contacts.find(
+    (c) => c.name.toLowerCase() === name.toLowerCase()
+  );
+  let contact;
+  if (existing) {
+    contact = existing;
+    // Si el contacto existía sin email y ahora le ponemos uno, lo
+    // actualizamos en el mismo gesto.
+    if (email && !existing.email) {
+      existing.email = email;
+      saveContacts();
+    }
+  } else {
+    contact = {
+      id: createId(),
+      name,
+      email,
+      invitedAt: null,
+      authUserId: null,
+      ownerEmail: null,
+      createdAt: new Date().toISOString(),
+    };
+    state.contacts = [...state.contacts, contact];
+    saveContacts();
+  }
+
+  addMember(editingGroupId, {
+    id: contact.id,
+    name: contact.name,
+    email: contact.email,
+    authUserId: contact.authUserId,
+  });
+
+  // Reset el form y colapsar el details para que la próxima creación
+  // arranque limpia.
+  elements.groupNewContactForm.reset();
+  if (elements.groupNewContactDetails) elements.groupNewContactDetails.open = false;
+
+  renderGroupsList();
+  openGroupModal(editingGroupId);
+});
+
+// Toggle Contactos/Grupos dentro del tab "Contactos y grupos".
+elements.contactsModeButtons?.forEach((button) => {
+  button.addEventListener("click", () => {
+    setContactsMode(button.dataset.contactsMode);
+  });
 });
 
 elements.groupMembersList?.addEventListener("click", (event) => {

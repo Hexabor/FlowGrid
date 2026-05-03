@@ -4026,9 +4026,11 @@ body.is-locked .shell {
   height: 18px;
 }
 
-/* Toggle Mensual/Anual al inicio de Análisis. Reusa el patrón visual del
-   .type-toggle-button (Gasto/Ingreso) por consistencia. */
-.analysis-mode-toggle {
+/* Toggle Mensual/Anual al inicio de Análisis y Contactos/Grupos en
+   Configuración. Mismo patrón visual que .type-toggle-button (Gasto/
+   Ingreso) — pastilla con dos botones, el activo coloreado. */
+.analysis-mode-toggle,
+.subpane-toggle {
   display: inline-flex;
   gap: 6px;
   padding: 4px;
@@ -4036,7 +4038,8 @@ body.is-locked .shell {
   border-radius: 10px;
 }
 
-.analysis-mode-toggle .type-toggle-button {
+.analysis-mode-toggle .type-toggle-button,
+.subpane-toggle .type-toggle-button {
   min-height: 0;
   padding: 8px 16px;
   font-size: 0.95rem;
@@ -4054,9 +4057,56 @@ body.is-locked .shell {
   border-color: transparent;
 }
 
+/* En el toggle Contactos/Grupos el activo va en violeta para no
+   competir con el verde de Análisis. */
+.contacts-mode-toggle .type-toggle-button.is-active {
+  background: var(--mod-violet-bg);
+  color: var(--mod-violet);
+}
+
+.contacts-mode-toggle {
+  margin-bottom: 16px;
+}
+
 @media (max-width: 719px) {
   .analysis-mode-toggle {
     margin-top: 6px;
     align-self: flex-start;
   }
+}
+
+/* "Crear contacto nuevo" colapsable dentro del modal de grupo. */
+.group-new-contact-details {
+  margin-top: 10px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+}
+
+.group-new-contact-details summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--mod-violet);
+  font-weight: 600;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.group-new-contact-details summary::before {
+  content: "+ ";
+  font-weight: 700;
+}
+
+.group-new-contact-details[open] summary::before {
+  content: "− ";
+}
+
+.group-new-contact {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.group-new-contact label {
+  display: grid;
+  gap: 4px;
 }

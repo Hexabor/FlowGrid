@@ -165,8 +165,15 @@ export const elements = {
   groupMembersList: document.querySelector("#group-members-list"),
   groupAddMemberForm: document.querySelector("#group-add-member-form"),
   groupAddMemberSelect: document.querySelector("#group-add-member-select"),
+  groupNewContactDetails: document.querySelector("#group-new-contact-details"),
+  groupNewContactForm: document.querySelector("#group-new-contact-form"),
+  groupNewContactName: document.querySelector("#group-new-contact-name"),
+  groupNewContactEmail: document.querySelector("#group-new-contact-email"),
   groupLeaveButton: document.querySelector("#group-leave-button"),
   groupDeleteButton: document.querySelector("#group-delete-button"),
+  // Toggle Contactos/Grupos dentro del panel "Contactos y grupos".
+  contactsModeButtons: document.querySelectorAll("[data-contacts-mode]"),
+  contactsPanes: document.querySelectorAll("[data-contacts-pane]"),
   // Confirmation modal: shared component for any robust delete dialog.
   // Each opener fills in the title, message, extra line, and the action
   // buttons via ui/confirm.js.
@@ -268,4 +275,47 @@ export function setSettingsPanel(panelName) {
   elements.settingsPanels.forEach((panel) => {
     panel.classList.toggle("is-active", panel.dataset.settingsPanel === panelName);
   });
+  // El tab "Contactos y grupos" tiene un sub-toggle. Al entrar, aplicar
+  // el sub-modo guardado para que aterrices donde estabas la última vez.
+  if (panelName === "contacts") {
+    setContactsMode(readContactsMode());
+  }
+}
+
+const CONTACTS_MODE_KEY = "flowgrid.contacts.mode.v1";
+
+function readContactsMode() {
+  try {
+    const stored = localStorage.getItem(CONTACTS_MODE_KEY);
+    if (stored === "contacts" || stored === "groups") return stored;
+  } catch {
+    // ignore
+  }
+  return "contacts";
+}
+
+// Toggle entre los sub-paneles "Contactos" y "Grupos" dentro del tab
+// "Contactos y grupos". Persiste en localStorage para que volver a abrir
+// la vista te lleve donde estabas.
+export function setContactsMode(mode) {
+  const normalised = mode === "groups" ? "groups" : "contacts";
+  const root = document.querySelector('[data-settings-panel="contacts"]');
+  if (root) root.dataset.contactsMode = normalised;
+  elements.contactsModeButtons?.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.contactsMode === normalised);
+  });
+  elements.contactsPanes?.forEach((pane) => {
+    pane.hidden = pane.dataset.contactsPane !== normalised;
+  });
+  try {
+    localStorage.setItem(CONTACTS_MODE_KEY, normalised);
+  } catch {
+    // ignore
+  }
+}
+
+// Llamar al entrar al panel "Contactos y grupos" para restaurar la
+// pestaña interna que el usuario tenía la última vez.
+export function applyStoredContactsMode() {
+  setContactsMode(readContactsMode());
 }

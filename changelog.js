@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-03",
     commit: "dev@HEAD",
+    title: "Grupos: tab unificado con Contactos + crear contacto inline al añadir miembro",
+    changes: [
+      "Las pestañas \"Contactos\" y \"Grupos\" en Configuración pasan a ser una sola — \"Contactos y grupos\" — con un toggle violeta arriba para alternar entre las dos vistas. Está pegado al patrón del toggle Mensual/Anual de Análisis. Recuerda en qué subpestaña estabas para cuando vuelvas a entrar.",
+      "Al añadir un miembro a un grupo, ya no hace falta salir a Contactos para crear uno nuevo si todavía no lo tenías. Debajo del selector de \"Añadir contacto existente\" hay ahora una sección colapsable \"O crear un contacto nuevo\" con nombre + email — el contacto se crea y se añade al grupo de un solo gesto.",
+      "Si el nombre que metes ya existe en tus contactos, FlowGrid reusa esa fila en lugar de duplicar. Si tenía email vacío y le pones uno aquí, queda actualizado para que puedas invitarle vía magic-link más adelante.",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
     title: "Grupos (3+ personas): primera versión — gestión desde Configuración",
     changes: [
       "Nueva pestaña \"Grupos\" en Configuración. Crea grupos con un nombre (\"YouTube\", \"Casa\", \"Viaje a Lisboa\") y desde ahí gestionas su composición — añadir miembros desde tu lista de contactos (vinculados u offline) y quitarlos sin perder los saldos pendientes que tengáis abiertos.",
