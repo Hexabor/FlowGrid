@@ -11,7 +11,10 @@ import {
   getMovementSharedLabel,
   renderSharedView,
   syncSharedFields,
+  parseSharedTarget,
+  readSharedGroupShares,
 } from "./shared.js";
+import { buildSplits, getMyMemberInGroup } from "./groups.js";
 import { getUserIdSync } from "../core/supabase.js";
 import { recordSharedEntryEdit } from "./edit-log.js";
 import { renderAnalysis } from "./analysis.js";
@@ -932,8 +935,78 @@ elements.form.addEventListener("submit", async (event) => {
     }
   }
 
-  if (shouldShare) {
-    const contactId = elements.sharedContact.value;
+  // Detectar si el target del compartido es un grupo o un contacto.
+  const sharedTarget = shouldShare
+    ? parseSharedTarget(elements.sharedContact.value)
+    : { kind: "none", id: null };
+  const isGroupShare = sharedTarget.kind === "group";
+
+  if (shouldShare && isGroupShare) {
+    // Caso grupo (3+ personas): construimos splits a partir del
+    // pagador + modo del grupo, y guardamos la entrada con group_id.
+    const groupId = sharedTarget.id;
+    const payerMemberId = elements.sharedGroupPayer?.value;
+    const groupMode = elements.sharedGroupMode?.value || "equal";
+
+    if (!groupId || !payerMemberId) {
+      elements.feedback.textContent = "Selecciona grupo y pagador.";
+      return;
+    }
+
+    let splits;
+    try {
+      splits = buildSplits({
+        groupId,
+        total: totalAmount,
+        payerMemberId,
+        mode: groupMode,
+        perMemberShares: groupMode === "uneven" ? readSharedGroupShares() : null,
+      });
+    } catch (err) {
+      elements.feedback.textContent = err.message;
+      return;
+    }
+
+    // Calcular MI parte (lo que owes el miembro que soy yo). Lo
+    // usamos como amount del movimiento personal; si yo no soy
+    // miembro del grupo (caso raro), no creamos movimiento personal.
+    const myMember = getMyMemberInGroup(groupId);
+    const myOwes = myMember ? Number(splits[myMember.id]?.owes) || 0 : 0;
+    const myPaid = myMember ? Number(splits[myMember.id]?.paid) || 0 : 0;
+
+    sharedEntry = {
+      id: oldSharedEntry?.id ?? createId(),
+      type: "expense",
+      contactId: "", // legacy 1↔1 field; vacío en entradas de grupo.
+      date: movement.date,
+      concept: movement.concept,
+      note: movement.note ?? "",
+      total: totalAmount,
+      paidBy: "me", // legacy field — para entradas de grupo no se usa.
+      splitMode: groupMode,
+      myShare: myOwes,
+      theirShare: 0,
+      sourceMovementId: movement.id,
+      groupId,
+      splits,
+      settledAt: oldSharedEntry?.settledAt ?? null,
+      createdAt: oldSharedEntry?.createdAt ?? new Date().toISOString(),
+      ownerId: oldSharedEntry?.ownerId ?? undefined,
+    };
+
+    // Si yo no consumo nada del gasto (myOwes === 0) Y no soy
+    // pagador, no creamos movimiento personal — solo la entrada
+    // de grupo. Si soy pagador o tengo parte que owes, sí creamos.
+    if (myOwes > 0) {
+      movement.amount = myOwes;
+      movement.sharedEntryId = sharedEntry.id;
+    }
+    // Si soy pagador pero mi owes es 0, también creamos un movimiento
+    // pequeño? No — si no consumo nada, mi gasto personal real es 0.
+    // El movimiento se omite y solo queda la entrada de grupo con los
+    // saldos pendientes a mi favor.
+  } else if (shouldShare) {
+    const contactId = sharedTarget.id;
     modeKey = elements.sharedMode.value;
     const mode = SHARED_MODES[modeKey];
 
@@ -983,7 +1056,15 @@ elements.form.addEventListener("submit", async (event) => {
     movement.sharedEntryId = sharedEntry.id;
   }
 
-  const skipMovement = shouldShare && SHARED_MODES[modeKey].paidBy === "me" && SHARED_MODES[modeKey].split === "full";
+  // Skip movimiento personal: en 1↔1 cuando es "me-full" (préstamo
+  // completo). En grupo, cuando mi parte (owes) es 0 — ej: pago algo
+  // íntegro para los demás y no consumo nada (skipMovement permite no
+  // contaminar el flujo personal con un gasto que no es mío).
+  const skipMovement = shouldShare && (
+    isGroupShare
+      ? !movement.sharedEntryId
+      : (SHARED_MODES[modeKey].paidBy === "me" && SHARED_MODES[modeKey].split === "full")
+  );
 
   if (wasEditing) {
     if (state.editingMovementId) {

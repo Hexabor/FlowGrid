@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-03-2233">
+    <link rel="stylesheet" href="styles.css?v=2026-05-03-2243">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -426,13 +426,15 @@
 
               <div id="shared-fields" class="shared-fields" hidden>
                 <label class="shared-contact-field">
-                  <span>Contacto</span>
+                  <span>Compartido con</span>
                   <div class="shared-contact-control">
                     <select id="shared-contact" name="sharedContactId"></select>
                     <button id="shared-contact-add" class="icon-button" type="button" title="Crear contacto" aria-label="Crear contacto">+</button>
                   </div>
                 </label>
-                <label class="shared-mode-field">
+
+                <!-- Caso 1↔1: contacto seleccionado. Modo y partes uneven. -->
+                <label class="shared-mode-field" data-shared-target-kind="contact">
                   <span>Modo</span>
                   <select id="shared-mode" name="sharedMode">
                     <option value="me-equal">T&uacute; pagaste, partes iguales</option>
@@ -443,7 +445,7 @@
                     <option value="them-full">Le debes la cantidad total al contacto</option>
                   </select>
                 </label>
-                <div id="shared-uneven" class="shared-uneven" hidden>
+                <div id="shared-uneven" class="shared-uneven" hidden data-shared-target-kind="contact">
                   <label>
                     <span>Tu parte</span>
                     <input id="shared-my-share" name="myShare" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
@@ -453,6 +455,23 @@
                     <input id="shared-their-share" name="theirShare" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
                   </label>
                   <p id="shared-uneven-feedback" class="shared-uneven-feedback"></p>
+                </div>
+
+                <!-- Caso grupo: pagador + reparto entre miembros activos. -->
+                <div id="shared-group-fields" class="shared-group-fields" hidden data-shared-target-kind="group">
+                  <label>
+                    <span>Pagador</span>
+                    <select id="shared-group-payer" name="groupPayer"></select>
+                  </label>
+                  <label>
+                    <span>Reparto</span>
+                    <select id="shared-group-mode" name="groupMode">
+                      <option value="equal">A partes iguales</option>
+                      <option value="uneven">Desiguales (cantidades por miembro)</option>
+                    </select>
+                  </label>
+                  <div id="shared-group-shares" class="shared-group-shares" hidden></div>
+                  <p id="shared-group-feedback" class="shared-uneven-feedback"></p>
                 </div>
               </div>
 
@@ -1287,7 +1306,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-03 22:33:32";
+      window.__FG_BUILD__ = "2026-05-03 22:43:03";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1345,6 +1364,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-03-2233"></script>
+    <script type="module" src="app.js?v=2026-05-03-2243"></script>
   </body>
 </html>

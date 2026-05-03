@@ -8,6 +8,30 @@ import { renderMovements, syncMovementSelects, fillMovementForm } from "./moveme
 import { setMovementDate, setPaymentDate } from "../ui/datepicker.js";
 import { getUserIdSync } from "../core/supabase.js";
 import { openHistoryModal, recordSharedEntryEdit } from "./edit-log.js";
+import {
+  getMyGroups,
+  getGroupById,
+  getGroupMembers,
+  getMyMemberInGroup,
+  resolveMemberView,
+  buildSplits,
+} from "./groups.js";
+
+// Helper para parsear el value del select #shared-contact, que ahora
+// mezcla contactos y grupos con prefijos "contact:" / "group:".
+// Backward-compat con valores legacy (sin prefijo) los trata como
+// contactos por id directo.
+export function parseSharedTarget(value) {
+  if (!value) return { kind: "none", id: null };
+  if (value.startsWith("group:")) return { kind: "group", id: value.slice(6) };
+  if (value.startsWith("contact:")) return { kind: "contact", id: value.slice(8) };
+  return { kind: "contact", id: value };
+}
+
+export function formatSharedTarget(kind, id) {
+  if (!id) return "";
+  return `${kind}:${id}`;
+}
 
 // When the visiting user is a linked partner (the entry's ownerId is
 // not theirs), the row's paid_by / my_share / their_share are stored
@@ -20,6 +44,12 @@ import { openHistoryModal, recordSharedEntryEdit } from "./edit-log.js";
 export function entryAsMyPerspective(entry) {
   const myUid = getUserIdSync();
   if (!entry.ownerId || !myUid || entry.ownerId === myUid) {
+    return entry;
+  }
+  // Entradas de grupo no necesitan el flip: los splits ya identifican
+  // a cada miembro por id, y el cálculo pairwise vive en groups.js.
+  // Devolverlas tal cual.
+  if (entry.groupId) {
     return entry;
   }
   const myReciprocal = state.contacts.find((c) => c.authUserId === entry.ownerId);
@@ -40,6 +70,31 @@ export function entryBalanceImpact(entry) {
 }
 
 export function entryDescription(entry) {
+  // Entrada de grupo: el "con quién" es el grupo y el pagador es uno
+  // de sus miembros. Resolvemos vía getGroupById + splits.
+  if (entry.groupId) {
+    const group = getGroupById(entry.groupId);
+    const groupName = group?.name ?? "Grupo";
+    if (entry.type === "payment") return `Pago en ${groupName}`;
+    const myMember = getMyMemberInGroup(entry.groupId);
+    const myUid = getUserIdSync();
+    let payerLabel = "";
+    if (entry.splits) {
+      const payerEntry = Object.entries(entry.splits).find(
+        ([, val]) => Number(val.paid) > 0
+      );
+      if (payerEntry) {
+        const payerMember = getGroupMembers(entry.groupId, { includeInactive: true })
+          .find((m) => m.id === payerEntry[0]);
+        if (payerMember) {
+          const view = resolveMemberView(payerMember);
+          payerLabel = view.isMe ? "Pagaste tú" : `Pagó ${view.label}`;
+        }
+      }
+    }
+    return `${entry.concept} — Grupo ${groupName}${payerLabel ? ` · ${payerLabel}` : ""}`;
+  }
+
   const contactName = getContactName(entry.contactId);
   if (entry.type === "payment") {
     return entry.paidBy === "me"
@@ -59,6 +114,12 @@ export function getMovementSharedLabel(movement) {
   const entry = state.sharedEntries.find((candidate) => candidate.id === movement.sharedEntryId);
   if (!entry) {
     return "";
+  }
+  // Si la entrada pertenece a un grupo, el "con quién" es el nombre del
+  // grupo, no un contacto individual.
+  if (entry.groupId) {
+    const group = getGroupById(entry.groupId);
+    return group ? `Grupo: ${group.name}` : "Grupo";
   }
   // Movements always live in the same account as their linked entry, so
   // flipping is normally a no-op here, but call it through anyway in
@@ -157,6 +218,7 @@ export function syncSharedFields() {
   }
 
   syncSharedContactOptions();
+  syncSharedTargetKind();
   syncSharedModeLabels();
   syncSharedUnevenVisibility();
   syncSharedTotalHint();
@@ -164,17 +226,185 @@ export function syncSharedFields() {
 
 export function syncSharedContactOptions() {
   const selected = elements.sharedContact.value;
-  elements.sharedContact.innerHTML = state.contacts.length
-    ? state.contacts.map((contact) => `<option value="${contact.id}">${contact.name}</option>`).join("")
-    : '<option value="">Sin contactos creados</option>';
+  const contacts = state.contacts.slice().sort((a, b) =>
+    a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+  );
+  const groups = getMyGroups().slice().sort((a, b) =>
+    a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+  );
 
-  if (selected && state.contacts.some((contact) => contact.id === selected)) {
-    elements.sharedContact.value = selected;
+  let html = "";
+  if (!contacts.length && !groups.length) {
+    html = '<option value="">Sin contactos ni grupos creados</option>';
+  } else {
+    if (contacts.length) {
+      html += '<optgroup label="Contactos">';
+      html += contacts.map((c) => `<option value="contact:${c.id}">${c.name}</option>`).join("");
+      html += "</optgroup>";
+    }
+    if (groups.length) {
+      html += '<optgroup label="Grupos">';
+      html += groups
+        .map((g) => `<option value="group:${g.id}">${g.name}</option>`)
+        .join("");
+      html += "</optgroup>";
+    }
+  }
+  elements.sharedContact.innerHTML = html;
+
+  // Restaurar la selección previa si sigue siendo válida.
+  if (selected) {
+    const stillValid = elements.sharedContact.querySelector(`option[value="${CSS.escape(selected)}"]`);
+    if (stillValid) elements.sharedContact.value = selected;
   }
 }
 
+// Visibilidad del bloque "compartir con un grupo" vs el de "1↔1 con
+// contacto", según el prefijo del value en #shared-contact. Llamado
+// cada vez que cambia la selección, el modo, o se abre el modal.
+export function syncSharedTargetKind() {
+  const target = parseSharedTarget(elements.sharedContact.value);
+
+  // Marca el form para que el CSS pueda esconder/mostrar bloques
+  // según el atributo. También directamente toggleamos los hidden
+  // por si en algún navegador el selector CSS por atributo falla.
+  if (elements.sharedFields) {
+    elements.sharedFields.dataset.targetKind = target.kind;
+  }
+
+  const isGroup = target.kind === "group";
+  // Bloque 1↔1
+  if (elements.sharedMode?.parentElement) {
+    elements.sharedMode.parentElement.hidden = isGroup;
+  }
+  if (elements.sharedUneven) {
+    if (isGroup) {
+      elements.sharedUneven.hidden = true;
+    } else {
+      // Su visibilidad la determina syncSharedUnevenVisibility según el modo.
+    }
+  }
+  // Bloque grupo
+  if (elements.sharedGroupFields) {
+    elements.sharedGroupFields.hidden = !isGroup;
+  }
+
+  if (isGroup) {
+    syncSharedGroupFields(target.id);
+  }
+}
+
+// Repuebla el selector de pagador y el grid de partes por miembro
+// cuando se elige (o cambia) un grupo. Defaults: pagador "yo" si soy
+// miembro vinculado, modo iguales.
+export function syncSharedGroupFields(groupId) {
+  if (!elements.sharedGroupPayer) return;
+  const group = getGroupById(groupId);
+  if (!group) return;
+  const members = getGroupMembers(groupId);
+  if (!members.length) {
+    elements.sharedGroupPayer.innerHTML = '<option value="">Grupo sin miembros</option>';
+    if (elements.sharedGroupShares) elements.sharedGroupShares.innerHTML = "";
+    return;
+  }
+
+  // Selector de pagador: cada miembro activo. Default = yo si soy
+  // miembro vinculado del grupo; si no, el primero.
+  const myMember = getMyMemberInGroup(groupId);
+  const previous = elements.sharedGroupPayer.value;
+  elements.sharedGroupPayer.innerHTML = members
+    .map((m) => {
+      const view = resolveMemberView(m);
+      const label = view.isMe ? "Yo" : view.label;
+      return `<option value="${m.id}">${label}</option>`;
+    })
+    .join("");
+  // Restore previous payer if still valid
+  if (previous && members.some((m) => m.id === previous)) {
+    elements.sharedGroupPayer.value = previous;
+  } else if (myMember) {
+    elements.sharedGroupPayer.value = myMember.id;
+  }
+
+  syncSharedGroupSharesGrid(groupId);
+  syncSharedGroupTotalHint();
+}
+
+// Pinta o esconde la rejilla de partes desiguales según el modo del
+// grupo. Si el modo es "uneven", crea un input numérico por cada
+// miembro activo del grupo. Si es "equal", oculta la rejilla y el
+// motor reparte automáticamente al guardar.
+export function syncSharedGroupSharesGrid(groupId) {
+  if (!elements.sharedGroupShares || !elements.sharedGroupMode) return;
+  const isUneven = elements.sharedGroupMode.value === "uneven";
+  if (!isUneven) {
+    elements.sharedGroupShares.hidden = true;
+    elements.sharedGroupShares.innerHTML = "";
+    return;
+  }
+  const members = getGroupMembers(groupId);
+  elements.sharedGroupShares.hidden = false;
+  elements.sharedGroupShares.innerHTML = members
+    .map((m) => {
+      const view = resolveMemberView(m);
+      const label = view.isMe ? "Yo" : view.label;
+      return `
+        <label class="shared-group-share">
+          <span>${label}</span>
+          <input type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" data-member-id="${m.id}" data-share-input>
+        </label>
+      `;
+    })
+    .join("");
+}
+
+// Feedback en vivo de cuánto suman las partes vs el total del gasto.
+// Solo aplica en modo desigual.
+export function syncSharedGroupTotalHint() {
+  if (!elements.sharedGroupFeedback) return;
+  if (elements.sharedGroupMode?.value !== "uneven") {
+    elements.sharedGroupFeedback.textContent = "";
+    return;
+  }
+  const total = Number(elements.amount?.value) || 0;
+  const inputs = elements.sharedGroupShares?.querySelectorAll("[data-share-input]") ?? [];
+  let sum = 0;
+  inputs.forEach((inp) => { sum += Number(inp.value) || 0; });
+  sum = Math.round(sum * 100) / 100;
+  const diff = Math.round((total - sum) * 100) / 100;
+  if (!total) {
+    elements.sharedGroupFeedback.textContent = "Introduce primero el importe total.";
+    elements.sharedGroupFeedback.dataset.state = "warn";
+  } else if (Math.abs(diff) < 0.005) {
+    elements.sharedGroupFeedback.textContent = `Total ${formatMoney(total)} — coincide.`;
+    elements.sharedGroupFeedback.dataset.state = "ok";
+  } else if (diff > 0) {
+    elements.sharedGroupFeedback.textContent = `Total ${formatMoney(total)} — faltan ${formatMoney(diff)}.`;
+    elements.sharedGroupFeedback.dataset.state = "warn";
+  } else {
+    elements.sharedGroupFeedback.textContent = `Total ${formatMoney(total)} — sobran ${formatMoney(-diff)}.`;
+    elements.sharedGroupFeedback.dataset.state = "warn";
+  }
+}
+
+// Recoge los inputs del grid de partes desiguales y devuelve un mapa
+// member_id → cantidad. Cero para miembros sin valor introducido.
+export function readSharedGroupShares() {
+  const out = {};
+  const inputs = elements.sharedGroupShares?.querySelectorAll("[data-share-input]") ?? [];
+  inputs.forEach((inp) => {
+    out[inp.dataset.memberId] = Number(inp.value) || 0;
+  });
+  return out;
+}
+
 export function syncSharedModeLabels() {
-  const name = getContactName(elements.sharedContact.value) || "Contacto";
+  const target = parseSharedTarget(elements.sharedContact.value);
+  // Solo etiquetamos los modos cuando el target es un contacto 1↔1.
+  // Para grupos, los modos del select están ocultos y no se usan.
+  const name = target.kind === "contact" && target.id
+    ? (getContactName(target.id) || "Contacto")
+    : "Contacto";
   Object.entries(SHARED_MODES).forEach(([key, mode]) => {
     const option = elements.sharedMode.querySelector(`option[value="${key}"]`);
     if (option) {
@@ -184,12 +414,21 @@ export function syncSharedModeLabels() {
 }
 
 export function syncSharedUnevenVisibility() {
+  // Solo aplica al caso 1↔1; en grupos este bloque está oculto.
+  const target = parseSharedTarget(elements.sharedContact.value);
+  if (target.kind !== "contact") {
+    elements.sharedUneven.hidden = true;
+    elements.sharedMyShare.required = false;
+    elements.sharedTheirShare.required = false;
+    return;
+  }
   const mode = SHARED_MODES[elements.sharedMode.value];
   const isUneven = mode?.split === "uneven";
   elements.sharedUneven.hidden = !isUneven;
   elements.sharedMyShare.required = isUneven;
   elements.sharedTheirShare.required = isUneven;
-  elements.sharedTheirShareLabel.textContent = `Parte de ${getContactName(elements.sharedContact.value) || "el otro contacto"}`;
+  const otherName = target.id ? (getContactName(target.id) || "el otro contacto") : "el otro contacto";
+  elements.sharedTheirShareLabel.textContent = `Parte de ${otherName}`;
 }
 
 export function syncSharedTotalHint() {
@@ -225,7 +464,36 @@ export function applySharedEntryToForm(entry) {
   elements.amount.value = entry.total;
   elements.isShared.checked = true;
   syncSharedFields();
-  elements.sharedContact.value = entry.contactId;
+
+  if (entry.groupId) {
+    // Entrada de grupo: pre-seleccionar grupo + pagador + modo + partes.
+    elements.sharedContact.value = `group:${entry.groupId}`;
+    syncSharedTargetKind();
+    if (elements.sharedGroupMode) {
+      elements.sharedGroupMode.value = entry.splitMode === "uneven" ? "uneven" : "equal";
+    }
+    syncSharedGroupSharesGrid(entry.groupId);
+    // Determinar el pagador por la estructura splits: el miembro con paid > 0.
+    if (entry.splits && elements.sharedGroupPayer) {
+      const payerEntry = Object.entries(entry.splits).find(
+        ([, val]) => Number(val.paid) > 0
+      );
+      if (payerEntry) elements.sharedGroupPayer.value = payerEntry[0];
+    }
+    if (entry.splitMode === "uneven" && entry.splits) {
+      const inputs = elements.sharedGroupShares?.querySelectorAll("[data-share-input]") ?? [];
+      inputs.forEach((inp) => {
+        const id = inp.dataset.memberId;
+        inp.value = Number(entry.splits[id]?.owes) || 0;
+      });
+    }
+    syncSharedGroupTotalHint();
+    return;
+  }
+
+  // Entrada legacy 1↔1.
+  elements.sharedContact.value = `contact:${entry.contactId}`;
+  syncSharedTargetKind();
   syncSharedModeLabels();
   elements.sharedMode.value = inferSharedModeKey(entry);
   syncSharedUnevenVisibility();
@@ -659,6 +927,7 @@ function buildSharedEntryRow(entry) {
 }
 
 elements.sharedContact.addEventListener("change", () => {
+  syncSharedTargetKind();
   syncSharedModeLabels();
   syncSharedUnevenVisibility();
 });
@@ -670,7 +939,25 @@ elements.sharedMode.addEventListener("change", () => {
 
 elements.sharedMyShare.addEventListener("input", syncSharedTotalHint);
 elements.sharedTheirShare.addEventListener("input", syncSharedTotalHint);
-elements.amount.addEventListener("input", syncSharedTotalHint);
+elements.amount.addEventListener("input", () => {
+  syncSharedTotalHint();
+  syncSharedGroupTotalHint();
+});
+
+elements.sharedGroupMode?.addEventListener("change", () => {
+  const target = parseSharedTarget(elements.sharedContact.value);
+  if (target.kind === "group") {
+    syncSharedGroupSharesGrid(target.id);
+    syncSharedGroupTotalHint();
+  }
+});
+
+// Inputs del grid de partes desiguales: feedback en vivo del total.
+elements.sharedGroupShares?.addEventListener("input", (event) => {
+  if (event.target.matches("[data-share-input]")) {
+    syncSharedGroupTotalHint();
+  }
+});
 
 elements.sharedContactAdd.addEventListener("click", () => {
   const name = prompt("Nombre del contacto:");
@@ -689,7 +976,8 @@ elements.sharedContactAdd.addEventListener("click", () => {
     contactId = created.id;
   }
   syncSharedContactOptions();
-  elements.sharedContact.value = contactId;
+  elements.sharedContact.value = `contact:${contactId}`;
+  syncSharedTargetKind();
   syncSharedModeLabels();
   syncSharedUnevenVisibility();
   renderContacts();

@@ -31,6 +31,13 @@ export const elements = {
   sharedTheirShare: document.querySelector("#shared-their-share"),
   sharedTheirShareLabel: document.querySelector("#shared-their-share-label"),
   sharedUnevenFeedback: document.querySelector("#shared-uneven-feedback"),
+  // Bloque "compartir con un grupo" del modal de gasto. Se muestra
+  // cuando el picker selecciona un value con prefijo "group:".
+  sharedGroupFields: document.querySelector("#shared-group-fields"),
+  sharedGroupPayer: document.querySelector("#shared-group-payer"),
+  sharedGroupMode: document.querySelector("#shared-group-mode"),
+  sharedGroupShares: document.querySelector("#shared-group-shares"),
+  sharedGroupFeedback: document.querySelector("#shared-group-feedback"),
   feedback: document.querySelector("#form-feedback"),
   submitButton: document.querySelector("#movement-form .primary-action"),
   submitLabel: document.querySelector("#movement-form .movement-submit-label"),
