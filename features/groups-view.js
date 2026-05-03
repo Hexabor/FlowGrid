@@ -68,31 +68,39 @@ function createGroupCard(group) {
   card.className = "group-card";
   card.dataset.id = group.id;
 
-  const head = document.createElement("div");
-  head.className = "group-card-head";
+  // Bloque izquierdo: nombre + cuenta de miembros en una sola línea
+  // (apilados solo cuando el ancho los obligue a partirse).
+  const info = document.createElement("div");
+  info.className = "group-card-info";
   const name = document.createElement("strong");
   name.className = "group-card-name";
   name.textContent = group.name;
-  const role = document.createElement("span");
-  role.className = "group-card-role";
-  role.textContent = isAdminOf(group) ? "Admin" : "Miembro";
-  head.append(name, role);
-
-  const meta = document.createElement("p");
+  const meta = document.createElement("span");
   meta.className = "group-card-meta";
   const members = getGroupMembers(group.id);
   meta.textContent = memberCountLabel(members.length);
+  info.append(name, meta);
 
-  const actions = document.createElement("div");
-  actions.className = "group-card-actions";
+  // Bloque central: tag de rol — solo aparece si soy admin (los
+  // miembros normales no necesitan ver "Miembro" como etiqueta;
+  // la ausencia ya lo dice).
+  const role = document.createElement("span");
+  role.className = "group-card-role";
+  if (isAdminOf(group)) {
+    role.textContent = "Admin";
+    role.classList.add("is-admin");
+  } else {
+    role.hidden = true;
+  }
+
+  // Bloque derecho: botón Gestionar.
   const editBtn = document.createElement("button");
   editBtn.type = "button";
-  editBtn.className = "ghost-action";
+  editBtn.className = "ghost-action group-card-edit";
   editBtn.dataset.action = "edit";
   editBtn.textContent = "Gestionar";
-  actions.append(editBtn);
 
-  card.append(head, meta, actions);
+  card.append(info, role, editBtn);
   return card;
 }
 

@@ -222,6 +222,9 @@ h2 {
 .module-grid {
   display: grid;
   gap: 10px;
+  /* Móvil por defecto: 2 columnas (5 tiles → 2+2+1, la última fila
+     queda solo media — aceptable y es el patrón habitual). */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .module-groups {
@@ -239,7 +242,9 @@ h2 {
   grid-template-columns: 28px 1fr;
   gap: 4px 12px;
   align-items: center;
-  padding: 14px;
+  /* Móvil: ~20% más alto que el padding 14px previo. La card pasa
+     de ~80px a ~96px de alto sin tocar el contenido interno. */
+  padding: 22px 14px;
   color: var(--text);
   text-align: left;
 }
@@ -267,6 +272,50 @@ h2 {
 .module-card--accent {
   grid-template-columns: 36px 1fr;
   gap: 4px 14px;
+}
+
+/* Desktop: las cards se vuelven verticales tipo "carta" 3:4, los 5
+   tiles en una sola fila (5 cols). Icono grande arriba centrado,
+   etiqueta principal en medio, descripción debajo. */
+@media (min-width: 720px) {
+  .module-card {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 12px;
+    aspect-ratio: 3 / 4;
+    text-align: center;
+    justify-items: center;
+    align-content: center;
+    padding: 18px 12px;
+  }
+
+  .module-card--accent {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .module-card .nav-icon,
+  .module-card .module-icon {
+    grid-row: auto;
+  }
+
+  .module-card .module-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .module-card .module-icon .nav-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .module-card strong {
+    font-size: 1.04rem;
+  }
+
+  .module-card small {
+    font-size: 0.82rem;
+  }
 }
 
 .module-icon {
@@ -317,49 +366,58 @@ h2 {
   --module-tile-fg: var(--mod-rose);
 }
 
+/* Fila de accesos secundarios (Configuración, Novedades, Roadmap) bajo
+   el grid principal del Home: 3 círculos icono-only centrados. La
+   etiqueta de texto queda en sr-only para lectores de pantalla;
+   tooltip nativo (atributo title) muestra el texto al pasar el ratón. */
 .meta-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 22px;
-  padding-top: 14px;
-  margin-top: 4px;
+  justify-content: center;
+  gap: 18px;
+  padding-top: 18px;
+  margin-top: 8px;
   border-top: 1px solid var(--line);
 }
 
 .meta-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  background: none;
-  border: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
   color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
 .meta-link:hover {
   color: var(--text);
+  background: rgba(23, 32, 38, 0.04);
+  border-color: #b8c5cb;
 }
 
 .meta-link .nav-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   color: currentColor;
 }
 
-@media (max-width: 719px) {
-  .meta-link span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
+/* Etiqueta del botón siempre oculta visualmente; sigue accesible para
+   screen readers. El icono + el title attribute en el HTML cubren la
+   identificación visual y la pista de tooltip al pasar el ratón. */
+.meta-link span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .changelog-list {
@@ -1787,10 +1845,10 @@ a.primary-action {
   }
 
   .module-grid {
-    /* 5 tiles: 2 columnas (queda 2+2+1). En pantallas anchas (≥1024px)
-       pasamos a 3 columnas con su propio @media más abajo para verse
-       3+2 — más balanceado y aprovecha el ancho. */
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* Desktop: 5 tiles en una sola fila. Cada tile usa aspect-ratio
+       3/4 (definido en .module-card del bloque anterior), así que la
+       altura sigue al ancho automáticamente. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .analysis-grid {
@@ -1850,15 +1908,6 @@ a.primary-action {
 
   .category-list .config-item {
     grid-template-columns: minmax(0, 1fr) 34px 42px;
-  }
-}
-
-/* En pantallas anchas, el grid del Home pasa a 3 columnas para que los
-   5 módulos se vean 3+2 en lugar de 2+2+1. Más balanceado y aprovecha
-   el ancho disponible. */
-@media (min-width: 1024px) {
-  .module-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -3685,55 +3734,62 @@ body.is-locked .shell {
 
 .groups-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   margin-top: 12px;
 }
 
+/* Card de grupo: una sola fila — nombre+miembros a la izquierda
+   ocupando el espacio sobrante, tag opcional de rol al centro-derecha,
+   botón "Gestionar" pegado a la derecha. Mismo layout en móvil y
+   desktop; basta con flex-wrap si por algún caso extremo el texto
+   del nombre fuera muy largo y comprimiera el botón. */
 .group-card {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
   background: var(--surface, #fff);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 10px;
   border-left: 4px solid var(--mod-violet);
 }
 
-.group-card-head {
+.group-card-info {
+  flex: 1 1 auto;
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .group-card-name {
-  font-size: 1.02rem;
+  font-size: 1rem;
   font-weight: 700;
 }
 
-.group-card-role {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--mod-violet);
-  font-weight: 600;
-}
-
 .group-card-meta {
-  margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--muted);
 }
 
-.group-card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
+.group-card-role {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--mod-violet-bg);
+  color: var(--mod-violet);
 }
 
-.group-card-actions .ghost-action {
+.group-card-edit {
+  flex: 0 0 auto;
   padding: 6px 12px;
   font-size: 0.85rem;
+  font-weight: 600;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: transparent;
@@ -3741,7 +3797,7 @@ body.is-locked .shell {
   cursor: pointer;
 }
 
-.group-card-actions .ghost-action:hover {
+.group-card-edit:hover {
   background: rgba(23, 32, 38, 0.04);
 }
 

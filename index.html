@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-03-2139">
+    <link rel="stylesheet" href="styles.css?v=2026-05-03-2151">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -255,14 +255,14 @@
                 </div>
               </section>
               <nav class="meta-row" aria-label="Configuracion y novedades">
-                <button class="meta-link" type="button" data-view-target="settings">
+                <button class="meta-link" type="button" data-view-target="settings" title="Configuración" aria-label="Configuración">
                   <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
                     <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
                     <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.05.05a2.1 2.1 0 0 1-2.97 2.97l-.05-.05a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.66V21a2.1 2.1 0 0 1-4.2 0v-.07a1.8 1.8 0 0 0-1.1-1.66 1.8 1.8 0 0 0-1.98.36l-.05.05a2.1 2.1 0 0 1-2.97-2.97l.05-.05A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.66-1.1H3a2.1 2.1 0 0 1 0-4.2h.07A1.8 1.8 0 0 0 4.73 8.6a1.8 1.8 0 0 0-.36-1.98l-.05-.05A2.1 2.1 0 0 1 7.29 3.6l.05.05a1.8 1.8 0 0 0 1.98.36A1.8 1.8 0 0 0 10.42 2.35V2a2.1 2.1 0 0 1 4.2 0v.07a1.8 1.8 0 0 0 1.1 1.66 1.8 1.8 0 0 0 1.98-.36l.05-.05a2.1 2.1 0 0 1 2.97 2.97l-.05.05a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.66 1.1H22a2.1 2.1 0 0 1 0 4.2h-.07A1.8 1.8 0 0 0 19.4 15Z"></path>
                   </svg>
                   <span>Configuraci&oacute;n</span>
                 </button>
-                <button class="meta-link" type="button" data-view-target="news">
+                <button class="meta-link" type="button" data-view-target="news" title="Novedades" aria-label="Novedades">
                   <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
                     <path d="M4 5h16v14H4z"></path>
                     <path d="M8 9h8"></path>
@@ -271,7 +271,7 @@
                   </svg>
                   <span>Novedades</span>
                 </button>
-                <button class="meta-link" type="button" data-view-target="roadmap">
+                <button class="meta-link" type="button" data-view-target="roadmap" title="Próximas mejoras" aria-label="Próximas mejoras">
                   <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 18h6"></path>
                     <path d="M10 22h4"></path>
@@ -1267,7 +1267,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-03 21:39:30";
+      window.__FG_BUILD__ = "2026-05-03 21:51:46";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1325,6 +1325,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-03-2139"></script>
+    <script type="module" src="app.js?v=2026-05-03-2151"></script>
   </body>
 </html>
