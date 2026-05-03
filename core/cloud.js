@@ -13,6 +13,8 @@ import {
   CONTACTS_KEY,
   SHARED_KEY,
   RECURRING_TEMPLATES_KEY,
+  GROUPS_KEY,
+  GROUP_MEMBERS_KEY,
   defaultCategories,
   defaultConcepts,
   seedMovements,
@@ -75,6 +77,9 @@ function recurringTemplateToCloud(t, ownerId) {
     shared_split_mode: t.sharedSplitMode ?? null,
     shared_my_share: t.sharedMyShare ?? null,
     shared_their_share: t.sharedTheirShare ?? null,
+    // Cuando la plantilla apunta a un grupo, los campos shared_* se
+    // ignoran y group_id manda. Para 1↔1 legacy va NULL.
+    group_id: t.groupId ?? null,
     created_at: t.createdAt ?? new Date().toISOString(),
   };
 }
@@ -100,6 +105,7 @@ function recurringTemplateFromCloud(row) {
     sharedSplitMode: row.shared_split_mode ?? null,
     sharedMyShare: row.shared_my_share != null ? Number(row.shared_my_share) : null,
     sharedTheirShare: row.shared_their_share != null ? Number(row.shared_their_share) : null,
+    groupId: row.group_id ?? null,
     createdAt: row.created_at,
   };
 }
@@ -153,6 +159,10 @@ function sharedToCloud(e, ownerId) {
     their_share: e.theirShare ?? 0,
     source_movement_id: e.sourceMovementId ?? null,
     settled_at: e.settledAt ?? null,
+    // Cuando la entrada pertenece a un grupo (3+ personas), group_id y
+    // splits llevan el desglose canónico. Para 1↔1 legacy, ambos van NULL.
+    group_id: e.groupId ?? null,
+    splits: e.splits ?? null,
     created_at: e.createdAt ?? new Date().toISOString(),
   };
 }
@@ -173,7 +183,57 @@ function sharedFromCloud(row) {
     theirShare: Number(row.their_share),
     sourceMovementId: row.source_movement_id ?? null,
     settledAt: row.settled_at ?? null,
+    groupId: row.group_id ?? null,
+    splits: row.splits ?? null,
     createdAt: row.created_at,
+  };
+}
+
+function groupToCloud(g, ownerId) {
+  return {
+    id: g.id,
+    owner_id: g.ownerId ?? ownerId,
+    name: g.name,
+    default_split_mode: g.defaultSplitMode ?? "equal",
+    default_split: g.defaultSplit ?? null,
+    created_at: g.createdAt ?? new Date().toISOString(),
+  };
+}
+
+function groupFromCloud(row) {
+  return {
+    id: row.id,
+    ownerId: row.owner_id,
+    name: row.name,
+    defaultSplitMode: row.default_split_mode,
+    defaultSplit: row.default_split ?? null,
+    createdAt: row.created_at,
+  };
+}
+
+function groupMemberToCloud(m) {
+  return {
+    id: m.id,
+    group_id: m.groupId,
+    auth_user_id: m.authUserId ?? null,
+    display_name: m.displayName,
+    email: m.email ?? null,
+    inviter_contact_id: m.inviterContactId ?? null,
+    joined_at: m.joinedAt ?? new Date().toISOString(),
+    left_at: m.leftAt ?? null,
+  };
+}
+
+function groupMemberFromCloud(row) {
+  return {
+    id: row.id,
+    groupId: row.group_id,
+    authUserId: row.auth_user_id ?? null,
+    displayName: row.display_name,
+    email: row.email ?? null,
+    inviterContactId: row.inviter_contact_id ?? null,
+    joinedAt: row.joined_at,
+    leftAt: row.left_at ?? null,
   };
 }
 
@@ -282,6 +342,54 @@ export async function cloudPushRecurringTemplates() {
   await syncTable("recurring_templates", ownerId, state.recurringTemplates, recurringTemplateToCloud);
 }
 
+// Solo empujamos los grupos donde YO soy el owner (admin). Los grupos
+// ajenos en los que soy miembro vienen del hydrate pero no los sincroniza
+// mi cliente: los gestiona su propio admin. La función filtra el state
+// local por ownerId === me antes de hacer la diff-delete.
+export async function cloudPushGroups() {
+  const ownerId = await getUserId();
+  if (!ownerId) return;
+  const myGroups = state.groups.filter(
+    (g) => (g.ownerId ?? ownerId) === ownerId
+  );
+  await syncTable("groups", ownerId, myGroups, groupToCloud);
+}
+
+// group_members tiene una asimetría: solo el admin del grupo puede
+// añadir/quitar miembros (RLS lo refleja). El cliente del admin empuja
+// todos los miembros de SUS grupos. Los miembros ajenos solo pueden
+// modificar su propia fila (UPDATE de left_at para abandonar) — eso lo
+// hacen vía un REST call directo, no por sync masivo.
+export async function cloudPushGroupMembers() {
+  const ownerId = await getUserId();
+  if (!ownerId) return;
+  const myGroupIds = new Set(
+    state.groups
+      .filter((g) => (g.ownerId ?? ownerId) === ownerId)
+      .map((g) => g.id)
+  );
+  const myMembers = state.groupMembers.filter((m) => myGroupIds.has(m.groupId));
+
+  // Diff-delete restringida a los miembros de mis grupos para no tocar
+  // los miembros de grupos ajenos (RLS los protege igualmente, pero un
+  // ?id=in.(...) con ids ajenos generaría errores ruidosos).
+  if (!myGroupIds.size) {
+    return;
+  }
+  const groupIdsParam = [...myGroupIds]
+    .map((id) => `"${encodeURIComponent(id)}"`)
+    .join(",");
+  const existing = await restGet(
+    `group_members?group_id=in.(${groupIdsParam})&select=id&limit=${ROW_LIMIT}`
+  );
+  const localIds = new Set(myMembers.map((m) => m.id));
+  const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
+  await restDelete("group_members", toDelete);
+  if (myMembers.length) {
+    await restUpsert("group_members", myMembers.map(groupMemberToCloud));
+  }
+}
+
 export async function cloudPushSettings() {
   const ownerId = await getUserId();
   if (!ownerId) return;
@@ -297,11 +405,16 @@ export async function cloudPushSettings() {
 }
 
 export async function cloudPushAll() {
+  // Orden importante: groups antes que group_members (FK constraint),
+  // y groups antes que recurring_templates / shared_entries para que
+  // sus group_id tengan referencia válida en el cloud.
+  await cloudPushGroups();
   await Promise.all([
     cloudPushMovements(),
     cloudPushContacts(),
     cloudPushSharedEntries(),
     cloudPushRecurringTemplates(),
+    cloudPushGroupMembers(),
     cloudPushSettings(),
   ]);
 }
@@ -312,7 +425,7 @@ export async function cloudHydrate() {
   const ownerId = await getUserId();
   if (!ownerId) return;
 
-  const [movementsData, settingsData, contactsData, sharedData, templatesData] = await Promise.all([
+  const [movementsData, settingsData, contactsData, sharedData, templatesData, groupsData, groupMembersData] = await Promise.all([
     restGet(`movements?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
     restGet(`settings?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
     restGet(`contacts?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
@@ -322,6 +435,12 @@ export async function cloudHydrate() {
     // pool keyed by ownerId so the UI can display them seamlessly.
     restGet(`shared_entries?select=*&limit=${ROW_LIMIT}`),
     restGet(`recurring_templates?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
+    // groups y group_members: SIN filtro de owner_id. RLS devuelve los
+    // grupos donde soy admin O miembro activo, y los miembros de esos
+    // grupos. La UI los rendea sin distinguir: para el usuario es lo
+    // mismo "mi grupo Casa" que "el grupo Casa de Juan donde estoy".
+    restGet(`groups?select=*&limit=${ROW_LIMIT}`),
+    restGet(`group_members?select=*&limit=${ROW_LIMIT}`),
   ]);
 
   const settingsRow = settingsData[0] ?? null;
@@ -331,11 +450,14 @@ export async function cloudHydrate() {
   // already" — otherwise a brand-new invitee skips the local-to-cloud seed
   // step and ends up missing their default categories/concepts.
   const myShared = sharedData.filter((row) => row.owner_id === ownerId);
+  const myGroups = groupsData.filter((row) => row.owner_id === ownerId);
+
   const cloudIsEmpty =
     !movementsData.length &&
     !contactsData.length &&
     !myShared.length &&
     !templatesData.length &&
+    !myGroups.length &&
     !settingsRow;
 
   if (cloudIsEmpty) {
@@ -345,18 +467,24 @@ export async function cloudHydrate() {
     const localContacts = readLocalArray(CONTACTS_KEY) ?? [];
     const localShared = readLocalArray(SHARED_KEY) ?? [];
     const localTemplates = readLocalArray(RECURRING_TEMPLATES_KEY) ?? [];
+    const localGroups = readLocalArray(GROUPS_KEY) ?? [];
+    const localGroupMembers = readLocalArray(GROUP_MEMBERS_KEY) ?? [];
     const localSettings = readLocalSettings();
 
     state.movements = localMovements;
     state.contacts = localContacts;
     state.sharedEntries = localShared;
     state.recurringTemplates = localTemplates;
+    state.groups = localGroups;
+    state.groupMembers = localGroupMembers;
     state.settings = localSettings;
 
     writeLocal(MOVEMENTS_KEY, state.movements);
     writeLocal(CONTACTS_KEY, state.contacts);
     writeLocal(SHARED_KEY, state.sharedEntries);
     writeLocal(RECURRING_TEMPLATES_KEY, state.recurringTemplates);
+    writeLocal(GROUPS_KEY, state.groups);
+    writeLocal(GROUP_MEMBERS_KEY, state.groupMembers);
     writeLocal(SETTINGS_KEY, state.settings);
 
     await cloudPushAll();
@@ -368,6 +496,8 @@ export async function cloudHydrate() {
   state.contacts = contactsData.map(contactFromCloud);
   state.sharedEntries = sharedData.map(sharedFromCloud);
   state.recurringTemplates = templatesData.map(recurringTemplateFromCloud);
+  state.groups = groupsData.map(groupFromCloud);
+  state.groupMembers = groupMembersData.map(groupMemberFromCloud);
   state.settings = settingsRow
     ? {
         categories: settingsRow.categories?.length ? settingsRow.categories : defaultCategories,
@@ -401,6 +531,8 @@ export async function cloudHydrate() {
   writeLocal(CONTACTS_KEY, state.contacts);
   writeLocal(SHARED_KEY, state.sharedEntries);
   writeLocal(RECURRING_TEMPLATES_KEY, state.recurringTemplates);
+  writeLocal(GROUPS_KEY, state.groups);
+  writeLocal(GROUP_MEMBERS_KEY, state.groupMembers);
   writeLocal(SETTINGS_KEY, state.settings);
 
   if (settingsMigrated) {

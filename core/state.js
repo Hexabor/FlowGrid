@@ -4,6 +4,8 @@ export const state = {
   contacts: [],
   sharedEntries: [],
   recurringTemplates: [],
+  groups: [],
+  groupMembers: [],
   datePickerMonth: new Date(),
   editingMovementId: null,
   pendingCsvMovements: [],
@@ -19,6 +21,7 @@ export const state = {
   breakdownSort: { key: "balance", dir: "desc" },
   editingSharedEntryId: null,
   editingRecurringTemplateId: null,
+  editingGroupId: null,
   // True while the form is editing a shared entry whose owner is a
   // linked partner (not the current user). Drives the un-flip of the
   // submitted form payload back to the owner's perspective and the

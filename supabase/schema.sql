@@ -146,6 +146,133 @@ create policy "contacts: invitee can claim by email"
   );
 
 -- =============================================================================
+-- GROUPS + GROUP MEMBERS  (gastos compartidos en grupo de 3+ personas;
+--   ver migrate-8-groups.sql. Las shared_entries con group_id IS NOT NULL
+--   viven dentro de un grupo y usan `splits` JSONB para el desglose;
+--   las legacy 1↔1 mantienen contact_id y paid_by/my_share/their_share.)
+--   Las dos tablas se crean primero y todas las policies se declaran
+--   después porque las policies se referencian mutuamente y Postgres
+--   valida la existencia de las tablas referenciadas al CREATE POLICY.
+-- =============================================================================
+create table if not exists public.groups (
+  id                  text primary key,
+  owner_id            uuid not null references auth.users(id) on delete cascade,
+  name                text not null,
+  default_split_mode  text not null default 'equal' check (default_split_mode in ('equal', 'uneven')),
+  default_split       jsonb,
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now()
+);
+
+create index if not exists groups_owner_idx on public.groups(owner_id);
+
+alter table public.groups enable row level security;
+
+create table if not exists public.group_members (
+  id                  text primary key,
+  group_id            text not null references public.groups(id) on delete cascade,
+  auth_user_id        uuid references auth.users(id) on delete set null,
+  display_name        text not null,
+  email               text,
+  inviter_contact_id  text,
+  joined_at           timestamptz not null default now(),
+  left_at             timestamptz
+);
+
+create index if not exists group_members_group_idx     on public.group_members(group_id);
+create index if not exists group_members_auth_user_idx on public.group_members(auth_user_id);
+create unique index if not exists group_members_unique_user_per_group
+  on public.group_members(group_id, auth_user_id)
+  where auth_user_id is not null;
+
+alter table public.group_members enable row level security;
+
+-- ---- policies: groups ----
+drop policy if exists "groups: owner or member can read" on public.groups;
+create policy "groups: owner or member can read"
+  on public.groups for select
+  using (
+    owner_id = auth.uid()
+    or exists (
+      select 1 from public.group_members gm
+      where gm.group_id = id
+        and gm.auth_user_id = auth.uid()
+        and gm.left_at is null
+    )
+  );
+
+drop policy if exists "groups: anyone can create" on public.groups;
+create policy "groups: anyone can create"
+  on public.groups for insert
+  with check (owner_id = auth.uid());
+
+drop policy if exists "groups: owner can update" on public.groups;
+create policy "groups: owner can update"
+  on public.groups for update
+  using (owner_id = auth.uid());
+
+drop policy if exists "groups: owner can delete" on public.groups;
+create policy "groups: owner can delete"
+  on public.groups for delete
+  using (owner_id = auth.uid());
+
+-- ---- policies: group_members ----
+drop policy if exists "group_members: members can read" on public.group_members;
+create policy "group_members: members can read"
+  on public.group_members for select
+  using (
+    auth_user_id = auth.uid()
+    or exists (
+      select 1 from public.groups g
+      where g.id = group_id and g.owner_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.group_members me
+      where me.group_id = group_members.group_id
+        and me.auth_user_id = auth.uid()
+        and me.left_at is null
+    )
+  );
+
+drop policy if exists "group_members: owner adds" on public.group_members;
+create policy "group_members: owner adds"
+  on public.group_members for insert
+  with check (
+    exists (
+      select 1 from public.groups g
+      where g.id = group_id and g.owner_id = auth.uid()
+    )
+  );
+
+drop policy if exists "group_members: owner or self update" on public.group_members;
+create policy "group_members: owner or self update"
+  on public.group_members for update
+  using (
+    auth_user_id = auth.uid()
+    or exists (
+      select 1 from public.groups g
+      where g.id = group_id and g.owner_id = auth.uid()
+    )
+  )
+  with check (
+    auth_user_id = auth.uid()
+    or exists (
+      select 1 from public.groups g
+      where g.id = group_id and g.owner_id = auth.uid()
+    )
+  );
+
+drop policy if exists "group_members: owner deletes" on public.group_members;
+create policy "group_members: owner deletes"
+  on public.group_members for delete
+  using (
+    exists (
+      select 1 from public.groups g
+      where g.id = group_id and g.owner_id = auth.uid()
+    )
+  );
+
+-- =============================================================================
 -- SHARED ENTRIES
 -- =============================================================================
 create table if not exists public.shared_entries (
@@ -167,6 +294,12 @@ create table if not exists public.shared_entries (
   -- this YouTube subscription and marked the row as liquidado without
   -- waiting to settle the global balance). See migrate-4-invitations.sql.
   settled_at         timestamptz,
+  -- When set, this entry belongs to a group (3+ personas). The fields
+  -- contact_id / paid_by / my_share / their_share become legacy hints
+  -- and the canonical breakdown lives in `splits` JSONB:
+  -- { member_id: { paid: numeric, owes: numeric } }. See migrate-8-groups.sql.
+  group_id           text references public.groups(id) on delete cascade,
+  splits             jsonb,
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now()
 );
@@ -174,17 +307,22 @@ create table if not exists public.shared_entries (
 create index if not exists shared_entries_owner_idx          on public.shared_entries(owner_id);
 create index if not exists shared_entries_owner_contact_idx  on public.shared_entries(owner_id, contact_id);
 create index if not exists shared_entries_owner_settled_idx  on public.shared_entries(owner_id, settled_at);
+create index if not exists shared_entries_group_idx
+  on public.shared_entries(group_id)
+  where group_id is not null;
 
 alter table public.shared_entries enable row level security;
 
--- Owner has full access AND a linked partner (a user matched as
--- contact.auth_user_id in the entry's owner account) gets symmetric
--- read/write access. The contact must be the SPECIFIC contact_id of
--- the entry, otherwise an invitee linked to one contact would also
--- see the inviter's shared entries with everyone else.
+-- Visibilidad de una shared_entry:
+--  (a) el owner del row (caso clásico 1↔1 + grupos creados por mí),
+--  (b) el partner vinculado de un par 1↔1 (legacy contact_id), o
+--  (c) un miembro activo del grupo cuando group_id está poblado.
+-- Las tres ramas se evalúan tanto en USING como en WITH CHECK para
+-- permitir que cualquier miembro inserte/edite entradas del grupo.
 drop policy if exists "shared_entries: owner full access" on public.shared_entries;
 drop policy if exists "shared_entries: owner or linked partner" on public.shared_entries;
-create policy "shared_entries: owner or linked partner"
+drop policy if exists "shared_entries: owner, linked partner or group member" on public.shared_entries;
+create policy "shared_entries: owner, linked partner or group member"
   on public.shared_entries for all
   using (
     owner_id = auth.uid()
@@ -194,6 +332,15 @@ create policy "shared_entries: owner or linked partner"
         and c.id = shared_entries.contact_id
         and c.auth_user_id = auth.uid()
     )
+    or (
+      group_id is not null
+      and exists (
+        select 1 from public.group_members gm
+        where gm.group_id = shared_entries.group_id
+          and gm.auth_user_id = auth.uid()
+          and gm.left_at is null
+      )
+    )
   )
   with check (
     owner_id = auth.uid()
@@ -202,6 +349,15 @@ create policy "shared_entries: owner or linked partner"
       where c.owner_id = shared_entries.owner_id
         and c.id = shared_entries.contact_id
         and c.auth_user_id = auth.uid()
+    )
+    or (
+      group_id is not null
+      and exists (
+        select 1 from public.group_members gm
+        where gm.group_id = shared_entries.group_id
+          and gm.auth_user_id = auth.uid()
+          and gm.left_at is null
+      )
     )
   );
 
@@ -232,6 +388,10 @@ create table if not exists public.recurring_templates (
   shared_split_mode     text check (shared_split_mode in ('equal', 'uneven', 'full')),
   shared_my_share       numeric(12,2),
   shared_their_share    numeric(12,2),
+  -- Cuando la plantilla apunta a un grupo (3+ personas), los campos
+  -- shared_* anteriores se ignoran y el motor genera el reparto leyendo
+  -- el grupo y sus miembros activos. Ver migrate-8-groups.sql.
+  group_id              text references public.groups(id) on delete set null,
   created_at            timestamptz not null default now(),
   updated_at            timestamptz not null default now()
 );
@@ -268,12 +428,14 @@ drop trigger if exists settings_set_updated_at            on public.settings;
 drop trigger if exists contacts_set_updated_at            on public.contacts;
 drop trigger if exists shared_entries_set_updated_at      on public.shared_entries;
 drop trigger if exists recurring_templates_set_updated_at on public.recurring_templates;
+drop trigger if exists groups_set_updated_at              on public.groups;
 
 create trigger movements_set_updated_at           before update on public.movements           for each row execute function public.set_updated_at();
 create trigger settings_set_updated_at            before update on public.settings            for each row execute function public.set_updated_at();
 create trigger contacts_set_updated_at            before update on public.contacts            for each row execute function public.set_updated_at();
 create trigger shared_entries_set_updated_at      before update on public.shared_entries      for each row execute function public.set_updated_at();
 create trigger recurring_templates_set_updated_at before update on public.recurring_templates for each row execute function public.set_updated_at();
+create trigger groups_set_updated_at              before update on public.groups              for each row execute function public.set_updated_at();
 
 -- =============================================================================
 -- SHARED ENTRY EDITS  (append-only audit log; see migrate-6-shared-entry-edits.sql)
