@@ -202,6 +202,8 @@ export const elements = {
   recurringSharedUneven: document.querySelector("#recurring-shared-uneven"),
   recurringSharedMyShare: document.querySelector("#recurring-shared-my-share"),
   recurringSharedTheirShare: document.querySelector("#recurring-shared-their-share"),
+  recurringSharedGroupInfo: document.querySelector("#recurring-shared-group-info"),
+  recurringGroupHint: document.querySelector("#recurring-group-hint"),
   recurringFeedback: document.querySelector("#recurring-feedback"),
   recurringSubmitLabel: document.querySelector("#recurring-submit-label"),
 };

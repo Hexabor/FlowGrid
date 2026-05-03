@@ -32,8 +32,17 @@ import { SHARED_MODES } from "../core/constants.js";
 import {
   buildSharedExpenseEntry,
   computeSharedShares,
+  parseSharedTarget,
 } from "./shared.js";
 import { getContactName } from "./contacts.js";
+import {
+  getMyGroups,
+  getGroupById,
+  getGroupMembers,
+  getMyMemberInGroup,
+  buildSplits,
+  resolveMemberView,
+} from "./groups.js";
 import { setRecurringStartDate, setRecurringEndDate } from "../ui/datepicker.js";
 import { showConfirm } from "../ui/confirm.js";
 
@@ -312,7 +321,8 @@ export function generatePendingRecurrences() {
 // in features/movements.js — same skip rule for me-full préstamos, same
 // shape for shared entries.
 function materialise(template, isoDate) {
-  const isShared = !!template.sharedContactId;
+  const isShared1on1 = !!template.sharedContactId;
+  const isSharedGroup = !!template.groupId;
   const movementId = createId();
 
   // Resolve [mes]/[año]/etc. placeholders against this occurrence's date.
@@ -326,7 +336,71 @@ function materialise(template, isoDate) {
   let sharedEntryId = null;
   let skipMovement = false;
 
-  if (isShared) {
+  if (isSharedGroup) {
+    // Plantilla de grupo: usar el reparto por defecto del grupo,
+    // pagador siempre = yo (el creador de la plantilla, que es el
+    // único que ejecuta el motor en su cliente).
+    const group = getGroupById(template.groupId);
+    const myMember = getMyMemberInGroup(template.groupId);
+    if (!group || !myMember) {
+      // Grupo o membresía perdida — no podemos generar. Saltar.
+      return { movement: null, sharedEntry: null };
+    }
+    const splitMode = group.defaultSplitMode || "equal";
+    let perMemberShares = null;
+    if (splitMode === "uneven" && group.defaultSplit) {
+      // default_split es {member_id: percent}. Convertir a cantidades
+      // en este importe concreto para pasarlas a buildSplits.
+      const totalPercent = Object.values(group.defaultSplit).reduce(
+        (acc, p) => acc + (Number(p) || 0),
+        0
+      );
+      if (totalPercent > 0) {
+        perMemberShares = {};
+        for (const [memberId, percent] of Object.entries(group.defaultSplit)) {
+          perMemberShares[memberId] = (Number(percent) / totalPercent) * template.amount;
+        }
+      }
+    }
+    let splits;
+    try {
+      splits = buildSplits({
+        groupId: template.groupId,
+        total: template.amount,
+        payerMemberId: myMember.id,
+        mode: splitMode === "uneven" && perMemberShares ? "uneven" : "equal",
+        perMemberShares,
+      });
+    } catch (err) {
+      console.error("[recurring] buildSplits failed", err);
+      return { movement: null, sharedEntry: null };
+    }
+
+    const myOwes = Number(splits[myMember.id]?.owes) || 0;
+    sharedEntry = {
+      id: createId(),
+      type: "expense",
+      contactId: "",
+      date: isoDate,
+      concept: template.concept,
+      note: renderedNote,
+      total: template.amount,
+      paidBy: "me",
+      splitMode: splitMode === "uneven" ? "uneven" : "equal",
+      myShare: myOwes,
+      theirShare: 0,
+      sourceMovementId: myOwes > 0 ? movementId : null,
+      groupId: template.groupId,
+      splits,
+      settledAt: null,
+      createdAt: new Date().toISOString(),
+    };
+    skipMovement = myOwes <= 0;
+    if (!skipMovement) {
+      amountForMovement = myOwes;
+      sharedEntryId = sharedEntry.id;
+    }
+  } else if (isShared1on1) {
     const modeKey = sharedModeKeyOfTemplate(template);
     const mode = SHARED_MODES[modeKey];
     const { myShare, theirShare } = computeSharedShares(
@@ -390,15 +464,19 @@ function sharedModeKeyOfTemplate(template) {
 
 export function createTemplateFromForm(formData) {
   const periodicity = formData.get("periodicity") || "monthly";
-  const sharedContactId = formData.get("sharedContactId") || "";
+  const rawTarget = formData.get("sharedContactId") || "";
+  const target = parseSharedTarget(rawTarget);
   const baseAmount = Number(formData.get("amount"));
 
   let sharedSplitMode = null;
   let sharedPaidBy = null;
   let sharedMyShare = null;
   let sharedTheirShare = null;
+  let sharedContactId = null;
+  let groupId = null;
 
-  if (sharedContactId) {
+  if (target.kind === "contact") {
+    sharedContactId = target.id;
     const modeKey = formData.get("sharedMode") || "me-equal";
     const mode = SHARED_MODES[modeKey];
     sharedPaidBy = mode.paidBy;
@@ -407,6 +485,8 @@ export function createTemplateFromForm(formData) {
       sharedMyShare = Number(formData.get("myShare")) || 0;
       sharedTheirShare = Number(formData.get("theirShare")) || 0;
     }
+  } else if (target.kind === "group") {
+    groupId = target.id;
   }
 
   return {
@@ -426,11 +506,12 @@ export function createTemplateFromForm(formData) {
     endDate: formData.get("endDate") || null,
     lastGeneratedDate: null,
     isActive: true,
-    sharedContactId: sharedContactId || null,
+    sharedContactId,
     sharedPaidBy,
     sharedSplitMode,
     sharedMyShare,
     sharedTheirShare,
+    groupId,
     createdAt: new Date().toISOString(),
   };
 }
@@ -762,12 +843,27 @@ function syncModalSelects() {
     if (matching) elements.recurringCategory.value = matching.category;
   }
 
-  // Shared-contact picker.
+  // Shared target picker: contactos + grupos con prefijos. Mismo
+  // patrón que el modal de gasto (parseSharedTarget en shared.js).
   if (elements.recurringSharedContact) {
-    const options = state.contacts.map((c) => ({ value: c.id, label: c.name }));
-    elements.recurringSharedContact.innerHTML =
-      '<option value="">Solo personal (sin compartir)</option>' +
-      optionMarkup(options);
+    const contacts = state.contacts.slice().sort((a, b) =>
+      a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+    );
+    const groups = getMyGroups().slice().sort((a, b) =>
+      a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+    );
+    let html = '<option value="">Solo personal (sin compartir)</option>';
+    if (contacts.length) {
+      html += '<optgroup label="Contactos">';
+      html += contacts.map((c) => `<option value="contact:${c.id}">${c.name}</option>`).join("");
+      html += "</optgroup>";
+    }
+    if (groups.length) {
+      html += '<optgroup label="Grupos">';
+      html += groups.map((g) => `<option value="group:${g.id}">${g.name}</option>`).join("");
+      html += "</optgroup>";
+    }
+    elements.recurringSharedContact.innerHTML = html;
   }
 }
 
@@ -778,18 +874,45 @@ function syncMonthOfYearVisibility() {
 }
 
 function syncSharedFieldsVisibility() {
-  const enabled = !!elements.recurringSharedContact?.value;
+  const value = elements.recurringSharedContact?.value || "";
+  const target = parseSharedTarget(value);
+  const isGroup = target.kind === "group";
+  const isContact = target.kind === "contact";
+
+  // Bloque 1↔1 (modo + uneven): solo cuando hay un contacto seleccionado.
   if (elements.recurringSharedFields) {
-    elements.recurringSharedFields.hidden = !enabled;
+    elements.recurringSharedFields.hidden = !isContact;
   }
+  // Info de grupo: cuando se selecciona un grupo, mostrar pista con
+  // el reparto por defecto que aplicará el motor.
+  if (elements.recurringSharedGroupInfo) {
+    elements.recurringSharedGroupInfo.hidden = !isGroup;
+    if (isGroup) {
+      const group = getGroupById(target.id);
+      const members = getGroupMembers(target.id);
+      const modeText = group?.defaultSplitMode === "uneven"
+        ? "porcentajes definidos en el grupo"
+        : "partes iguales";
+      const memberCount = members.length;
+      if (elements.recurringGroupHint) {
+        elements.recurringGroupHint.textContent =
+          `Cada generación creará una entrada compartida en "${group?.name ?? "el grupo"}" repartiendo el importe entre ${memberCount} miembro${memberCount === 1 ? "" : "s"} a ${modeText}. El pagador será siempre tú.`;
+      }
+    }
+  }
+
   syncSharedUnevenVisibility();
 }
 
 function syncSharedUnevenVisibility() {
   if (!elements.recurringSharedUneven) return;
-  const enabled = !!elements.recurringSharedContact?.value;
+  const target = parseSharedTarget(elements.recurringSharedContact?.value || "");
+  if (target.kind !== "contact") {
+    elements.recurringSharedUneven.hidden = true;
+    return;
+  }
   const modeKey = elements.recurringSharedMode?.value;
-  const isUneven = enabled && modeKey && SHARED_MODES[modeKey]?.split === "uneven";
+  const isUneven = modeKey && SHARED_MODES[modeKey]?.split === "uneven";
   elements.recurringSharedUneven.hidden = !isUneven;
 }
 
@@ -818,7 +941,13 @@ function resetRecurringForm(template = null, prefill = null) {
   setRecurringEndDate(endDate);
 
   if (elements.recurringSharedContact) {
-    elements.recurringSharedContact.value = seed?.sharedContactId ?? "";
+    if (seed?.groupId) {
+      elements.recurringSharedContact.value = `group:${seed.groupId}`;
+    } else if (seed?.sharedContactId) {
+      elements.recurringSharedContact.value = `contact:${seed.sharedContactId}`;
+    } else {
+      elements.recurringSharedContact.value = "";
+    }
   }
   if (elements.recurringSharedMode) {
     const modeKey = seed
@@ -869,10 +998,37 @@ export function openConvertFromMovement(movement) {
   if (!movement) return;
   convertingFromMovementId = movement.id;
   const date = movement.date ? parseIsoDate(movement.date) : todayLocal();
+
+  // Si el movimiento de origen está asociado a una shared_entry de
+  // grupo, propagamos el groupId al prefill de la plantilla (también
+  // el importe TOTAL del gasto, no la parte personal del usuario, que
+  // es lo que muestra movement.amount). Para 1↔1 legacy y movimientos
+  // sin compartido, el prefill se queda como hasta ahora.
+  let totalAmount = movement.amount;
+  let groupId = null;
+  let sharedContactId = null;
+  let sharedSplitMode = null;
+  let sharedPaidBy = null;
+  if (movement.sharedEntryId) {
+    const linkedEntry = state.sharedEntries.find(
+      (e) => e.id === movement.sharedEntryId
+    );
+    if (linkedEntry) {
+      totalAmount = Number(linkedEntry.total) || movement.amount;
+      if (linkedEntry.groupId) {
+        groupId = linkedEntry.groupId;
+      } else if (linkedEntry.contactId) {
+        sharedContactId = linkedEntry.contactId;
+        sharedSplitMode = linkedEntry.splitMode;
+        sharedPaidBy = linkedEntry.paidBy;
+      }
+    }
+  }
+
   resetRecurringForm(null, {
     type: movement.type,
     concept: movement.concept,
-    amount: movement.amount,
+    amount: totalAmount,
     category: movement.category,
     party: movement.party,
     note: movement.note,
@@ -880,6 +1036,10 @@ export function openConvertFromMovement(movement) {
     dayOfMonth: date.getDate(),
     monthOfYear: date.getMonth() + 1,
     startDate: movement.date,
+    groupId,
+    sharedContactId,
+    sharedSplitMode,
+    sharedPaidBy,
   });
   if (elements.recurringFeedback) {
     elements.recurringFeedback.textContent =
