@@ -15,7 +15,9 @@ import {
 import { getUserIdSync } from "../core/supabase.js";
 import { recordSharedEntryEdit } from "./edit-log.js";
 import { renderAnalysis } from "./analysis.js";
+import { openConvertFromMovement } from "./recurring.js";
 import { setMovementDate } from "../ui/datepicker.js";
+import { showConfirm } from "../ui/confirm.js";
 
 export function getCategory(value) {
   return state.settings.categories.find((category) => category.value === value);
@@ -252,6 +254,10 @@ export function createMovementCard(movement, compact = false) {
   const signedAmount = getSignedAmount(movement);
   const recurrenceRaw = movement.recurrence || "puntual";
   const recurrenceLabel = recurrenceRaw[0].toUpperCase() + recurrenceRaw.slice(1);
+  // 🔁 marks rows generated automatically by a Periódicos template (vs.
+  // hand-entered movements that may also have a `recurrence` label).
+  const autoBadge = movement.recurringTemplateId ? "🔁 " : "";
+  const recurrenceDisplay = autoBadge + recurrenceLabel;
   const sharedLabel = getMovementSharedLabel(movement);
 
   card.dataset.id = movement.id;
@@ -274,14 +280,14 @@ export function createMovementCard(movement, compact = false) {
   card.querySelector(".amount").classList.add(movement.type);
   card.querySelector(".date").textContent = formatDate(movement.date);
   card.querySelector(".party").textContent = movement.party || "";
-  card.querySelector(".recurrence").textContent = recurrenceLabel;
+  card.querySelector(".recurrence").textContent = recurrenceDisplay;
   card.querySelector(".shared-cell").textContent = sharedLabel;
 
   // Expanded section (mobile only). All rows that would be empty are
   // hidden via the `hidden` attribute so the dl collapses naturally.
   card.querySelector(".exp-date").textContent = formatDate(movement.date);
   card.querySelector(".exp-category").textContent = getCategoryLabel(movement.category);
-  card.querySelector(".exp-recurrence").textContent = recurrenceLabel;
+  card.querySelector(".exp-recurrence").textContent = recurrenceDisplay;
 
   const partyRow = card.querySelector('[data-row="party"]');
   if (movement.party) {
@@ -506,6 +512,7 @@ export function resetMovementForm(movement) {
   elements.sharedContact.disabled = false;
   elements.editCommentField.hidden = true;
   elements.editComment.value = "";
+  if (elements.convertToRecurring) elements.convertToRecurring.hidden = true;
   elements.submitLabel.textContent = "Anadir movimiento";
   state.editingMovementId = null;
   state.editingSharedEntryId = null;
@@ -557,6 +564,13 @@ function editMovementById(id) {
   fillMovementForm(movement);
   elements.submitLabel.textContent = "Guardar cambios";
   elements.feedback.textContent = "Editando movimiento.";
+  // The "Convertir en plantilla periódica" button is only meaningful for
+  // hand-entered movements that aren't already auto-generated. Hide it
+  // for virtual rows (partner shared expenses) and for rows already
+  // linked to a template (would be a no-op anyway).
+  if (elements.convertToRecurring) {
+    elements.convertToRecurring.hidden = !!movement.isVirtual || !!movement.recurringTemplateId;
+  }
   openMovementModal();
   elements.concept.focus();
 }
@@ -572,16 +586,10 @@ function duplicateMovementById(id) {
   elements.concept.focus();
 }
 
-function deleteMovementById(id) {
-  const movement = state.movements.find((candidate) => candidate.id === id);
-  if (!movement) return;
+function actuallyDeleteMovement(movement) {
   const linkedEntry = movement.sharedEntryId
     ? state.sharedEntries.find((entry) => entry.id === movement.sharedEntryId)
     : null;
-
-  if (!confirm(`Eliminar "${movement.concept}" del ${formatDate(movement.date)}?`)) {
-    return;
-  }
 
   state.movements = state.movements.filter((candidate) => candidate.id !== movement.id);
   if (linkedEntry) {
@@ -594,6 +602,78 @@ function deleteMovementById(id) {
   if (linkedEntry) {
     renderSharedView();
   }
+}
+
+// Wipe the source template + every movement it produced + paired shared
+// entries. Imported lazily to avoid a static cycle with recurring.js.
+async function deleteTemplateAndAllOccurrences(templateId) {
+  const generated = state.movements.filter((m) => m.recurringTemplateId === templateId);
+  const linkedEntryIds = new Set(
+    generated.map((m) => m.sharedEntryId).filter(Boolean)
+  );
+  state.movements = state.movements.filter((m) => m.recurringTemplateId !== templateId);
+  if (linkedEntryIds.size) {
+    state.sharedEntries = state.sharedEntries.filter((e) => !linkedEntryIds.has(e.id));
+    saveSharedEntries();
+  }
+  state.recurringTemplates = state.recurringTemplates.filter((t) => t.id !== templateId);
+  saveMovements();
+  // saveRecurringTemplates is exported from storage.js but not imported
+  // here; reach in via dynamic import to avoid expanding the static
+  // import surface for a single call.
+  const storage = await import("../core/storage.js");
+  storage.saveRecurringTemplates();
+  renderMovements();
+  renderAnalysis();
+  if (linkedEntryIds.size) renderSharedView();
+  // Re-render recurring view so the now-deleted template disappears.
+  const recurring = await import("./recurring.js");
+  recurring.renderRecurringView?.();
+}
+
+function deleteMovementById(id) {
+  const movement = state.movements.find((candidate) => candidate.id === id);
+  if (!movement) return;
+
+  const template = movement.recurringTemplateId
+    ? state.recurringTemplates.find((t) => t.id === movement.recurringTemplateId)
+    : null;
+
+  // Recurrent movement: robust modal with explicit warning that the row
+  // won't regenerate, plus an option to wipe the template + every
+  // occurrence (with double-confirm on the destructive button).
+  if (template) {
+    showConfirm({
+      title: "Borrar movimiento recurrente",
+      message: `Este movimiento fue generado por la plantilla "${template.concept}" del ${formatDate(movement.date)}. Si lo borras, NO se regenerará automáticamente — tendrás que crearlo a mano si lo quieres recuperar.`,
+      extra: "¿Qué quieres hacer?",
+      actions: [
+        {
+          label: "Cancelar",
+          kind: "secondary",
+          onClick: () => {},
+        },
+        {
+          label: "Borrar solo este",
+          kind: "secondary",
+          onClick: () => actuallyDeleteMovement(movement),
+        },
+        {
+          label: "Borrar este, todos los demás generados y la plantilla",
+          kind: "danger",
+          requireDoubleConfirm: true,
+          onClick: () => deleteTemplateAndAllOccurrences(template.id),
+        },
+      ],
+    });
+    return;
+  }
+
+  // Plain hand-entered movement: simple confirm is enough.
+  if (!confirm(`Eliminar "${movement.concept}" del ${formatDate(movement.date)}?`)) {
+    return;
+  }
+  actuallyDeleteMovement(movement);
 }
 
 // Mobile-only: tapping the card body (away from any button) toggles inline
@@ -718,6 +798,19 @@ elements.openMovementModal.addEventListener("click", () => {
   resetMovementForm();
   elements.feedback.textContent = "";
   openMovementModal();
+});
+
+// "Convertir en plantilla periódica" — visible only while editing an
+// existing, non-virtual, non-already-linked movement. Closes the
+// movement modal and opens the recurring modal pre-filled with the
+// source data; the recurring submit handler will link the source row.
+elements.convertToRecurring?.addEventListener("click", () => {
+  if (!state.editingMovementId) return;
+  const movement = state.movements.find((m) => m.id === state.editingMovementId);
+  if (!movement) return;
+  closeMovementModal();
+  resetMovementForm();
+  openConvertFromMovement(movement);
 });
 
 elements.closeMovementModal.addEventListener("click", closeMovementModal);

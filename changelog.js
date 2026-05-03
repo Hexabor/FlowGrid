@@ -1,5 +1,70 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
+    title: "Periódicos desktop: botones a iconos y columna Importe alineada",
+    changes: [
+      "Las acciones de cada plantilla en desktop ahora son iconos cuadrados (lápiz para Editar, dos barras para Pausar / triángulo para Reactivar, papelera para Eliminar) en lugar de botones con texto. Se compactan al final de la fila sin robar espacio. Tooltip al pasar el ratón mantiene la claridad y el texto sigue accesible para lectores de pantalla.",
+      "Cabecera \"Importe\" ahora alineada a la derecha para que el título coincida con la posición de los números de la columna.",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
+    title: "Periódicos: vista tabla en desktop + cards expandibles en móvil",
+    changes: [
+      "En desktop la lista de plantillas ya no son tarjetones gigantes que dejaban media pantalla en blanco — ahora es una tabla compacta con columnas: Concepto, Importe, Periodicidad, Próxima, Compartido, Acciones. Cabecera de columnas arriba para orientarte. Cada fila es una plantilla, los botones (Editar / Pausar / Eliminar) van inline al final.",
+      "En móvil cada plantilla es una mini-card como las de Movimientos. Colapsada muestra solo lo esencial: concepto, importe, próxima generación y con quién está compartida (si lo está). Tocas la card y se expande mostrando nota, periodicidad, emisor/receptor y los botones.",
+      "Plantillas compartidas ahora muestran SIEMPRE \"Con [contacto] · [modo de reparto]\". Antes en los modos de reparto donde tú pagabas (\"Tú pagas, partes iguales\"), no se veía con quién estaba compartida; ahora aparece el nombre del contacto delante.",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
+    title: "Periódicos: tiempo real al cruzar medianoche y borrado robusto",
+    changes: [
+      "Generación en tiempo real: si tienes la app abierta y cruza la medianoche, los movimientos del nuevo día aparecen solos sin necesidad de recargar. Si vuelves a la pestaña tras horas en background (móvil con la pantalla bloqueada, ordenador suspendido), también se actualiza al instante al volver al frente.",
+      "Borrar un movimiento recurrente (con icono 🔁) ahora abre un diálogo claro que avisa de que ese movimiento NO se regenerará automáticamente, y ofrece tres opciones: cancelar, borrar solo ese movimiento, o borrar la plantilla entera con todos sus movimientos generados (esta última con doble confirmación en rojo).",
+      "Borrar una plantilla periódica también pasa por un diálogo equivalente: te dice cuántos movimientos ha generado y te deja elegir entre mantener esos movimientos en tu histórico (perderán el icono 🔁) o borrarlos junto a la plantilla. La opción destructiva siempre requiere segundo click confirmando.",
+      "Reactivar una plantilla pausada ahora salta el hueco: si pausaste hace 2 meses, al reactivar NO genera de golpe los 2 meses perdidos. Empieza a producir desde la próxima ocurrencia. Si quisieras recuperar el hueco, edita la plantilla y mueve startDate hacia atrás.",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
+    title: "Periódicos: notas dinámicas con [mes], [año], [día], [fecha]",
+    changes: [
+      "Las notas y el campo Emisor/receptor de una plantilla periódica admiten ahora placeholders entre corchetes que se sustituyen por los datos de la fecha de generación: <code>[mes]</code> → mayo · <code>[Mes]</code> → Mayo · <code>[año]</code> → 2026 · <code>[día]</code> → 3 · <code>[fecha]</code> → 03/05/2026. También aceptamos las variantes naturales <code>[mes en curso]</code> y <code>[año en curso]</code>.",
+      "Ejemplo: si tu plantilla de Alquiler tiene la nota \"Alquiler [mes] [año]\", la generación de mayo escribirá \"Alquiler mayo 2026\", la de junio \"Alquiler junio 2026\", y así sucesivamente. La plantilla guarda el texto literal con los corchetes; cada movimiento generado se renderiza con su propia fecha.",
+      "Mientras escribes la nota en el modal, aparece debajo un mini-preview en naranja con cómo quedaría la nota si la plantilla generase hoy. Solo se muestra cuando hay placeholders, así que las notas planas no añaden ruido.",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
+    title: "Periódicos: calendario coherente y conversión rápida desde un movimiento",
+    changes: [
+      "Las dos fechas del modal de plantilla periódica (Empieza el / Termina el) ahora usan el calendario propio de FlowGrid en formato DD/MM/AAAA, igual que el resto de la app. Antes salían los selectores nativos del navegador, distintos en cada sistema.",
+      "La fecha de fin trae un botón \"Quitar\" al lado para vaciarla con un click cuando ya no la necesites — recuerda que es opcional.",
+      "Editar un movimiento ya existente ahora muestra un botón naranja \"Convertir en plantilla periódica\". Pulsarlo cierra la edición y abre el modal de plantilla pre-rellenado con los datos del movimiento (concepto, importe, categoría, fecha→día del mes). Al guardar, el movimiento original queda enlazado a la plantilla (aparece con 🔁) y la siguiente ocurrencia se generará automáticamente sin duplicar la actual.",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
+    title: "Periódicos: plantillas que generan tus movimientos recurrentes solos",
+    changes: [
+      "Nueva sección \"Periódicos\" en el Home (tile naranja) y en la barra lateral. Define una plantilla con concepto, importe, periodicidad (mensual o anual) y día — FlowGrid genera automáticamente el movimiento en cada periodo, sin que tengas que volver a meterlo a mano. Ideal para alquileres, suscripciones, nóminas.",
+      "Generación silenciosa al arrancar la app: cualquier ocurrencia pendiente desde la última visita se materializa de golpe y aparece en tu lista, marcada con un icono 🔁 en la columna de recurrencia para que distingas a simple vista qué ha entrado solo.",
+      "Idempotente: si abres la app dos veces el mismo día, no se duplica nada. Cada plantilla recuerda su última fecha generada y no vuelve atrás.",
+      "Días imposibles del mes (alquiler el 31 en febrero) caen al último día real del mes. No se saltan ni se desplazan a otro mes.",
+      "Editar el importe de una plantilla solo afecta a futuras generaciones. Los movimientos pasados son fotografías del momento y no se modifican retroactivamente.",
+      "Pausar y eliminar son acciones distintas. Pausar conserva la plantilla; eliminar la quita pero los movimientos ya generados se quedan en tu histórico.",
+      "Plantillas compartidas soportadas desde día uno: una recurrencia puede asignarse a un contacto y reparto (alquiler con tu pareja, suscripción al 50/50). Cada generación crea también la entrada compartida correspondiente, igual que si la metieras a mano.",
+      "Vista \"Análisis\" unifica las antiguas \"Mes a mes\" y \"Año a Año\" en una sola pantalla con un toggle Mensual/Anual al inicio. Recuerda el último modo que usaste, así que abrir la vista te lleva directamente a lo que estabas mirando. El Home pasa a 4 tiles 2×2: Movimientos · Compartidos · Análisis · Periódicos.",
+    ],
+  },
+  {
     date: "2026-05-02",
     commit: "main@HEAD",
     title: "Movimientos desktop: tapar el hueco entre cabecera de columnas y separador de mes",

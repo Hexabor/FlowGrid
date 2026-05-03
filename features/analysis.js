@@ -1,5 +1,5 @@
 import { state } from "../core/state.js";
-import { elements } from "../core/dom.js";
+import { elements, setAnalysisMode } from "../core/dom.js";
 import { APP_LOCALE, formatMoney } from "../core/utils.js";
 import { getCategoryLabel, getAllMovements } from "./movements.js";
 
@@ -208,6 +208,13 @@ document.querySelectorAll("[data-period]").forEach((button) => {
     }
 
     renderAnalysis();
+  });
+});
+
+// Toggle Mensual/Anual at the top of the unified Análisis view.
+elements.analysisModeButtons?.forEach((button) => {
+  button.addEventListener("click", () => {
+    setAnalysisMode(button.dataset.analysisMode);
   });
 });
 

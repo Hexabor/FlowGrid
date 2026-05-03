@@ -4,6 +4,7 @@ import {
   SETTINGS_KEY,
   SHARED_KEY,
   CONTACTS_KEY,
+  RECURRING_TEMPLATES_KEY,
   LEGACY_PEOPLE_KEY,
   defaultCategories,
   defaultConcepts,
@@ -14,6 +15,7 @@ import {
   cloudPushSettings,
   cloudPushContacts,
   cloudPushSharedEntries,
+  cloudPushRecurringTemplates,
   pushInBackground,
 } from "./cloud.js";
 
@@ -71,6 +73,17 @@ function loadSharedEntries() {
   }
 }
 
+function loadRecurringTemplates() {
+  const stored = localStorage.getItem(RECURRING_TEMPLATES_KEY);
+  if (!stored) return [];
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function loadContacts() {
   const stored = localStorage.getItem(CONTACTS_KEY);
   if (stored) {
@@ -104,6 +117,7 @@ export function initState() {
   state.settings = loadSettings();
   state.contacts = loadContacts();
   state.sharedEntries = loadSharedEntries();
+  state.recurringTemplates = loadRecurringTemplates();
 }
 
 export function saveMovements() {
@@ -124,4 +138,9 @@ export function saveContacts() {
 export function saveSharedEntries() {
   localStorage.setItem(SHARED_KEY, JSON.stringify(state.sharedEntries));
   pushInBackground(cloudPushSharedEntries);
+}
+
+export function saveRecurringTemplates() {
+  localStorage.setItem(RECURRING_TEMPLATES_KEY, JSON.stringify(state.recurringTemplates));
+  pushInBackground(cloudPushRecurringTemplates);
 }

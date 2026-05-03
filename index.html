@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-02-2344">
+    <link rel="stylesheet" href="styles.css?v=2026-05-03-1859">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -114,23 +114,19 @@
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
           </button>
-          <button class="nav-button" type="button" data-view-target="month" aria-label="Mes a mes">
-            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M4 5h16v15H4z"></path>
-              <path d="M8 3v4"></path>
-              <path d="M16 3v4"></path>
-              <path d="M4 10h16"></path>
-              <path d="M8 14h2"></path>
-              <path d="M14 14h2"></path>
-            </svg>
-          </button>
-          <button class="nav-button" type="button" data-view-target="year" aria-label="Año a Año">
+          <button class="nav-button" type="button" data-view-target="analysis" aria-label="Análisis">
             <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
               <path d="M4 19V5"></path>
               <path d="M4 19h16"></path>
               <path d="M8 16v-5"></path>
               <path d="M12 16V8"></path>
               <path d="M16 16v-3"></path>
+            </svg>
+          </button>
+          <button class="nav-button" type="button" data-view-target="recurring" aria-label="Periódicos">
+            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M21 12a9 9 0 1 1-3-6.7"></path>
+              <path d="M21 4v5h-5"></path>
             </svg>
           </button>
           <span class="nav-separator" aria-hidden="true"></span>
@@ -209,21 +205,7 @@
                     <strong>Compartidos</strong>
                     <small>Gastos compartidos separados del espacio personal.</small>
                   </button>
-                  <button class="module-card module-card--accent" type="button" data-view-target="month" data-color="green">
-                    <span class="module-icon">
-                      <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
-                        <path d="M4 5h16v15H4z"></path>
-                        <path d="M8 3v4"></path>
-                        <path d="M16 3v4"></path>
-                        <path d="M4 10h16"></path>
-                        <path d="M8 14h2"></path>
-                        <path d="M14 14h2"></path>
-                      </svg>
-                    </span>
-                    <strong>Mes a mes</strong>
-                    <small>Totales mensuales por concepto y categoria.</small>
-                  </button>
-                  <button class="module-card module-card--accent" type="button" data-view-target="year" data-color="amber">
+                  <button class="module-card module-card--accent" type="button" data-view-target="analysis" data-color="green">
                     <span class="module-icon">
                       <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
                         <path d="M4 19V5"></path>
@@ -233,8 +215,18 @@
                         <path d="M16 16v-3"></path>
                       </svg>
                     </span>
-                    <strong>A&ntilde;o a A&ntilde;o</strong>
-                    <small>Totales anuales por concepto y categoria.</small>
+                    <strong>An&aacute;lisis</strong>
+                    <small>Totales por concepto y categor&iacute;a, en mensual o anual.</small>
+                  </button>
+                  <button class="module-card module-card--accent" type="button" data-view-target="recurring" data-color="orange">
+                    <span class="module-icon">
+                      <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M21 12a9 9 0 1 1-3-6.7"></path>
+                        <path d="M21 4v5h-5"></path>
+                      </svg>
+                    </span>
+                    <strong>Peri&oacute;dicos</strong>
+                    <small>Plantillas que generan movimientos recurrentes.</small>
                   </button>
                 </div>
               </section>
@@ -418,6 +410,14 @@
                 <input id="edit-comment" name="editComment" type="text" autocomplete="off" maxlength="280" placeholder="Ej: corregí el importe, era 12&nbsp;€">
               </label>
 
+              <button id="convert-to-recurring" class="ghost-action convert-to-recurring" type="button" hidden>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12a9 9 0 1 1-3-6.7"></path>
+                  <path d="M21 4v5h-5"></path>
+                </svg>
+                Convertir en plantilla peri&oacute;dica
+              </button>
+
               <button class="primary-action movement-submit" type="submit">
                 <span class="movement-submit-label">Anadir movimiento</span>
                 <svg class="movement-submit-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -428,15 +428,19 @@
           </div>
         </div>
 
-        <section class="view" id="month-view" data-view="month" aria-labelledby="month-title">
+        <section class="view" id="analysis-view" data-view="analysis" data-mode="month" aria-labelledby="analysis-title">
           <header class="topbar">
             <div>
               <p class="eyebrow">Analisis</p>
-              <h1 id="month-title">Mes a mes</h1>
+              <h1 id="analysis-title">An&aacute;lisis</h1>
+            </div>
+            <div class="analysis-mode-toggle" role="group" aria-label="Granularidad del an&aacute;lisis">
+              <button type="button" class="type-toggle-button is-active" data-analysis-mode="month">Mensual</button>
+              <button type="button" class="type-toggle-button" data-analysis-mode="year">Anual</button>
             </div>
           </header>
 
-          <section class="panel analysis-panel">
+          <section class="panel analysis-panel" data-analysis-pane="month">
             <div class="period-toolbar">
               <button class="icon-button" type="button" data-period="month" data-step="-1" aria-label="Mes anterior">‹</button>
               <strong id="month-period-label"></strong>
@@ -471,17 +475,8 @@
               </section>
             </div>
           </section>
-        </section>
 
-        <section class="view" id="year-view" data-view="year" aria-labelledby="year-title">
-          <header class="topbar">
-            <div>
-              <p class="eyebrow">Analisis</p>
-              <h1 id="year-title">Año a Año</h1>
-            </div>
-          </header>
-
-          <section class="panel analysis-panel">
+          <section class="panel analysis-panel" data-analysis-pane="year" hidden>
             <div class="period-toolbar">
               <button class="icon-button" type="button" data-period="year" data-step="-1" aria-label="Año anterior">‹</button>
               <strong id="year-period-label"></strong>
@@ -517,6 +512,169 @@
             </div>
           </section>
         </section>
+
+        <section class="view" id="recurring-view" data-view="recurring" aria-labelledby="recurring-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Autom&aacute;tico</p>
+              <h1 id="recurring-title">Peri&oacute;dicos</h1>
+            </div>
+            <p id="recurring-count" class="period">0 plantillas</p>
+          </header>
+
+          <section class="panel">
+            <header class="ledger-header">
+              <div class="ledger-header-top">
+                <h2>Tus plantillas recurrentes</h2>
+                <div class="ledger-actions">
+                  <button id="open-recurring-modal" class="primary-action" type="button">Nueva plantilla</button>
+                </div>
+              </div>
+            </header>
+
+            <p class="recurring-blurb">
+              Cada plantilla genera autom&aacute;ticamente un movimiento en su d&iacute;a (alquileres, suscripciones, n&oacute;minas).
+              Editar el importe solo afecta a generaciones futuras; los movimientos pasados no se modifican.
+              Si pausas una plantilla, deja de generar nuevos movimientos hasta que la reactives, y al hacerlo arranca desde la pr&oacute;xima ocurrencia (no recupera los meses de la pausa).
+            </p>
+
+            <div id="recurring-list" class="recurring-list"></div>
+            <p id="recurring-empty" class="empty-state" hidden>
+              A&uacute;n no tienes plantillas. Crea la primera para que FlowGrid genere tus movimientos recurrentes.
+            </p>
+          </section>
+        </section>
+
+        <div id="recurring-modal" class="modal" hidden>
+          <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="recurring-form-title">
+            <div class="section-heading">
+              <h2 id="recurring-form-title">Nueva plantilla peri&oacute;dica</h2>
+              <button id="close-recurring-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
+              <p id="recurring-feedback" role="status" aria-live="polite"></p>
+            </div>
+
+            <form id="recurring-form" class="movement-form">
+              <label>
+                <span>Tipo</span>
+                <select id="recurring-type" name="type" required>
+                  <option value="expense">Gasto</option>
+                  <option value="income">Ingreso</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Concepto</span>
+                <select id="recurring-concept" name="concept" required></select>
+              </label>
+
+              <label>
+                <span>Categor&iacute;a</span>
+                <select id="recurring-category" name="category" required></select>
+              </label>
+
+              <label>
+                <span>Importe</span>
+                <div class="amount-input">
+                  <input id="recurring-amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0,00" required>
+                  <span class="amount-suffix" aria-hidden="true">€</span>
+                </div>
+              </label>
+
+              <label>
+                <span>Periodicidad</span>
+                <select id="recurring-periodicity" name="periodicity" required>
+                  <option value="monthly">Mensual</option>
+                  <option value="yearly">Anual</option>
+                </select>
+              </label>
+
+              <label>
+                <span>D&iacute;a del mes</span>
+                <input id="recurring-day-of-month" name="dayOfMonth" type="number" min="1" max="31" required>
+              </label>
+
+              <label id="recurring-month-of-year-field" hidden>
+                <span>Mes del a&ntilde;o</span>
+                <select id="recurring-month-of-year" name="monthOfYear">
+                  <option value="1">Enero</option>
+                  <option value="2">Febrero</option>
+                  <option value="3">Marzo</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Mayo</option>
+                  <option value="6">Junio</option>
+                  <option value="7">Julio</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Septiembre</option>
+                  <option value="10">Octubre</option>
+                  <option value="11">Noviembre</option>
+                  <option value="12">Diciembre</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Empieza el</span>
+                <input id="recurring-start-date" name="startDate" type="hidden" required>
+                <button id="recurring-start-date-trigger" class="date-trigger" type="button" aria-haspopup="dialog" aria-expanded="false"></button>
+              </label>
+
+              <label>
+                <span>Termina el (opcional)</span>
+                <input id="recurring-end-date" name="endDate" type="hidden">
+                <div class="date-trigger-row">
+                  <button id="recurring-end-date-trigger" class="date-trigger" type="button" aria-haspopup="dialog" aria-expanded="false"></button>
+                  <button id="recurring-end-date-clear" class="ghost-action date-clear-button" type="button" hidden>Quitar</button>
+                </div>
+              </label>
+
+              <label>
+                <span>Emisor / receptor (opcional) <small class="label-hint">— tambi&eacute;n admite los placeholders</small></span>
+                <input id="recurring-party" name="party" type="text" autocomplete="off">
+              </label>
+
+              <label>
+                <span>Nota (opcional) <small class="label-hint">— admite <code>[mes]</code>, <code>[Mes]</code>, <code>[a&ntilde;o]</code>, <code>[d&iacute;a]</code>, <code>[fecha]</code></small></span>
+                <input id="recurring-note" name="note" type="text" autocomplete="off" placeholder="Ej: Alquiler [mes] [a&ntilde;o]">
+                <small id="recurring-note-preview" class="placeholder-preview" hidden></small>
+              </label>
+
+              <label>
+                <span>Compartido con</span>
+                <select id="recurring-shared-contact" name="sharedContactId">
+                  <option value="">Solo personal (sin compartir)</option>
+                </select>
+              </label>
+
+              <div id="recurring-shared-fields" class="shared-fields" hidden>
+                <label class="shared-mode-field">
+                  <span>Modo de reparto</span>
+                  <select id="recurring-shared-mode" name="sharedMode">
+                    <option value="me-equal">T&uacute; pagas, partes iguales</option>
+                    <option value="me-uneven">T&uacute; pagas, partes desiguales</option>
+                    <option value="me-full">Se te debe la cantidad total</option>
+                    <option value="them-equal">Otro paga, partes iguales</option>
+                    <option value="them-uneven">Otro paga, partes desiguales</option>
+                    <option value="them-full">Le debes la cantidad total</option>
+                  </select>
+                </label>
+
+                <div id="recurring-shared-uneven" class="shared-uneven" hidden>
+                  <label>
+                    <span>Tu parte</span>
+                    <input id="recurring-shared-my-share" name="myShare" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+                  </label>
+                  <label>
+                    <span>Su parte</span>
+                    <input id="recurring-shared-their-share" name="theirShare" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+                  </label>
+                </div>
+              </div>
+
+              <button class="primary-action" type="submit">
+                <span class="movement-submit-label" id="recurring-submit-label">Crear plantilla</span>
+              </button>
+            </form>
+          </div>
+        </div>
 
         <section class="view" id="shared-view" data-view="shared" aria-labelledby="shared-title">
           <header class="topbar">
@@ -794,16 +952,12 @@
             <p>FlowGrid sigue evolucionando. Estas son las mejoras en las que estoy trabajando o que est&aacute;n previstas a corto plazo:</p>
             <ul class="roadmap-list">
               <li>
-                <strong>Migraci&oacute;n a Cloudflare y dominio propio</strong>
-                <span>FlowGrid se mudar&aacute; a su propio dominio (flowgrid.arcdev.app) v&iacute;a Cloudflare Pages. URL m&aacute;s memorable, mejor rendimiento gracias al CDN global, y separaci&oacute;n entre la versi&oacute;n estable que usas a diario y las pruebas en desarrollo, para que los experimentos en marcha no afecten a tu uso.</span>
-              </li>
-              <li>
-                <strong>Recurrencias autom&aacute;ticas</strong>
-                <span>Las entradas marcadas como mensuales o anuales se generar&aacute;n solas en su fecha. Hoy la recurrencia es solo informativa.</span>
-              </li>
-              <li>
                 <strong>Compartidos en grupo (3 o m&aacute;s personas)</strong>
                 <span>Hoy los gastos compartidos son entre t&uacute; y un contacto. Pronto podr&aacute;s repartir un gasto entre varias personas a la vez (suscripciones de grupo, pisos compartidos, viajes con amigos&hellip;).</span>
+              </li>
+              <li>
+                <strong>Papelera para deshacer borrados</strong>
+                <span>Al borrar un movimiento, contacto o plantilla, el elemento ir&aacute; a una papelera durante unos d&iacute;as desde la que podr&aacute;s restaurarlo con un click, igual que en Drive. As&iacute; un borrado por error siempre es reversible.</span>
               </li>
               <li>
                 <strong>Gr&aacute;ficas y evoluci&oacute;n temporal</strong>
@@ -847,6 +1001,18 @@
         <p>Has recibido invitaciones para compartir gastos. Al aceptar podr&aacute;s ver el historial que esa persona ha registrado contigo y editar las entradas comunes.</p>
         <ul id="invitation-list" class="invitation-list"></ul>
         <p id="invitation-feedback" class="invitation-feedback" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div id="confirm-modal" class="modal" hidden>
+      <div class="modal-dialog confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="section-heading">
+          <h2 id="confirm-title"></h2>
+          <button id="close-confirm-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
+        </div>
+        <p id="confirm-message" class="confirm-message"></p>
+        <p id="confirm-extra" class="confirm-extra" hidden></p>
+        <div id="confirm-actions" class="confirm-actions"></div>
       </div>
     </div>
 
@@ -978,7 +1144,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-02 23:44:22";
+      window.__FG_BUILD__ = "2026-05-03 18:59:05";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1036,6 +1202,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-02-2344"></script>
+    <script type="module" src="app.js?v=2026-05-03-1859"></script>
   </body>
 </html>

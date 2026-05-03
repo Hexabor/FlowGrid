@@ -6,6 +6,8 @@ import { closePaymentModal } from "./features/shared.js";
 import { collapseExpandedCard } from "./features/movements.js";
 import { checkPendingInvitations, closeInvitationModal, runInvitationBackfills } from "./features/invitations.js";
 import { closeHistoryModal } from "./features/edit-log.js";
+import { generatePendingRecurrences, closeRecurringModal, startRecurringScheduler } from "./features/recurring.js";
+import { closeConfirmModal } from "./ui/confirm.js";
 import { onAuthChange } from "./core/supabase.js";
 import { cloudHydrate } from "./core/cloud.js";
 import { showAuthGate, hideAuthGate, refreshSessionBadge } from "./ui/auth-gate.js";
@@ -25,6 +27,14 @@ async function bootApp() {
     console.error("[cloud hydrate]", error);
   }
   initState();
+  // Materialise any pending occurrences from the user's recurring
+  // templates BEFORE the first render, so the freshly generated
+  // movements show up in the list straight away. Idempotent.
+  try {
+    generatePendingRecurrences();
+  } catch (error) {
+    console.error("[recurring]", error);
+  }
   setInitialDate();
   render();
   refreshSessionBadge();
@@ -37,6 +47,10 @@ async function bootApp() {
   // Surface any pending invitations addressed to this user's email. Runs
   // last so the rest of the app is already painted underneath the modal.
   checkPendingInvitations();
+  // Start the hybrid real-time scheduler for recurring templates: a
+  // setTimeout to the next local midnight + a visibilitychange listener
+  // that re-runs generation when the tab returns to the foreground.
+  startRecurringScheduler();
   console.log("[app] boot complete");
 }
 
@@ -64,6 +78,8 @@ document.addEventListener("keydown", (event) => {
     closePaymentModal();
     closeInvitationModal();
     closeHistoryModal();
+    closeRecurringModal();
+    closeConfirmModal();
     collapseExpandedCard();
     document.querySelectorAll('.info-button[aria-expanded="true"]').forEach((button) => {
       button.setAttribute("aria-expanded", "false");

@@ -18,6 +18,8 @@
   --mod-amber-bg: rgba(217, 119, 6, 0.14);
   --mod-violet: #7c3aed;
   --mod-violet-bg: rgba(124, 58, 237, 0.13);
+  --mod-orange: #ea580c;
+  --mod-orange-bg: rgba(234, 88, 12, 0.13);
   --shadow: 0 16px 48px rgba(23, 32, 38, 0.07);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 75%;
@@ -301,6 +303,11 @@ h2 {
 .module-card[data-color="violet"] {
   --module-tile-bg: var(--mod-violet-bg);
   --module-tile-fg: var(--mod-violet);
+}
+
+.module-card[data-color="orange"] {
+  --module-tile-bg: var(--mod-orange-bg);
+  --module-tile-fg: var(--mod-orange);
 }
 
 .meta-row {
@@ -3350,4 +3357,491 @@ body.is-locked .shell {
    grid-template-rows 0fr→1fr trick. */
 .movement-expanded {
   display: none;
+}
+
+/* ==== Periódicos (recurring templates) ====
+   Layout responsive con UN solo HTML:
+   - Desktop ≥720px: rejilla tipo tabla con cabecera de columnas y filas
+     compactas. Las acciones van inline a la derecha.
+   - Mobile <720px: cards mini con expansión al tocar. Colapsada muestra
+     solo concepto + importe + próxima generación + (compartido). Al
+     expandir aparece nota, periodicidad, emisor/receptor y botones. */
+
+.recurring-blurb {
+  margin: 6px 0 18px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.recurring-list {
+  display: block;
+}
+
+.recurring-row {
+  /* Compartida entre cabecera + filas para que las columnas alineen */
+  display: grid;
+  align-items: center;
+}
+
+/* ---- Cabecera de columnas (solo desktop) ---- */
+.recurring-row--header {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  /* Mismo padding horizontal que las filas (12px 14px) para que las
+     columnas del grid empiecen exactamente al mismo x — si no, los
+     títulos quedan 2px desplazados respecto a los valores. Vertical
+     más corto porque la cabecera no necesita tanto aire. */
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ri-col {
+  white-space: nowrap;
+}
+
+/* ---- Comunes a las filas de plantilla ---- */
+.ri-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ri-concept {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ri-note,
+.ri-party {
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ri-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ri-amount.expense { color: #c92a2a; }
+.ri-amount.income { color: #18794e; }
+
+.ri-period,
+.ri-next,
+.ri-shared {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.ri-shared {
+  color: var(--mod-violet);
+}
+
+.ri-shared:empty {
+  /* Cells without shared data still occupy the grid slot on desktop
+     (alignment), pero en móvil escondemos la línea entera */
+}
+
+.ri-next--paused {
+  color: var(--mod-orange);
+  font-weight: 600;
+}
+
+.ri-next--ended {
+  font-style: italic;
+}
+
+/* ---- Acciones (Editar / Pausar / Eliminar) ---- */
+.ri-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.ri-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ri-action:hover {
+  background: rgba(23, 32, 38, 0.04);
+}
+
+.ri-action--delete {
+  color: #c92a2a;
+  border-color: rgba(201, 42, 42, 0.35);
+}
+
+.ri-action--delete:hover {
+  background: rgba(201, 42, 42, 0.08);
+}
+
+.ri-action-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+/* ---- Desktop: layout tipo tabla ---- */
+@media (min-width: 720px) {
+  .recurring-row {
+    /* Columna 6 (Acciones) FIJA en 120px — antes era `auto`, lo que la
+       hacía dimensionarse a su contenido: ~70px en la cabecera (texto
+       "ACCIONES"), ~108px en las filas (3 iconos). Como las columnas
+       `fr` reparten lo que sobra, esa diferencia hacía que cada columna
+       midiera ligeramente distinto en cabecera vs filas y los títulos
+       nunca acababan de cuadrar con los valores. Con valor fijo, todas
+       las columnas resuelven idénticamente en cabecera y filas. */
+    grid-template-columns: minmax(180px, 2fr) minmax(110px, 1fr) minmax(150px, 1.6fr) minmax(90px, 1fr) minmax(180px, 2.4fr) 120px;
+    gap: 16px;
+    padding: 12px 14px;
+  }
+
+  .recurring-row--item {
+    border-bottom: 1px solid var(--line);
+    border-left: 3px solid var(--mod-orange);
+    transition: background 0.12s ease;
+  }
+
+  .recurring-row--item:hover {
+    background: rgba(234, 88, 12, 0.04);
+  }
+
+  .recurring-row--item.is-paused {
+    border-left-color: var(--line);
+    opacity: 0.6;
+  }
+
+  /* Cabecera "ACCIONES" centrada sobre el grupo de botones (en vez de
+     pegada a la derecha). Como el grupo es más ancho que el texto del
+     título, anclarlos por la derecha hacía que ACCIONES apareciera
+     visualmente sobre el último icono y no sobre el conjunto. */
+  .ri-col--actions {
+    justify-self: center;
+  }
+
+  .ri-actions {
+    justify-self: end;
+  }
+
+  /* Botones de acción en desktop: cuadrados con solo icono. La etiqueta
+     queda accesible para lectores de pantalla pero invisible para que
+     la columna se mantenga compacta. El title nativo (tooltip) sirve
+     de aclaración al pasar el ratón. */
+  .ri-action {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    gap: 0;
+  }
+
+  .ri-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+/* ---- Mobile: mini-cards con expand/collapse ---- */
+@media (max-width: 719px) {
+  .recurring-row--header {
+    display: none;
+  }
+
+  .recurring-row--item {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "title amount"
+      "next  next"
+      "shared shared"
+      "period period"
+      "actions actions";
+    gap: 4px 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--mod-orange);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .recurring-row--item.is-paused {
+    border-left-color: var(--line);
+    opacity: 0.7;
+  }
+
+  .ri-title { grid-area: title; min-width: 0; }
+  .ri-amount { grid-area: amount; align-self: start; }
+  .ri-next { grid-area: next; }
+  .ri-shared { grid-area: shared; }
+  .ri-period { grid-area: period; }
+  .ri-actions { grid-area: actions; }
+
+  /* Próxima generación: prefijar "Próxima: " en móvil para que el
+     número solo no quede sin contexto. */
+  .ri-next::before {
+    content: "Próxima: ";
+    color: var(--muted);
+  }
+
+  .ri-next--paused::before { content: ""; }
+  .ri-next--ended::before { content: ""; }
+
+  /* Colapsada: ocultar todo lo "extra" hasta que se toque la card */
+  .recurring-row--item:not(.is-expanded) .ri-note,
+  .recurring-row--item:not(.is-expanded) .ri-party,
+  .recurring-row--item:not(.is-expanded) .ri-period,
+  .recurring-row--item:not(.is-expanded) .ri-actions {
+    display: none;
+  }
+
+  /* En móvil colapsada, las celdas vacías (.ri-shared sin contenido)
+     no deben dejar hueco vertical. */
+  .recurring-row--item:not(.is-expanded) .ri-shared:empty {
+    display: none;
+  }
+
+  .recurring-row--item.is-expanded {
+    cursor: default;
+  }
+
+  .recurring-row--item.is-expanded .ri-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .recurring-row--item.is-expanded .ri-action {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+    padding: 8px 10px;
+  }
+
+  /* En móvil mostramos texto, ocultamos el icono — la lista de acciones
+     se ve más clara cuando es texto ancho. */
+  .ri-action-icon {
+    display: none;
+  }
+}
+
+/* Modal de confirmación robusta. Reutilizado en cualquier flujo que
+   pida más que un confirm() nativo (borrar movimiento recurrente,
+   borrar plantilla, etc.). El layout pone título en la sección-heading
+   y los botones en una columna pegada abajo para que el usuario no se
+   precipite a aceptar. */
+.confirm-dialog {
+  max-width: 460px;
+}
+
+.confirm-message {
+  margin: 6px 0 0;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.confirm-extra {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.confirm-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.confirm-action {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+}
+
+.confirm-action.primary-action {
+  background: var(--mod-blue-bg);
+  color: var(--mod-blue);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.confirm-action.primary-action:hover {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.confirm-action.ghost-action:hover {
+  background: rgba(23, 32, 38, 0.05);
+}
+
+.confirm-action.danger-action {
+  background: rgba(201, 42, 42, 0.06);
+  color: #c92a2a;
+  border-color: rgba(201, 42, 42, 0.4);
+}
+
+.confirm-action.danger-action:hover {
+  background: rgba(201, 42, 42, 0.14);
+}
+
+/* Estado armado: el primer click de un botón con doble-confirmación
+   lo cambia a "¿Seguro? Pulsa otra vez" y le aplicamos un fondo más
+   intenso para que sea evidente que el siguiente click ejecuta. */
+.confirm-action.is-armed {
+  background: #c92a2a;
+  color: #fff;
+  border-color: #c92a2a;
+  animation: confirm-pulse 0.4s ease-out;
+}
+
+@keyframes confirm-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* Preview en vivo bajo el campo Nota del modal de plantilla periódica:
+   muestra cómo se renderizaría la nota si la plantilla generara hoy una
+   ocurrencia, con [mes]/[año]/etc. ya sustituidos. Solo aparece cuando
+   la nota contiene placeholders. */
+.placeholder-preview {
+  display: block;
+  margin-top: 6px;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--mod-orange);
+  background: var(--mod-orange-bg);
+  border-radius: 4px;
+}
+
+/* Pareja botón disparador del calendario + "Quitar" para fechas
+   opcionales (la fecha de fin de una plantilla periódica). El botón
+   Quitar solo aparece cuando hay fecha cargada. */
+.date-trigger-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.date-trigger-row .date-trigger {
+  flex: 1 1 auto;
+}
+
+.date-clear-button {
+  flex: 0 0 auto;
+  align-self: stretch;
+  padding: 0 14px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.date-clear-button:hover {
+  color: var(--text);
+  border-style: solid;
+}
+
+/* Botón "Convertir en plantilla periódica" en el modal de movimiento.
+   Ghost de ancho completo con icono SVG a la izquierda, en naranja para
+   atar visualmente con la sección Periódicos del Home. */
+.convert-to-recurring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--mod-orange);
+  background: var(--mod-orange-bg);
+  border: 1px solid rgba(234, 88, 12, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+  /* En el grid de 4 columnas del .movement-form (desktop), atravesar
+     todas las columnas. En móvil ya es una sola columna por defecto. */
+  grid-column: 1 / -1;
+}
+
+.convert-to-recurring:hover {
+  background: rgba(234, 88, 12, 0.18);
+}
+
+.convert-to-recurring svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Toggle Mensual/Anual al inicio de Análisis. Reusa el patrón visual del
+   .type-toggle-button (Gasto/Ingreso) por consistencia. */
+.analysis-mode-toggle {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(23, 32, 38, 0.04);
+  border-radius: 10px;
+}
+
+.analysis-mode-toggle .type-toggle-button {
+  min-height: 0;
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.analysis-mode-toggle .type-toggle-button.is-active {
+  background: var(--mod-green-bg);
+  color: var(--mod-green);
+  border-color: transparent;
+}
+
+@media (max-width: 719px) {
+  .analysis-mode-toggle {
+    margin-top: 6px;
+    align-self: flex-start;
+  }
 }

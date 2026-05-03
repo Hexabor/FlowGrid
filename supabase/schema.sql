@@ -6,22 +6,29 @@
 -- MOVEMENTS
 -- =============================================================================
 create table if not exists public.movements (
-  id              text primary key,
-  owner_id        uuid not null references auth.users(id) on delete cascade,
-  type            text not null check (type in ('expense', 'income')),
-  date            date not null,
-  concept         text not null,
-  amount          numeric(12,2) not null,
-  category        text not null,
-  party           text not null default '',
-  recurrence      text not null default '',
-  note            text not null default '',
-  shared_entry_id text,
-  updated_at      timestamptz not null default now()
+  id                     text primary key,
+  owner_id               uuid not null references auth.users(id) on delete cascade,
+  type                   text not null check (type in ('expense', 'income')),
+  date                   date not null,
+  concept                text not null,
+  amount                 numeric(12,2) not null,
+  category               text not null,
+  party                  text not null default '',
+  recurrence             text not null default '',
+  note                   text not null default '',
+  shared_entry_id        text,
+  -- Backreference to the template that generated this row (see
+  -- recurring_templates below + supabase/migrate-7-recurring-templates.sql).
+  -- NULL for hand-entered movements. Drives the 🔁 indicator in the list.
+  recurring_template_id  text,
+  updated_at             timestamptz not null default now()
 );
 
 create index if not exists movements_owner_idx       on public.movements(owner_id);
 create index if not exists movements_owner_date_idx  on public.movements(owner_id, date desc);
+create index if not exists movements_recurring_template_idx
+  on public.movements(recurring_template_id)
+  where recurring_template_id is not null;
 
 alter table public.movements enable row level security;
 
@@ -199,6 +206,51 @@ create policy "shared_entries: owner or linked partner"
   );
 
 -- =============================================================================
+-- RECURRING TEMPLATES  (Periódicos versión B; see migrate-7-recurring-templates.sql)
+-- Per-user definitions of recurring movements (alquileres, suscripciones,
+-- nóminas). The client materialises actual movements from these templates
+-- on every boot, idempotent via last_generated_date.
+-- =============================================================================
+create table if not exists public.recurring_templates (
+  id                    text primary key,
+  owner_id              uuid not null references auth.users(id) on delete cascade,
+  type                  text not null check (type in ('expense', 'income')),
+  concept               text not null,
+  amount                numeric(12,2) not null,
+  category              text not null,
+  party                 text not null default '',
+  note                  text not null default '',
+  periodicity           text not null check (periodicity in ('monthly', 'yearly')),
+  day_of_month          smallint not null check (day_of_month between 1 and 31),
+  month_of_year         smallint check (month_of_year between 1 and 12),
+  start_date            date not null,
+  end_date              date,
+  last_generated_date   date,
+  is_active             boolean not null default true,
+  shared_contact_id     text,
+  shared_paid_by        text check (shared_paid_by in ('me', 'them')),
+  shared_split_mode     text check (shared_split_mode in ('equal', 'uneven', 'full')),
+  shared_my_share       numeric(12,2),
+  shared_their_share    numeric(12,2),
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
+
+create index if not exists recurring_templates_owner_idx
+  on public.recurring_templates(owner_id);
+create index if not exists recurring_templates_owner_active_idx
+  on public.recurring_templates(owner_id, is_active);
+
+alter table public.recurring_templates enable row level security;
+
+drop policy if exists "recurring_templates: owner full access"
+  on public.recurring_templates;
+create policy "recurring_templates: owner full access"
+  on public.recurring_templates for all
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+
+-- =============================================================================
 -- updated_at auto-trigger (so the client can rely on it for last-write-wins)
 -- =============================================================================
 create or replace function public.set_updated_at()
@@ -211,15 +263,17 @@ begin
 end;
 $$;
 
-drop trigger if exists movements_set_updated_at      on public.movements;
-drop trigger if exists settings_set_updated_at       on public.settings;
-drop trigger if exists contacts_set_updated_at       on public.contacts;
-drop trigger if exists shared_entries_set_updated_at on public.shared_entries;
+drop trigger if exists movements_set_updated_at           on public.movements;
+drop trigger if exists settings_set_updated_at            on public.settings;
+drop trigger if exists contacts_set_updated_at            on public.contacts;
+drop trigger if exists shared_entries_set_updated_at      on public.shared_entries;
+drop trigger if exists recurring_templates_set_updated_at on public.recurring_templates;
 
-create trigger movements_set_updated_at      before update on public.movements      for each row execute function public.set_updated_at();
-create trigger settings_set_updated_at       before update on public.settings       for each row execute function public.set_updated_at();
-create trigger contacts_set_updated_at       before update on public.contacts       for each row execute function public.set_updated_at();
-create trigger shared_entries_set_updated_at before update on public.shared_entries for each row execute function public.set_updated_at();
+create trigger movements_set_updated_at           before update on public.movements           for each row execute function public.set_updated_at();
+create trigger settings_set_updated_at            before update on public.settings            for each row execute function public.set_updated_at();
+create trigger contacts_set_updated_at            before update on public.contacts            for each row execute function public.set_updated_at();
+create trigger shared_entries_set_updated_at      before update on public.shared_entries      for each row execute function public.set_updated_at();
+create trigger recurring_templates_set_updated_at before update on public.recurring_templates for each row execute function public.set_updated_at();
 
 -- =============================================================================
 -- SHARED ENTRY EDITS  (append-only audit log; see migrate-6-shared-entry-edits.sql)

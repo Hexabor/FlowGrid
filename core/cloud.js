@@ -12,6 +12,7 @@ import {
   SETTINGS_KEY,
   CONTACTS_KEY,
   SHARED_KEY,
+  RECURRING_TEMPLATES_KEY,
   defaultCategories,
   defaultConcepts,
   seedMovements,
@@ -32,6 +33,7 @@ function movementToCloud(m, ownerId) {
     recurrence: m.recurrence ?? "",
     note: m.note ?? "",
     shared_entry_id: m.sharedEntryId ?? null,
+    recurring_template_id: m.recurringTemplateId ?? null,
   };
 }
 
@@ -47,6 +49,58 @@ function movementFromCloud(row) {
     recurrence: row.recurrence ?? "",
     note: row.note ?? "",
     sharedEntryId: row.shared_entry_id ?? null,
+    recurringTemplateId: row.recurring_template_id ?? null,
+  };
+}
+
+function recurringTemplateToCloud(t, ownerId) {
+  return {
+    id: t.id,
+    owner_id: ownerId,
+    type: t.type,
+    concept: t.concept,
+    amount: t.amount,
+    category: t.category,
+    party: t.party ?? "",
+    note: t.note ?? "",
+    periodicity: t.periodicity,
+    day_of_month: t.dayOfMonth,
+    month_of_year: t.monthOfYear ?? null,
+    start_date: t.startDate,
+    end_date: t.endDate ?? null,
+    last_generated_date: t.lastGeneratedDate ?? null,
+    is_active: t.isActive ?? true,
+    shared_contact_id: t.sharedContactId ?? null,
+    shared_paid_by: t.sharedPaidBy ?? null,
+    shared_split_mode: t.sharedSplitMode ?? null,
+    shared_my_share: t.sharedMyShare ?? null,
+    shared_their_share: t.sharedTheirShare ?? null,
+    created_at: t.createdAt ?? new Date().toISOString(),
+  };
+}
+
+function recurringTemplateFromCloud(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    concept: row.concept,
+    amount: Number(row.amount),
+    category: row.category,
+    party: row.party ?? "",
+    note: row.note ?? "",
+    periodicity: row.periodicity,
+    dayOfMonth: row.day_of_month,
+    monthOfYear: row.month_of_year ?? null,
+    startDate: row.start_date,
+    endDate: row.end_date ?? null,
+    lastGeneratedDate: row.last_generated_date ?? null,
+    isActive: row.is_active ?? true,
+    sharedContactId: row.shared_contact_id ?? null,
+    sharedPaidBy: row.shared_paid_by ?? null,
+    sharedSplitMode: row.shared_split_mode ?? null,
+    sharedMyShare: row.shared_my_share != null ? Number(row.shared_my_share) : null,
+    sharedTheirShare: row.shared_their_share != null ? Number(row.shared_their_share) : null,
+    createdAt: row.created_at,
   };
 }
 
@@ -222,6 +276,12 @@ export async function cloudPushSharedEntries() {
   }
 }
 
+export async function cloudPushRecurringTemplates() {
+  const ownerId = await getUserId();
+  if (!ownerId) return;
+  await syncTable("recurring_templates", ownerId, state.recurringTemplates, recurringTemplateToCloud);
+}
+
 export async function cloudPushSettings() {
   const ownerId = await getUserId();
   if (!ownerId) return;
@@ -241,6 +301,7 @@ export async function cloudPushAll() {
     cloudPushMovements(),
     cloudPushContacts(),
     cloudPushSharedEntries(),
+    cloudPushRecurringTemplates(),
     cloudPushSettings(),
   ]);
 }
@@ -251,7 +312,7 @@ export async function cloudHydrate() {
   const ownerId = await getUserId();
   if (!ownerId) return;
 
-  const [movementsData, settingsData, contactsData, sharedData] = await Promise.all([
+  const [movementsData, settingsData, contactsData, sharedData, templatesData] = await Promise.all([
     restGet(`movements?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
     restGet(`settings?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
     restGet(`contacts?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
@@ -260,6 +321,7 @@ export async function cloudHydrate() {
     // partner has set me as auth_user_id). We hydrate them as a single
     // pool keyed by ownerId so the UI can display them seamlessly.
     restGet(`shared_entries?select=*&limit=${ROW_LIMIT}`),
+    restGet(`recurring_templates?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
   ]);
 
   const settingsRow = settingsData[0] ?? null;
@@ -273,6 +335,7 @@ export async function cloudHydrate() {
     !movementsData.length &&
     !contactsData.length &&
     !myShared.length &&
+    !templatesData.length &&
     !settingsRow;
 
   if (cloudIsEmpty) {
@@ -281,16 +344,19 @@ export async function cloudHydrate() {
     const localMovements = readLocalArray(MOVEMENTS_KEY) ?? seedMovements;
     const localContacts = readLocalArray(CONTACTS_KEY) ?? [];
     const localShared = readLocalArray(SHARED_KEY) ?? [];
+    const localTemplates = readLocalArray(RECURRING_TEMPLATES_KEY) ?? [];
     const localSettings = readLocalSettings();
 
     state.movements = localMovements;
     state.contacts = localContacts;
     state.sharedEntries = localShared;
+    state.recurringTemplates = localTemplates;
     state.settings = localSettings;
 
     writeLocal(MOVEMENTS_KEY, state.movements);
     writeLocal(CONTACTS_KEY, state.contacts);
     writeLocal(SHARED_KEY, state.sharedEntries);
+    writeLocal(RECURRING_TEMPLATES_KEY, state.recurringTemplates);
     writeLocal(SETTINGS_KEY, state.settings);
 
     await cloudPushAll();
@@ -301,6 +367,7 @@ export async function cloudHydrate() {
   state.movements = movementsData.map(movementFromCloud);
   state.contacts = contactsData.map(contactFromCloud);
   state.sharedEntries = sharedData.map(sharedFromCloud);
+  state.recurringTemplates = templatesData.map(recurringTemplateFromCloud);
   state.settings = settingsRow
     ? {
         categories: settingsRow.categories?.length ? settingsRow.categories : defaultCategories,
@@ -333,6 +400,7 @@ export async function cloudHydrate() {
   writeLocal(MOVEMENTS_KEY, state.movements);
   writeLocal(CONTACTS_KEY, state.contacts);
   writeLocal(SHARED_KEY, state.sharedEntries);
+  writeLocal(RECURRING_TEMPLATES_KEY, state.recurringTemplates);
   writeLocal(SETTINGS_KEY, state.settings);
 
   if (settingsMigrated) {

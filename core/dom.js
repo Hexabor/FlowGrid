@@ -123,6 +123,52 @@ export const elements = {
   feedbackMessage: document.querySelector("#feedback-message"),
   feedbackSubmit: document.querySelector("#feedback-submit"),
   feedbackStatus: document.querySelector("#feedback-status"),
+  // Análisis (vista unificada con toggle mensual/anual).
+  analysisView: document.querySelector("#analysis-view"),
+  analysisModeButtons: document.querySelectorAll("[data-analysis-mode]"),
+  analysisPanes: document.querySelectorAll("[data-analysis-pane]"),
+  // Periódicos (recurring templates).
+  recurringList: document.querySelector("#recurring-list"),
+  recurringEmpty: document.querySelector("#recurring-empty"),
+  recurringCount: document.querySelector("#recurring-count"),
+  recurringModal: document.querySelector("#recurring-modal"),
+  openRecurringModal: document.querySelector("#open-recurring-modal"),
+  closeRecurringModal: document.querySelector("#close-recurring-modal"),
+  recurringForm: document.querySelector("#recurring-form"),
+  recurringType: document.querySelector("#recurring-type"),
+  recurringConcept: document.querySelector("#recurring-concept"),
+  recurringCategory: document.querySelector("#recurring-category"),
+  recurringAmount: document.querySelector("#recurring-amount"),
+  recurringPeriodicity: document.querySelector("#recurring-periodicity"),
+  recurringDayOfMonth: document.querySelector("#recurring-day-of-month"),
+  recurringMonthOfYear: document.querySelector("#recurring-month-of-year"),
+  recurringMonthOfYearField: document.querySelector("#recurring-month-of-year-field"),
+  recurringStartDate: document.querySelector("#recurring-start-date"),
+  recurringStartDateTrigger: document.querySelector("#recurring-start-date-trigger"),
+  recurringEndDate: document.querySelector("#recurring-end-date"),
+  recurringEndDateTrigger: document.querySelector("#recurring-end-date-trigger"),
+  recurringEndDateClear: document.querySelector("#recurring-end-date-clear"),
+  convertToRecurring: document.querySelector("#convert-to-recurring"),
+  // Confirmation modal: shared component for any robust delete dialog.
+  // Each opener fills in the title, message, extra line, and the action
+  // buttons via ui/confirm.js.
+  confirmModal: document.querySelector("#confirm-modal"),
+  closeConfirmModal: document.querySelector("#close-confirm-modal"),
+  confirmTitle: document.querySelector("#confirm-title"),
+  confirmMessage: document.querySelector("#confirm-message"),
+  confirmExtra: document.querySelector("#confirm-extra"),
+  confirmActions: document.querySelector("#confirm-actions"),
+  recurringParty: document.querySelector("#recurring-party"),
+  recurringNote: document.querySelector("#recurring-note"),
+  recurringNotePreview: document.querySelector("#recurring-note-preview"),
+  recurringSharedContact: document.querySelector("#recurring-shared-contact"),
+  recurringSharedFields: document.querySelector("#recurring-shared-fields"),
+  recurringSharedMode: document.querySelector("#recurring-shared-mode"),
+  recurringSharedUneven: document.querySelector("#recurring-shared-uneven"),
+  recurringSharedMyShare: document.querySelector("#recurring-shared-my-share"),
+  recurringSharedTheirShare: document.querySelector("#recurring-shared-their-share"),
+  recurringFeedback: document.querySelector("#recurring-feedback"),
+  recurringSubmitLabel: document.querySelector("#recurring-submit-label"),
 };
 
 export function openMovementModal() {
@@ -135,16 +181,53 @@ export function closeMovementModal() {
 }
 
 const VIEW_STORAGE_KEY = "flowgrid.view.v1";
+const ANALYSIS_MODE_KEY = "flowgrid.analysis.mode.v1";
 
-export function setView(viewName) {
-  elements.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === viewName));
-  elements.navButtons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.viewTarget === viewName);
+// Migrate previously persisted view names: the old per-period views
+// month/year are gone, both replaced by the unified analysis view.
+const VIEW_ALIASES = { month: "analysis", year: "analysis" };
+
+function readAnalysisMode() {
+  try {
+    const stored = localStorage.getItem(ANALYSIS_MODE_KEY);
+    if (stored === "month" || stored === "year") return stored;
+  } catch {
+    // ignore
+  }
+  return "month";
+}
+
+export function setAnalysisMode(mode) {
+  const normalised = mode === "year" ? "year" : "month";
+  if (elements.analysisView) {
+    elements.analysisView.dataset.mode = normalised;
+  }
+  elements.analysisModeButtons?.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.analysisMode === normalised);
+  });
+  elements.analysisPanes?.forEach((pane) => {
+    pane.hidden = pane.dataset.analysisPane !== normalised;
   });
   try {
-    localStorage.setItem(VIEW_STORAGE_KEY, viewName);
+    localStorage.setItem(ANALYSIS_MODE_KEY, normalised);
+  } catch {
+    // ignore
+  }
+}
+
+export function setView(viewName) {
+  const resolved = VIEW_ALIASES[viewName] ?? viewName;
+  elements.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === resolved));
+  elements.navButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.viewTarget === resolved);
+  });
+  try {
+    localStorage.setItem(VIEW_STORAGE_KEY, resolved);
   } catch {
     // localStorage may be unavailable (private mode, quota); ignore.
+  }
+  if (resolved === "analysis") {
+    setAnalysisMode(readAnalysisMode());
   }
 }
 
