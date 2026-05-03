@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-03-2129">
+    <link rel="stylesheet" href="styles.css?v=2026-05-03-2139">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -237,6 +237,20 @@
                     </span>
                     <strong>Peri&oacute;dicos</strong>
                     <small>Plantillas que generan movimientos recurrentes.</small>
+                  </button>
+                  <button class="module-card module-card--accent" type="button" data-view-target="contacts-groups" data-color="rose">
+                    <span class="module-icon">
+                      <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        <path d="M19 8v6"></path>
+                        <path d="M22 11h-6"></path>
+                      </svg>
+                    </span>
+                    <strong>Contactos y grupos</strong>
+                    <small>Personas con quienes compartes gastos.</small>
                   </button>
                 </div>
               </section>
@@ -1093,7 +1107,13 @@
               <input id="group-new-contact-name" name="name" type="text" autocomplete="off" required placeholder="Nombre">
             </label>
             <label>
-              <span>Email <small class="label-hint">(opcional, para invitarle)</small></span>
+              <span>
+                Email <small class="label-hint">(opcional, para invitarle)</small>
+                <button class="info-button" type="button" aria-label="M&aacute;s info sobre el email" aria-expanded="false">
+                  <span aria-hidden="true">i</span>
+                  <span class="info-tooltip" role="tooltip">Tambi&eacute;n puedes a&ntilde;adir o cambiar el email m&aacute;s tarde desde Contactos y grupos &rarr; pesta&ntilde;a Contactos.</span>
+                </button>
+              </span>
               <input id="group-new-contact-email" name="email" type="email" autocomplete="off">
             </label>
             <button class="primary-action" type="submit">Crear y a&ntilde;adir al grupo</button>
@@ -1247,7 +1267,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-03 21:29:50";
+      window.__FG_BUILD__ = "2026-05-03 21:39:30";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1305,6 +1325,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-03-2129"></script>
+    <script type="module" src="app.js?v=2026-05-03-2139"></script>
   </body>
 </html>

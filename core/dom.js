@@ -230,10 +230,18 @@ export function setAnalysisMode(mode) {
   if (elements.analysisView) {
     elements.analysisView.dataset.mode = normalised;
   }
-  elements.analysisModeButtons?.forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.analysisMode === normalised);
+  // Re-querying en cada llamada para evitar cualquier issue de NodeList
+  // capturado en frío al cargar el módulo. classList.add/remove
+  // explícitos en lugar de toggle(force) por si el navegador interpreta
+  // raro el segundo argumento.
+  document.querySelectorAll("[data-analysis-mode]").forEach((btn) => {
+    if (btn.dataset.analysisMode === normalised) {
+      btn.classList.add("is-active");
+    } else {
+      btn.classList.remove("is-active");
+    }
   });
-  elements.analysisPanes?.forEach((pane) => {
+  document.querySelectorAll("[data-analysis-pane]").forEach((pane) => {
     pane.hidden = pane.dataset.analysisPane !== normalised;
   });
   try {
@@ -300,10 +308,16 @@ function readContactsMode() {
 // que volver a abrir la vista te lleve donde estabas.
 export function setContactsMode(mode) {
   const normalised = mode === "groups" ? "groups" : "contacts";
-  elements.contactsModeButtons?.forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.contactsMode === normalised);
+  // Re-query fresco + add/remove explícitos por las mismas razones que
+  // setAnalysisMode más arriba.
+  document.querySelectorAll("button[data-contacts-mode]").forEach((btn) => {
+    if (btn.dataset.contactsMode === normalised) {
+      btn.classList.add("is-active");
+    } else {
+      btn.classList.remove("is-active");
+    }
   });
-  elements.contactsPanes?.forEach((pane) => {
+  document.querySelectorAll("[data-contacts-pane]").forEach((pane) => {
     pane.hidden = pane.dataset.contactsPane !== normalised;
   });
   try {
