@@ -4049,18 +4049,26 @@ body.is-locked .shell {
   color: var(--muted);
   cursor: pointer;
   border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Patrón "pill toggle" tipo iOS/macOS: el botón activo se eleva con
+   fondo blanco + sombra suave sobre el fondo gris del contenedor. Es
+   mucho más obvio visualmente que un teñido con la marca de la sección,
+   que se confundía con el botón inactivo cuando los dos colores eran
+   parecidos. El color de la TEXTO sí va con el acento (verde para
+   Análisis, violeta para Contactos/Grupos). */
+.analysis-mode-toggle .type-toggle-button.is-active,
+.subpane-toggle .type-toggle-button.is-active {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
 .analysis-mode-toggle .type-toggle-button.is-active {
-  background: var(--mod-green-bg);
   color: var(--mod-green);
-  border-color: transparent;
 }
 
-/* En el toggle Contactos/Grupos el activo va en violeta para no
-   competir con el verde de Análisis. */
 .contacts-mode-toggle .type-toggle-button.is-active {
-  background: var(--mod-violet-bg);
   color: var(--mod-violet);
 }
 
@@ -4072,35 +4080,33 @@ body.is-locked .shell {
   }
 }
 
-/* "Crear contacto nuevo" colapsable dentro del modal de grupo. */
-.group-new-contact-details {
-  margin-top: 10px;
-  border-top: 1px dashed var(--line);
-  padding-top: 12px;
+/* Divisor "o" entre los dos forms de añadir miembro al grupo: el de
+   contacto existente arriba y el de crear-y-añadir abajo. La línea
+   horizontal con la palabra centrada es el separador típico para
+   ofrecer dos alternativas equivalentes al usuario sin esconder
+   ninguna. */
+.group-add-member-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 12px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
 }
 
-.group-new-contact-details summary {
-  cursor: pointer;
-  font-size: 0.88rem;
-  color: var(--mod-violet);
-  font-weight: 600;
-  padding: 4px 0;
-  list-style: none;
-}
-
-.group-new-contact-details summary::before {
-  content: "+ ";
-  font-weight: 700;
-}
-
-.group-new-contact-details[open] summary::before {
-  content: "− ";
+.group-add-member-divider::before,
+.group-add-member-divider::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--line);
 }
 
 .group-new-contact {
   display: grid;
   gap: 10px;
-  margin-top: 10px;
 }
 
 .group-new-contact label {

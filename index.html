@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-03-2112">
+    <link rel="stylesheet" href="styles.css?v=2026-05-03-2129">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -1085,20 +1085,19 @@
             <button class="primary-action" type="submit">A&ntilde;adir al grupo</button>
           </form>
 
-          <details id="group-new-contact-details" class="group-new-contact-details">
-            <summary>O crear un contacto nuevo</summary>
-            <form id="group-new-contact-form" class="group-new-contact" onsubmit="return false;">
-              <label>
-                <span>Nombre</span>
-                <input id="group-new-contact-name" name="name" type="text" autocomplete="off" required>
-              </label>
-              <label>
-                <span>Email <small class="label-hint">(opcional, para invitarle)</small></span>
-                <input id="group-new-contact-email" name="email" type="email" autocomplete="off">
-              </label>
-              <button class="primary-action" type="submit">Crear contacto y a&ntilde;adir</button>
-            </form>
-          </details>
+          <div class="group-add-member-divider" aria-hidden="true"><span>o</span></div>
+
+          <form id="group-new-contact-form" class="group-new-contact" onsubmit="return false;">
+            <label>
+              <span>Crear contacto nuevo</span>
+              <input id="group-new-contact-name" name="name" type="text" autocomplete="off" required placeholder="Nombre">
+            </label>
+            <label>
+              <span>Email <small class="label-hint">(opcional, para invitarle)</small></span>
+              <input id="group-new-contact-email" name="email" type="email" autocomplete="off">
+            </label>
+            <button class="primary-action" type="submit">Crear y a&ntilde;adir al grupo</button>
+          </form>
         </section>
 
         <section class="group-danger-zone">
@@ -1248,7 +1247,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-03 21:12:30";
+      window.__FG_BUILD__ = "2026-05-03 21:29:50";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1306,6 +1305,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-03-2112"></script>
+    <script type="module" src="app.js?v=2026-05-03-2129"></script>
   </body>
 </html>

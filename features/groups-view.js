@@ -116,8 +116,11 @@ function openGroupModal(groupId) {
 
   // Rename form: solo visible / activo para admin.
   elements.groupRenameForm.hidden = !admin;
-  // Add-member form: solo admin.
+  // Add-member forms (existente + nuevo) y el divider: solo admin.
   elements.groupAddMemberForm.hidden = !admin;
+  if (elements.groupNewContactForm) elements.groupNewContactForm.hidden = !admin;
+  const divider = elements.groupModal?.querySelector(".group-add-member-divider");
+  if (divider) divider.hidden = !admin;
 
   // Botones de salir / eliminar.
   // - Salir: visible si soy miembro vinculado activo.
@@ -328,10 +331,10 @@ elements.groupNewContactForm?.addEventListener("submit", (event) => {
     authUserId: contact.authUserId,
   });
 
-  // Reset el form y colapsar el details para que la próxima creación
-  // arranque limpia.
+  // Reset el form para que la próxima creación arranque limpia. Como
+  // el form ya no está dentro de un <details>, no hace falta colapsar
+  // nada — solo limpiar inputs.
   elements.groupNewContactForm.reset();
-  if (elements.groupNewContactDetails) elements.groupNewContactDetails.open = false;
 
   renderGroupsList();
   openGroupModal(editingGroupId);

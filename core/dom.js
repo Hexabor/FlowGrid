@@ -165,7 +165,6 @@ export const elements = {
   groupMembersList: document.querySelector("#group-members-list"),
   groupAddMemberForm: document.querySelector("#group-add-member-form"),
   groupAddMemberSelect: document.querySelector("#group-add-member-select"),
-  groupNewContactDetails: document.querySelector("#group-new-contact-details"),
   groupNewContactForm: document.querySelector("#group-new-contact-form"),
   groupNewContactName: document.querySelector("#group-new-contact-name"),
   groupNewContactEmail: document.querySelector("#group-new-contact-email"),
