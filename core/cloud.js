@@ -527,6 +527,12 @@ export async function cloudHydrate() {
     if (conceptMerge.movementsTouched) movementsMigrated = true;
   }
 
+  // Defensa: asegurar que soy miembro activo de todos los grupos que
+  // tengo en propiedad (admin). Cubre el caso legacy de grupos creados
+  // antes de que el auto-add del creador estuviera bien cableado, o
+  // grupos donde mi member row se perdió en algún sync.
+  const groupMembersTouched = ensureOwnerIsMemberOfOwnGroups(ownerId);
+
   writeLocal(MOVEMENTS_KEY, state.movements);
   writeLocal(CONTACTS_KEY, state.contacts);
   writeLocal(SHARED_KEY, state.sharedEntries);
@@ -541,6 +547,51 @@ export async function cloudHydrate() {
   if (movementsMigrated) {
     await cloudPushMovements();
   }
+  if (groupMembersTouched) {
+    await cloudPushGroupMembers();
+  }
+}
+
+// Si soy el owner_id de un grupo pero no aparezco como group_member
+// activo (auth_user_id === me, left_at IS NULL), inserto la fila. Si
+// aparezco con left_at no nulo (me había salido de mi propio grupo,
+// caso raro), reactivo. Idempotente.
+function ensureOwnerIsMemberOfOwnGroups(myUid) {
+  if (!myUid) return false;
+  let touched = false;
+  for (const group of state.groups) {
+    if (group.ownerId !== myUid) continue;
+    const myMember = state.groupMembers.find(
+      (m) => m.groupId === group.id && m.authUserId === myUid
+    );
+    if (!myMember) {
+      state.groupMembers = [
+        ...state.groupMembers,
+        {
+          id: createIdLocal(),
+          groupId: group.id,
+          authUserId: myUid,
+          displayName: "Yo",
+          email: null,
+          inviterContactId: null,
+          joinedAt: group.createdAt ?? new Date().toISOString(),
+          leftAt: null,
+        },
+      ];
+      touched = true;
+    } else if (myMember.leftAt) {
+      myMember.leftAt = null;
+      touched = true;
+    }
+  }
+  return touched;
+}
+
+function createIdLocal() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `fg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 // Strip combining diacritics + lowercase + trim, so "Cafeteria/pub" and

@@ -4205,6 +4205,15 @@ body.is-locked .shell {
   border-radius: 10px;
 }
 
+/* Override del comportamiento por defecto de [hidden] que el CSS del
+   form rompe (el grid `.movement-form > *` set explícitamente display).
+   Estas reglas devuelven la semántica esperada: cuando un bloque tiene
+   el atributo hidden, no se ve. */
+.shared-mode-field[hidden],
+.shared-group-fields[hidden] {
+  display: none !important;
+}
+
 .shared-group-shares {
   display: grid;
   gap: 6px;
