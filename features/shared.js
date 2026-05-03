@@ -229,9 +229,26 @@ export function syncSharedContactOptions() {
   const contacts = state.contacts.slice().sort((a, b) =>
     a.name.localeCompare(b.name, "es", { sensitivity: "base" })
   );
-  const groups = getMyGroups().slice().sort((a, b) =>
+  // Usamos state.groups directamente: la RLS ya filtra al hidratar a
+  // los grupos visibles para el usuario (owner o miembro activo).
+  // getMyGroups() añadía un filtro local extra basado en
+  // groupMembers.authUserId que en algunos dispositivos puede ir
+  // desfasado tras un refresh — usar state.groups es más robusto.
+  const groups = state.groups.slice().sort((a, b) =>
     a.name.localeCompare(b.name, "es", { sensitivity: "base" })
   );
+
+  // Diagnóstico temporal — ayuda a depurar el caso del móvil donde el
+  // optgroup de Grupos aparecía vacío. Si ves [shared dropdown] groups: 0
+  // pero en desktop ves groups: N, hay un mismatch de hidratación.
+  if (typeof console !== "undefined") {
+    console.log("[shared dropdown]", {
+      contacts: contacts.length,
+      groups: groups.length,
+      stateGroupsRaw: state.groups.length,
+      stateGroupMembers: state.groupMembers.length,
+    });
+  }
 
   let html = "";
   if (!contacts.length && !groups.length) {
