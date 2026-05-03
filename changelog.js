@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-03",
     commit: "dev@HEAD",
+    title: "Contactos y grupos: vista propia en la barra lateral, ya no en Configuración",
+    changes: [
+      "\"Contactos y grupos\" pasa a ser una vista de primer nivel — tiene su propio botón en la barra lateral (icono de personas con el +) y su pantalla completa, igual que Movimientos, Compartidos, Análisis o Periódicos. Ya no vive como pestaña dentro de Configuración.",
+      "El toggle Contactos/Grupos arriba a la derecha del panel cambia entre las dos subvistas y recuerda en cuál estabas la próxima vez que entres.",
+      "Bug del toggle anterior corregido: el querySelector matcheaba tanto los botones del toggle como el contenedor que lo envolvía, así que el listener del padre se disparaba después y machacaba la selección. Ahora solo escucha en los botones (selector restringido a `button[data-contacts-mode]`).",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
     title: "Grupos: tab unificado con Contactos + crear contacto inline al añadir miembro",
     changes: [
       "Las pestañas \"Contactos\" y \"Grupos\" en Configuración pasan a ser una sola — \"Contactos y grupos\" — con un toggle violeta arriba para alternar entre las dos vistas. Está pegado al patrón del toggle Mensual/Anual de Análisis. Recuerda en qué subpestaña estabas para cuando vuelvas a entrar.",

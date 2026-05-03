@@ -4064,12 +4064,9 @@ body.is-locked .shell {
   color: var(--mod-violet);
 }
 
-.contacts-mode-toggle {
-  margin-bottom: 16px;
-}
-
 @media (max-width: 719px) {
-  .analysis-mode-toggle {
+  .analysis-mode-toggle,
+  .contacts-mode-toggle {
     margin-top: 6px;
     align-self: flex-start;
   }

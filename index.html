@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-03-2102">
+    <link rel="stylesheet" href="styles.css?v=2026-05-03-2112">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -127,6 +127,16 @@
             <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
               <path d="M21 12a9 9 0 1 1-3-6.7"></path>
               <path d="M21 4v5h-5"></path>
+            </svg>
+          </button>
+          <button class="nav-button" type="button" data-view-target="contacts-groups" aria-label="Contactos y grupos">
+            <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              <path d="M19 8v6"></path>
+              <path d="M22 11h-6"></path>
             </svg>
           </button>
           <span class="nav-separator" aria-hidden="true"></span>
@@ -763,6 +773,68 @@
         </div>
 
 
+        <section class="view" id="contacts-groups-view" data-view="contacts-groups" aria-labelledby="contacts-groups-title">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Personas</p>
+              <h1 id="contacts-groups-title">Contactos y grupos</h1>
+            </div>
+            <div class="contacts-mode-toggle subpane-toggle" role="group" aria-label="Cambiar entre contactos y grupos">
+              <button type="button" class="type-toggle-button is-active" data-contacts-mode="contacts">Contactos</button>
+              <button type="button" class="type-toggle-button" data-contacts-mode="groups">Grupos</button>
+            </div>
+          </header>
+
+          <div class="settings-subpane" data-contacts-pane="contacts">
+            <section class="panel">
+              <div class="section-heading">
+                <h2>Contactos</h2>
+                <span id="contacts-count"></span>
+              </div>
+              <p class="empty-state">Los contactos se usan para los gastos compartidos. Puedes ponerles email para invitarles a colaborar.</p>
+
+              <form id="contacts-form" class="settings-form">
+                <label>
+                  <span>Nombre</span>
+                  <input id="new-contact-name" name="name" type="text" autocomplete="off" required>
+                </label>
+                <label>
+                  <span>Email <small class="label-hint">(opcional)</small></span>
+                  <input id="new-contact-email" name="email" type="email" autocomplete="off">
+                </label>
+                <button class="primary-action" type="submit">Anadir contacto</button>
+              </form>
+
+              <div id="contacts-list" class="config-list"></div>
+            </section>
+          </div>
+
+          <div class="settings-subpane" data-contacts-pane="groups" hidden>
+            <section class="panel">
+              <div class="section-heading">
+                <h2>Grupos</h2>
+                <span id="groups-count"></span>
+              </div>
+              <p class="empty-state group-blurb">
+                Los grupos te permiten repartir un mismo gasto entre varias personas (suscripciones, alquileres, viajes&hellip;). Cada par tiene su propio saldo, as&iacute; que liquidas con cada miembro por separado.
+              </p>
+
+              <form id="group-create-form" class="settings-form" onsubmit="return false;">
+                <label>
+                  <span>Nombre del grupo</span>
+                  <input id="new-group-name" name="name" type="text" autocomplete="off" required placeholder="Ej: YouTube, Casa, Viaje a Lisboa">
+                </label>
+                <button class="primary-action" type="submit">Crear grupo</button>
+              </form>
+
+              <div id="groups-list" class="groups-list"></div>
+              <p id="groups-empty" class="empty-state" hidden>
+                A&uacute;n no tienes grupos. Crea el primero arriba.
+              </p>
+            </section>
+          </div>
+        </section>
+
         <section class="view" id="settings-view" data-view="settings" aria-labelledby="settings-title">
           <header class="topbar">
             <div>
@@ -773,7 +845,6 @@
 
           <div class="settings-tabs" aria-label="Secciones de configuracion">
             <button class="settings-tab is-active" type="button" data-settings-target="concepts">Conceptos y categorias</button>
-            <button class="settings-tab" type="button" data-settings-target="contacts">Contactos y grupos</button>
             <button class="settings-tab" type="button" data-settings-target="csv">CSV</button>
             <button class="settings-tab" type="button" data-settings-target="backup">Backup JS</button>
           </div>
@@ -835,61 +906,6 @@
             </section>
           </section>
 
-          <section class="settings-panel" data-settings-panel="contacts" data-contacts-mode="contacts">
-            <div class="contacts-mode-toggle subpane-toggle" role="group" aria-label="Cambiar entre contactos y grupos">
-              <button type="button" class="type-toggle-button is-active" data-contacts-mode="contacts">Contactos</button>
-              <button type="button" class="type-toggle-button" data-contacts-mode="groups">Grupos</button>
-            </div>
-
-            <div class="settings-subpane" data-contacts-pane="contacts">
-              <section class="panel">
-                <div class="section-heading">
-                  <h2>Contactos</h2>
-                  <span id="contacts-count"></span>
-                </div>
-                <p class="empty-state">Los contactos se usan para los gastos compartidos. Mas adelante podras invitarles a colaborar.</p>
-
-                <form id="contacts-form" class="settings-form">
-                  <label>
-                    <span>Nombre</span>
-                    <input id="new-contact-name" name="name" type="text" autocomplete="off" required>
-                  </label>
-                  <label>
-                    <span>Email <small class="label-hint">(opcional)</small></span>
-                    <input id="new-contact-email" name="email" type="email" autocomplete="off">
-                  </label>
-                  <button class="primary-action" type="submit">Anadir contacto</button>
-                </form>
-
-                <div id="contacts-list" class="config-list"></div>
-              </section>
-            </div>
-
-            <div class="settings-subpane" data-contacts-pane="groups" hidden>
-              <section class="panel">
-                <div class="section-heading">
-                  <h2>Grupos</h2>
-                  <span id="groups-count"></span>
-                </div>
-                <p class="empty-state group-blurb">
-                  Los grupos te permiten repartir un mismo gasto entre varias personas (suscripciones, alquileres, viajes&hellip;). Cada par tiene su propio saldo, as&iacute; que liquidas con cada miembro por separado.
-                </p>
-
-                <form id="group-create-form" class="settings-form" onsubmit="return false;">
-                  <label>
-                    <span>Nombre del grupo</span>
-                    <input id="new-group-name" name="name" type="text" autocomplete="off" required placeholder="Ej: YouTube, Casa, Viaje a Lisboa">
-                  </label>
-                  <button class="primary-action" type="submit">Crear grupo</button>
-                </form>
-
-                <div id="groups-list" class="groups-list"></div>
-                <p id="groups-empty" class="empty-state" hidden>
-                  A&uacute;n no tienes grupos. Crea el primero arriba.
-                </p>
-              </section>
-            </div>
-          </section>
 
           <section class="settings-panel" data-settings-panel="csv">
             <section class="panel">
@@ -1232,7 +1248,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-03 21:02:45";
+      window.__FG_BUILD__ = "2026-05-03 21:12:30";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1290,6 +1306,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-03-2102"></script>
+    <script type="module" src="app.js?v=2026-05-03-2112"></script>
   </body>
 </html>
