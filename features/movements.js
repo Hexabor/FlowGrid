@@ -808,12 +808,25 @@ elements.openMovementModal.addEventListener("click", () => {
 // movement modal and opens the recurring modal pre-filled with the
 // source data; the recurring submit handler will link the source row.
 elements.convertToRecurring?.addEventListener("click", () => {
-  if (!state.editingMovementId) return;
-  const movement = state.movements.find((m) => m.id === state.editingMovementId);
-  if (!movement) return;
-  closeMovementModal();
-  resetMovementForm();
-  openConvertFromMovement(movement);
+  try {
+    if (!state.editingMovementId) {
+      console.warn("[convert] no editingMovementId set");
+      return;
+    }
+    const movement = state.movements.find((m) => m.id === state.editingMovementId);
+    if (!movement) {
+      console.warn("[convert] movement not found for id", state.editingMovementId);
+      return;
+    }
+    // Capturar valores ANTES de resetear el form, que limpia state.
+    const captured = movement;
+    closeMovementModal();
+    resetMovementForm();
+    openConvertFromMovement(captured);
+  } catch (err) {
+    console.error("[convert] failed", err);
+    alert("No se pudo abrir la conversión a plantilla. Mira consola.");
+  }
 });
 
 elements.closeMovementModal.addEventListener("click", closeMovementModal);
