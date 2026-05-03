@@ -3475,8 +3475,12 @@ body.is-locked .shell {
 
 /* ==== Session indicators in sidebar ====
    Email = chivato (no clickable). Logout = button.
-   Mobile: each occupies one cell of the 5-col sidebar grid.
-   Desktop: pushed to the bottom of the flex-column sidebar via margin-top:auto on email. */
+   En el HTML van en este orden: <logout> <email>. Eso permite que en
+   móvil (sidebar = grid 5 cols) el logout ocupe la celda 5 de la
+   fila 2 (justo después de los 4 nav buttons "secundarios") y el
+   email vaya a una tercera fila completa (grid-column: 1 / -1).
+   En desktop (sidebar = flex column) el margin-top:auto va sobre el
+   logout para empujar logout+email juntos al fondo de la columna. */
 .session-email {
   display: flex;
   align-items: center;
@@ -3490,6 +3494,9 @@ body.is-locked .shell {
   overflow: hidden;
   text-overflow: ellipsis;
   word-break: break-all;
+  /* En móvil (display: grid) ocupa toda la fila. En desktop el grid-
+     -column se ignora porque la sidebar es flex column. */
+  grid-column: 1 / -1;
 }
 
 .session-email:empty {
@@ -3514,15 +3521,15 @@ body.is-locked .shell {
 }
 
 @media (min-width: 980px) {
-  .session-email {
-    width: 100%;
-    margin-top: auto;
-    padding: 6px 4px 2px;
-  }
-
   .session-logout {
     width: 34px;
     align-self: center;
+    margin-top: auto;
+  }
+
+  .session-email {
+    width: 100%;
+    padding: 6px 4px 2px;
   }
 }
 
