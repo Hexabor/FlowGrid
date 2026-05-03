@@ -4210,8 +4210,16 @@ body.is-locked .shell {
    Estas reglas devuelven la semántica esperada: cuando un bloque tiene
    el atributo hidden, no se ve. */
 .shared-mode-field[hidden],
-.shared-group-fields[hidden] {
+.shared-group-fields[hidden],
+.shared-group-shares[hidden] {
   display: none !important;
+}
+
+/* El <p> de feedback se mantiene en el DOM aunque esté vacío (lo
+   reusamos al cambiar el modo). Cuando no tiene texto, ocultarlo
+   para que no deje una franja blanca dentro del bloque rosa. */
+.shared-group-fields .shared-uneven-feedback:empty {
+  display: none;
 }
 
 .shared-group-shares {
