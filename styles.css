@@ -3656,6 +3656,221 @@ body.is-locked .shell {
   }
 }
 
+/* ==== Grupos en Configuración ==== */
+.group-blurb {
+  margin: 6px 0 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.groups-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.group-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  border-left: 4px solid var(--mod-violet);
+}
+
+.group-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.group-card-name {
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.group-card-role {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mod-violet);
+  font-weight: 600;
+}
+
+.group-card-meta {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.group-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.group-card-actions .ghost-action {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.group-card-actions .ghost-action:hover {
+  background: rgba(23, 32, 38, 0.04);
+}
+
+/* Modal de gestión de grupo */
+.group-dialog {
+  max-width: 540px;
+}
+
+.group-rename {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.group-admin-badge {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(23, 32, 38, 0.06);
+}
+
+.group-admin-badge.is-admin {
+  background: var(--mod-violet-bg);
+  color: var(--mod-violet);
+}
+
+.group-hint {
+  margin: 4px 0 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.group-members-section {
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.group-members-list {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 14px;
+}
+
+.group-member-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(23, 32, 38, 0.03);
+  border-radius: 8px;
+}
+
+.group-member-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-width: 0;
+}
+
+.group-member-info strong.is-me {
+  color: var(--mod-violet);
+}
+
+.group-member-info small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.group-member-tag {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mod-violet-bg);
+  color: var(--mod-violet);
+  font-weight: 600;
+}
+
+.group-member-tag.is-offline {
+  background: rgba(23, 32, 38, 0.06);
+  color: var(--muted);
+}
+
+.group-member-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.group-member-actions .ghost-action {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.group-member-actions .ghost-action:hover {
+  background: rgba(23, 32, 38, 0.05);
+}
+
+.group-add-member {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.group-danger-zone {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.group-danger-zone .ghost-action,
+.group-danger-zone .danger-action {
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+}
+
+.group-danger-zone .danger-action {
+  color: #c92a2a;
+  border-color: rgba(201, 42, 42, 0.4);
+}
+
+.group-danger-zone .danger-action:hover {
+  background: rgba(201, 42, 42, 0.08);
+}
+
 /* Modal de confirmación robusta. Reutilizado en cualquier flujo que
    pida más que un confirm() nativo (borrar movimiento recurrente,
    borrar plantilla, etc.). El layout pone título en la sección-heading

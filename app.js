@@ -7,6 +7,7 @@ import { collapseExpandedCard } from "./features/movements.js";
 import { checkPendingInvitations, closeInvitationModal, runInvitationBackfills } from "./features/invitations.js";
 import { closeHistoryModal } from "./features/edit-log.js";
 import { generatePendingRecurrences, closeRecurringModal, startRecurringScheduler } from "./features/recurring.js";
+import { closeGroupModal } from "./features/groups-view.js";
 import { closeConfirmModal } from "./ui/confirm.js";
 import { onAuthChange } from "./core/supabase.js";
 import { cloudHydrate } from "./core/cloud.js";
@@ -79,6 +80,7 @@ document.addEventListener("keydown", (event) => {
     closeInvitationModal();
     closeHistoryModal();
     closeRecurringModal();
+    closeGroupModal();
     closeConfirmModal();
     collapseExpandedCard();
     document.querySelectorAll('.info-button[aria-expanded="true"]').forEach((button) => {

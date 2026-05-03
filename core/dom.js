@@ -149,6 +149,24 @@ export const elements = {
   recurringEndDateTrigger: document.querySelector("#recurring-end-date-trigger"),
   recurringEndDateClear: document.querySelector("#recurring-end-date-clear"),
   convertToRecurring: document.querySelector("#convert-to-recurring"),
+  // Grupos (gestión en Configuración → Grupos).
+  groupsList: document.querySelector("#groups-list"),
+  groupsEmpty: document.querySelector("#groups-empty"),
+  groupsCount: document.querySelector("#groups-count"),
+  groupCreateForm: document.querySelector("#group-create-form"),
+  newGroupName: document.querySelector("#new-group-name"),
+  groupModal: document.querySelector("#group-modal"),
+  closeGroupModal: document.querySelector("#close-group-modal"),
+  groupModalTitle: document.querySelector("#group-modal-title"),
+  groupRenameForm: document.querySelector("#group-rename-form"),
+  groupRenameInput: document.querySelector("#group-rename-input"),
+  groupAdminBadge: document.querySelector("#group-admin-badge"),
+  groupRoleHint: document.querySelector("#group-role-hint"),
+  groupMembersList: document.querySelector("#group-members-list"),
+  groupAddMemberForm: document.querySelector("#group-add-member-form"),
+  groupAddMemberSelect: document.querySelector("#group-add-member-select"),
+  groupLeaveButton: document.querySelector("#group-leave-button"),
+  groupDeleteButton: document.querySelector("#group-delete-button"),
   // Confirmation modal: shared component for any robust delete dialog.
   // Each opener fills in the title, message, extra line, and the action
   // buttons via ui/confirm.js.

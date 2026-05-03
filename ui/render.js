@@ -4,6 +4,7 @@ import { renderSharedView } from "../features/shared.js";
 import { renderContacts } from "../features/contacts.js";
 import { renderCategories, renderConcepts } from "../features/settings.js";
 import { renderRecurringView } from "../features/recurring.js";
+import { renderGroupsList } from "../features/groups-view.js";
 import { renderChangelog } from "./changelog-view.js";
 
 export function render() {
@@ -20,5 +21,6 @@ export function render() {
   renderConcepts();
   renderCategories();
   renderRecurringView();
+  renderGroupsList();
   renderChangelog();
 }

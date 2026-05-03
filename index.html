@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-03-2010">
+    <link rel="stylesheet" href="styles.css?v=2026-05-03-2029">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -774,6 +774,7 @@
           <div class="settings-tabs" aria-label="Secciones de configuracion">
             <button class="settings-tab is-active" type="button" data-settings-target="concepts">Conceptos y categorias</button>
             <button class="settings-tab" type="button" data-settings-target="contacts">Contactos</button>
+            <button class="settings-tab" type="button" data-settings-target="groups">Grupos</button>
             <button class="settings-tab" type="button" data-settings-target="csv">CSV</button>
             <button class="settings-tab" type="button" data-settings-target="backup">Backup JS</button>
           </div>
@@ -856,6 +857,31 @@
               </form>
 
               <div id="contacts-list" class="config-list"></div>
+            </section>
+          </section>
+
+          <section class="settings-panel" data-settings-panel="groups">
+            <section class="panel">
+              <div class="section-heading">
+                <h2>Grupos</h2>
+                <span id="groups-count"></span>
+              </div>
+              <p class="empty-state group-blurb">
+                Los grupos te permiten repartir un mismo gasto entre varias personas (suscripciones, alquileres, viajes&hellip;). Cada par tiene su propio saldo, as&iacute; que liquidas con cada miembro por separado.
+              </p>
+
+              <form id="group-create-form" class="settings-form">
+                <label>
+                  <span>Nombre del grupo</span>
+                  <input id="new-group-name" name="name" type="text" autocomplete="off" required placeholder="Ej: YouTube, Casa, Viaje a Lisboa">
+                </label>
+                <button class="primary-action" type="submit">Crear grupo</button>
+              </form>
+
+              <div id="groups-list" class="groups-list"></div>
+              <p id="groups-empty" class="empty-state" hidden>
+                A&uacute;n no tienes grupos. Crea el primero arriba.
+              </p>
             </section>
           </section>
 
@@ -1004,6 +1030,47 @@
       </div>
     </div>
 
+    <div id="group-modal" class="modal" hidden>
+      <div class="modal-dialog group-dialog" role="dialog" aria-modal="true" aria-labelledby="group-modal-title">
+        <div class="section-heading">
+          <h2 id="group-modal-title">Editar grupo</h2>
+          <button id="close-group-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
+        </div>
+
+        <form id="group-rename-form" class="group-rename">
+          <label>
+            <span>Nombre</span>
+            <input id="group-rename-input" name="name" type="text" autocomplete="off" required>
+          </label>
+          <button class="ghost-action" type="submit">Renombrar</button>
+        </form>
+
+        <section class="group-members-section">
+          <header class="section-heading">
+            <h3>Miembros</h3>
+            <span id="group-admin-badge" class="group-admin-badge"></span>
+          </header>
+          <p class="group-hint" id="group-role-hint"></p>
+          <div id="group-members-list" class="group-members-list"></div>
+
+          <form id="group-add-member-form" class="group-add-member">
+            <label>
+              <span>A&ntilde;adir contacto</span>
+              <select id="group-add-member-select" required>
+                <option value="">Selecciona un contacto&hellip;</option>
+              </select>
+            </label>
+            <button class="primary-action" type="submit">A&ntilde;adir</button>
+          </form>
+        </section>
+
+        <section class="group-danger-zone">
+          <button id="group-leave-button" class="ghost-action" type="button" hidden>Salir del grupo</button>
+          <button id="group-delete-button" class="danger-action" type="button" hidden>Eliminar grupo&hellip;</button>
+        </section>
+      </div>
+    </div>
+
     <div id="confirm-modal" class="modal" hidden>
       <div class="modal-dialog confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
         <div class="section-heading">
@@ -1144,7 +1211,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-03 20:10:49";
+      window.__FG_BUILD__ = "2026-05-03 20:29:52";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1202,6 +1269,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-03-2010"></script>
+    <script type="module" src="app.js?v=2026-05-03-2029"></script>
   </body>
 </html>

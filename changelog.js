@@ -2,6 +2,18 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-03",
     commit: "dev@HEAD",
+    title: "Grupos (3+ personas): primera versión — gestión desde Configuración",
+    changes: [
+      "Nueva pestaña \"Grupos\" en Configuración. Crea grupos con un nombre (\"YouTube\", \"Casa\", \"Viaje a Lisboa\") y desde ahí gestionas su composición — añadir miembros desde tu lista de contactos (vinculados u offline) y quitarlos sin perder los saldos pendientes que tengáis abiertos.",
+      "Cualquier miembro puede pagar un gasto del grupo. Los balances entre cada par (tú con cada miembro) se mantienen independientes, así que liquidas con cada persona por separado cuando os Bizumeéis.",
+      "Como admin del grupo puedes ceder el rol a cualquier miembro vinculado activo — útil si te vas del piso o dejas de gestionar la suscripción. Si te quieres salir siendo admin, FlowGrid pide cederlo primero al miembro vinculado más antiguo.",
+      "Eliminar un grupo o quitar un miembro siempre pasa por un modal claro con doble confirmación, igual que en Periódicos.",
+      "El modal de \"Nuevo gasto\" todavía no ofrece grupos — eso llega en el siguiente paso. Esta entrega es la base: crear y mantener tus grupos para que cuando puedas asignar gastos, los grupos ya estén ahí esperando.",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    commit: "dev@HEAD",
     title: "Periódicos desktop: botones a iconos y columna Importe alineada",
     changes: [
       "Las acciones de cada plantilla en desktop ahora son iconos cuadrados (lápiz para Editar, dos barras para Pausar / triángulo para Reactivar, papelera para Eliminar) en lugar de botones con texto. Se compactan al final de la fila sin robar espacio. Tooltip al pasar el ratón mantiene la claridad y el texto sigue accesible para lectores de pantalla.",
