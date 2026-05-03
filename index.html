@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-03-2210">
+    <link rel="stylesheet" href="styles.css?v=2026-05-03-2222">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -177,15 +177,11 @@
         <section class="view is-active" id="home-view" data-view="home" aria-labelledby="home-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">FlowGrid</p>
               <h1 id="home-title">Home</h1>
             </div>
           </header>
 
           <section class="panel">
-            <div class="section-heading">
-              <h2>Modulos</h2>
-            </div>
             <div class="module-groups">
               <section class="module-group">
                 <div class="module-grid">
@@ -298,18 +294,6 @@
                 <strong>Movimientos peri&oacute;dicos</strong>
                 <p>Define plantillas para alquileres, suscripciones o n&oacute;minas y FlowGrid las genera solas en su d&iacute;a.</p>
               </button>
-              <button class="highlight-card" type="button" data-view-target="shared" data-color="violet">
-                <span class="highlight-icon">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </span>
-                <strong>Movimientos compartidos</strong>
-                <p>Reparte un gasto con alguien y lleva el saldo abierto hasta que os Bizume&aacute;is. Edici&oacute;n sim&eacute;trica entre ambos lados.</p>
-              </button>
               <button class="highlight-card" type="button" data-view-target="contacts-groups" data-color="rose">
                 <span class="highlight-icon">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -321,8 +305,8 @@
                     <path d="M22 11h-6"></path>
                   </svg>
                 </span>
-                <strong>Contactos y grupos</strong>
-                <p>Crea grupos para repartir gastos entre 3 o m&aacute;s personas: alquileres, suscripciones, viajes&hellip;</p>
+                <strong>Gastos compartidos en grupo</strong>
+                <p>Reparte un gasto entre 3 o m&aacute;s personas: alquileres, suscripciones, viajes&hellip; cada par mantiene su saldo.</p>
               </button>
             </div>
           </section>
@@ -331,7 +315,6 @@
         <section class="view" id="movements-view" data-view="movements" aria-labelledby="movements-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">Core</p>
               <h1 id="movements-title">Movimientos</h1>
             </div>
             <p id="current-period" class="period">Mes actual</p>
@@ -499,7 +482,6 @@
         <section class="view" id="analysis-view" data-view="analysis" data-mode="month" aria-labelledby="analysis-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">Analisis</p>
               <h1 id="analysis-title">An&aacute;lisis</h1>
             </div>
             <div class="analysis-mode-toggle" role="group" aria-label="Granularidad del an&aacute;lisis">
@@ -584,7 +566,6 @@
         <section class="view" id="recurring-view" data-view="recurring" aria-labelledby="recurring-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">Autom&aacute;tico</p>
               <h1 id="recurring-title">Peri&oacute;dicos</h1>
             </div>
             <p id="recurring-count" class="period">0 plantillas</p>
@@ -747,7 +728,6 @@
         <section class="view" id="shared-view" data-view="shared" aria-labelledby="shared-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">Espacio aislado</p>
               <h1 id="shared-title">Compartidos</h1>
             </div>
           </header>
@@ -834,7 +814,6 @@
         <section class="view" id="contacts-groups-view" data-view="contacts-groups" aria-labelledby="contacts-groups-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">Personas</p>
               <h1 id="contacts-groups-title">Contactos y grupos</h1>
             </div>
             <div class="contacts-mode-toggle subpane-toggle" role="group" aria-label="Cambiar entre contactos y grupos">
@@ -896,7 +875,6 @@
         <section class="view" id="settings-view" data-view="settings" aria-labelledby="settings-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">Infraestructura</p>
               <h1 id="settings-title">Configuracion</h1>
             </div>
           </header>
@@ -1032,7 +1010,6 @@
         <section class="view" id="news-view" data-view="news" aria-labelledby="news-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">Registro</p>
               <h1 id="news-title">Novedades</h1>
             </div>
           </header>
@@ -1049,7 +1026,6 @@
         <section class="view" id="roadmap-view" data-view="roadmap" aria-labelledby="roadmap-title">
           <header class="topbar">
             <div>
-              <p class="eyebrow">Roadmap</p>
               <h1 id="roadmap-title">Pr&oacute;ximas mejoras</h1>
             </div>
           </header>
@@ -1311,7 +1287,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-03 22:10:02";
+      window.__FG_BUILD__ = "2026-05-03 22:22:48";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1369,6 +1345,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-03-2210"></script>
+    <script type="module" src="app.js?v=2026-05-03-2222"></script>
   </body>
 </html>

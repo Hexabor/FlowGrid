@@ -177,7 +177,6 @@ button {
   margin-bottom: 18px;
 }
 
-.eyebrow,
 .period {
   margin: 0;
   color: var(--nav);
@@ -392,85 +391,127 @@ h2 {
 
 /* ==== Novedades destacadas (panel debajo del grid del Home) ====
    Cards informativas que resaltan las grandes features recientes.
-   Tonos grises/sage neutros para que no compitan con los tiles de
-   navegación de arriba — la atención principal son los botones, esto
-   es contexto secundario. Móvil: ocultas (no aportan en una pantalla
-   pequeña ya con scroll); desktop: 3 columnas en una fila. */
+   Tonos sage neutros para no competir con los tiles de navegación
+   de arriba — la atención principal son los botones, esto es
+   contexto secundario.
+
+   PC: 2 columnas, cards con icono + título + descripción.
+   Móvil: 2 columnas también, MUY compactas (icono pequeño + título
+   solo, sin descripción) para que entren en una sola fila baja sin
+   forzar scroll. */
 .home-highlights {
   margin-top: 14px;
 }
 
-@media (max-width: 719px) {
-  .home-highlights {
-    display: none;
-  }
-}
-
 .highlight-grid {
   display: grid;
-  gap: 12px;
-  grid-template-columns: 1fr;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 @media (min-width: 720px) {
   .highlight-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
   }
 }
 
 .highlight-card {
   display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: 4px 14px;
-  padding: 16px;
+  align-items: center;
   text-align: left;
   background: #f1f4f2;
   border: 1px solid #dde2dd;
-  border-left: 4px solid #8a9b8e;
-  border-radius: 12px;
+  border-left: 3px solid #8a9b8e;
+  border-radius: 10px;
   cursor: pointer;
   color: var(--text);
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 
 .highlight-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 85, 80, 0.10);
   background: #ecf0ed;
 }
 
-/* Las data-color attributes se mantienen por si en el futuro queremos
-   re-colorear. En v1 los tres tonos son idénticos (sage-grey neutro)
-   para que el panel sea informativo sin acaparar la atención. */
+@media (min-width: 720px) {
+  .highlight-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 85, 80, 0.10);
+  }
+}
+
+/* Móvil: layout horizontal SUPER compacto. Icono pequeño + título en
+   una sola línea, sin descripción. Card no excede 44-48px de alto. */
+.highlight-card {
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
 .highlight-icon {
-  grid-row: span 2;
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   background: #ffffff;
   color: #5d6c64;
   border: 1px solid #dde2dd;
+  grid-row: 1;
 }
 
 .highlight-icon svg {
-  width: 26px;
-  height: 26px;
+  width: 16px;
+  height: 16px;
 }
 
 .highlight-card strong {
-  font-size: 1.02rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #3f4a44;
-  line-height: 1.2;
+  line-height: 1.15;
+  grid-row: 1;
 }
 
 .highlight-card p {
-  margin: 0;
-  font-size: 0.86rem;
-  color: #5a6660;
-  line-height: 1.4;
+  /* Descripción oculta en móvil — solo título + icono caben sin
+     forzar scroll. En PC se reactiva más abajo. */
+  display: none;
+}
+
+/* PC: cards más generosas con descripción visible. */
+@media (min-width: 720px) {
+  .highlight-card {
+    grid-template-columns: 52px 1fr;
+    gap: 4px 14px;
+    padding: 16px;
+    border-left-width: 4px;
+    border-radius: 12px;
+  }
+
+  .highlight-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    grid-row: span 2;
+  }
+
+  .highlight-icon svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .highlight-card strong {
+    font-size: 1.02rem;
+    grid-row: auto;
+  }
+
+  .highlight-card p {
+    display: block;
+    margin: 0;
+    font-size: 0.86rem;
+    color: #5a6660;
+    line-height: 1.4;
+  }
 }
 
 /* Fila de accesos secundarios (Configuración, Novedades, Roadmap) bajo
