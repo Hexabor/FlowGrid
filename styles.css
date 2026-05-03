@@ -4309,6 +4309,15 @@ body.is-locked .shell {
   height: 18px;
 }
 
+/* Override del [hidden] por defecto: el .movement-form > * { display: ... }
+   sobrescribe la regla por defecto de [hidden]. Sin este !important el
+   botón se ve incluso cuando estamos creando un movimiento nuevo (donde
+   no hay editingMovementId que convertir), y al hacer click el handler
+   loguea "[convert] no editingMovementId set" y no hace nada. */
+.convert-to-recurring[hidden] {
+  display: none !important;
+}
+
 /* Toggle Mensual/Anual al inicio de Análisis y Contactos/Grupos en
    Configuración. Mismo patrón visual que .type-toggle-button (Gasto/
    Ingreso) — pastilla con dos botones, el activo coloreado. */
