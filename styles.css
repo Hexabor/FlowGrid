@@ -146,6 +146,29 @@ button {
   display: block;
 }
 
+/* Home en desktop: el panel de tiles + las novedades destacadas se
+   centran verticalmente en el espacio disponible del navegador en
+   lugar de pegarse al borde superior. La topbar (eyebrow + título
+   "Home") sigue arriba; los dos paneles de debajo se centran entre
+   ella y el final del viewport con margin-auto encima/debajo. */
+@media (min-width: 720px) {
+  #home-view.is-active {
+    display: flex;
+    flex-direction: column;
+    /* 100vh menos los paddings top/bottom de .app (18px + 92px) deja
+       el viewport del cliente para distribuir vertical. */
+    min-height: calc(100vh - 110px);
+  }
+
+  #home-view.is-active > .panel:not(.home-highlights) {
+    margin-top: auto;
+  }
+
+  #home-view.is-active > .home-highlights {
+    margin-bottom: auto;
+  }
+}
+
 .topbar {
   display: flex;
   gap: 16px;
@@ -369,10 +392,18 @@ h2 {
 
 /* ==== Novedades destacadas (panel debajo del grid del Home) ====
    Cards informativas que resaltan las grandes features recientes.
-   Cada una tinta del color de su feature; click navega a la vista.
-   Móvil: apiladas; desktop: 3 columnas en una fila. */
+   Tonos grises/sage neutros para que no compitan con los tiles de
+   navegación de arriba — la atención principal son los botones, esto
+   es contexto secundario. Móvil: ocultas (no aportan en una pantalla
+   pequeña ya con scroll); desktop: 3 columnas en una fila. */
 .home-highlights {
   margin-top: 14px;
+}
+
+@media (max-width: 719px) {
+  .home-highlights {
+    display: none;
+  }
 }
 
 .highlight-grid {
@@ -393,35 +424,24 @@ h2 {
   gap: 4px 14px;
   padding: 16px;
   text-align: left;
-  background: var(--hl-bg, var(--surface-soft));
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--hl-fg, var(--mod-violet));
+  background: #f1f4f2;
+  border: 1px solid #dde2dd;
+  border-left: 4px solid #8a9b8e;
   border-radius: 12px;
   cursor: pointer;
   color: var(--text);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 
 .highlight-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(23, 32, 38, 0.08);
+  box-shadow: 0 4px 12px rgba(74, 85, 80, 0.10);
+  background: #ecf0ed;
 }
 
-.highlight-card[data-color="orange"] {
-  --hl-bg: var(--mod-orange-bg);
-  --hl-fg: var(--mod-orange);
-}
-
-.highlight-card[data-color="violet"] {
-  --hl-bg: var(--mod-violet-bg);
-  --hl-fg: var(--mod-violet);
-}
-
-.highlight-card[data-color="rose"] {
-  --hl-bg: var(--mod-rose-bg);
-  --hl-fg: var(--mod-rose);
-}
-
+/* Las data-color attributes se mantienen por si en el futuro queremos
+   re-colorear. En v1 los tres tonos son idénticos (sage-grey neutro)
+   para que el panel sea informativo sin acaparar la atención. */
 .highlight-icon {
   grid-row: span 2;
   display: grid;
@@ -429,8 +449,9 @@ h2 {
   width: 52px;
   height: 52px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--hl-fg);
+  background: #ffffff;
+  color: #5d6c64;
+  border: 1px solid #dde2dd;
 }
 
 .highlight-icon svg {
@@ -441,14 +462,14 @@ h2 {
 .highlight-card strong {
   font-size: 1.02rem;
   font-weight: 700;
-  color: var(--hl-fg);
+  color: #3f4a44;
   line-height: 1.2;
 }
 
 .highlight-card p {
   margin: 0;
   font-size: 0.86rem;
-  color: var(--text);
+  color: #5a6660;
   line-height: 1.4;
 }
 
