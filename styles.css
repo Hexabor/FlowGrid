@@ -2172,6 +2172,18 @@ a.primary-action {
     align-items: end;
   }
 
+  /* Form de feedback: el textarea de Mensaje es alto y el input
+     de Asunto es de una sola línea — con align-items: end heredado,
+     Asunto se hundía al fondo dejando aire encima. Lo subimos a
+     start para los inputs y dejamos solo el botón submit alineado
+     al fondo (queda al lado de la base del textarea). */
+  #feedback-form {
+    align-items: start;
+  }
+  #feedback-form > button[type="submit"] {
+    align-self: end;
+  }
+
   .config-toolbar {
     grid-template-columns: 180px 180px;
   }

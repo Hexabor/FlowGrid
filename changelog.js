@@ -2,6 +2,14 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Form de feedback en PC: Asunto alineado arriba",
+    changes: [
+      "El input de Asunto se hundía al fondo (alineado con la base del textarea de Mensaje), dejando un hueco vacío encima. Ahora se alinea arriba; solo el botón \"Enviar feedback\" sigue al fondo, junto a la esquina del textarea.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Móvil: sin tooltip al tocar los botones del menú",
     changes: [
       "Al tocar un botón de la barra de navegación en móvil, salía el nombre del módulo como tooltip — innecesario, porque el nombre ya se lee en el título de la vista que se abre. Ahora el tooltip solo aparece en dispositivos con hover real (PC). El aria-label se mantiene para lectores de pantalla.",
