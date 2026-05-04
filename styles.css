@@ -711,20 +711,29 @@ h2 {
   overflow-y: auto;
   /* Reservamos espacio para el scrollbar siempre — sin esto, cuando
      aparece la barra come 14-16px del padding-right y tapa el borde
-     derecho de inputs y la X de cerrar. */
+     derecho de inputs y la X de cerrar. Padding-right algo mayor que
+     el resto: 22px deja una franja confortable entre el contenido /
+     la X y el scrollbar (que ronda 14-16px). */
   scrollbar-gutter: stable;
-  padding: 14px;
+  padding: 14px 22px 14px 14px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
 }
 
-/* #close-movement-modal vivía absolute en la esquina del modal-dialog
-   porque competía dentro del .section-heading con el feedback. Ahora
-   que el feedback sale a su propia fila debajo, el botón puede ir en
-   el flujo flex normal del header — así nunca cae sobre el scrollbar
-   del modal cuando aparece. */
+/* X de cerrar del modal de movimiento: vuelve a la esquina superior
+   derecha (absolute) tras quitar el feedback del header. El `right`
+   está a 22px (no 10) para que el botón quede a la izquierda del
+   scrollbar cuando el modal hace scroll. El padding-right del
+   modal-dialog deja una franja del mismo ancho para que tampoco el
+   contenido toque el scrollbar. */
+#close-movement-modal {
+  position: absolute;
+  top: 10px;
+  right: 22px;
+  z-index: 1;
+}
 
 .modal-dialog .section-heading {
   padding-right: 40px;

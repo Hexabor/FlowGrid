@@ -2,9 +2,9 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
-    title: "Modal de movimiento: la X de cerrar ya no queda tapada por el scrollbar",
+    title: "Modal de movimiento: X arriba a la derecha sin tapar el scrollbar",
     changes: [
-      "El botón X estaba posicionado en la esquina (absolute) y, cuando aparecía la barra de scroll del modal, le caía encima. Ahora vive en el flujo flex del header (igual que en el resto de modales), y el feedback (\"Editando movimiento\", etc.) baja a una fila propia debajo del título.",
+      "El botón X vuelve a su posición de siempre (esquina superior derecha) pero más adentro, fuera de la franja del scrollbar. El padding-right del modal sube a 22px para que tampoco el contenido toque la barra. El feedback (\"Editando movimiento\"…) sigue en su propia fila debajo del título.",
     ],
   },
   {
