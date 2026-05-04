@@ -2,10 +2,10 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
-    title: "Resumen de saldos en móvil: dos columnas más densas",
+    title: "Resumen de saldos en móvil: dos columnas con cards de una sola línea",
     changes: [
-      "El listado de contactos del panel \"Saldos\" en móvil pasa de una fila por contacto a dos columnas. Cada card lleva el nombre en la primera línea y la dirección (TE DEBE / LE DEBES) + cantidad en la segunda. Más contactos visibles a la vez sin scroll.",
-      "En pantallas muy estrechas (<360px) vuelve automáticamente a una columna para que nombre y cantidad respiren.",
+      "Cada card pasa a una sola línea (nombre + cantidad). El \"TE DEBE / LE DEBES\" se omite; el color del borde izquierdo (verde / rojo) ya señala la dirección. Una pequeña leyenda arriba con dos puntitos de color explica el código sin gastar línea por card.",
+      "Se mantiene el fallback a una columna en pantallas <360px y los lectores de pantalla siguen recibiendo \"te debe / le debes\" (texto oculto solo visualmente).",
     ],
   },
   {

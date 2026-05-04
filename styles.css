@@ -1828,10 +1828,10 @@ a.primary-action {
     margin-bottom: 14px;
   }
 
-  /* Resumen de saldos en móvil: pasa de una fila por contacto (mucho
-     aire horizontal desperdiciado en pantallas medias) a dos columnas
-     con cards de dos líneas. Cada card lleva el nombre arriba y la
-     direccion + cantidad en una segunda fila más densa. */
+  /* Resumen de saldos en móvil: dos columnas con una fila por card
+     (nombre + cantidad lado a lado). El "TE DEBE / LE DEBES" se
+     omite — el color del borde izquierdo (verde/rojo) ya da la
+     dirección. La leyenda arriba del listado explica el código. */
   .balance-summary-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -1839,25 +1839,22 @@ a.primary-action {
 
   .balance-summary-row {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "name   name"
-      "dir    amount";
-    gap: 4px 8px;
+    gap: 8px;
     padding: 10px 12px;
   }
 
-  .balance-summary-name {
-    grid-area: name;
-  }
-
   .balance-summary-direction {
-    grid-area: dir;
-    justify-self: start;
-  }
-
-  .balance-summary-amount {
-    grid-area: amount;
-    justify-self: end;
+    /* Texto redundante con el color: lo escondemos visualmente pero
+       lo mantenemos en el DOM para lectores de pantalla. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   /* En pantallas muy estrechas (<360px) volvemos a 1 columna para
@@ -1867,6 +1864,36 @@ a.primary-action {
       grid-template-columns: 1fr;
     }
   }
+}
+
+/* Leyenda del resumen de saldos (móvil): puntos de color con la
+   etiqueta correspondiente a cada estado (te debe / le debes). */
+.balance-summary-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: -4px 0 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.balance-summary-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 50%;
+  vertical-align: -1px;
+}
+
+.balance-summary-legend-dot.is-positive {
+  background: var(--green);
+}
+
+.balance-summary-legend-dot.is-negative {
+  background: var(--red);
 }
 
 .shared-toolbar {

@@ -658,6 +658,15 @@ function renderMobileBalanceSummary(contactsWithActivity) {
   title.textContent = "Toca un contacto para ver detalle y liquidar:";
   wrapper.append(title);
 
+  // Leyenda discreta: explica los puntos verde/rojo de cada card sin
+  // tener que repetir "TE DEBE / LE DEBES" en cada fila.
+  const legend = document.createElement("p");
+  legend.className = "balance-summary-legend";
+  legend.innerHTML =
+    '<span class="balance-summary-legend-dot is-positive"></span> te debe' +
+    '<span class="balance-summary-legend-dot is-negative"></span> le debes';
+  wrapper.append(legend);
+
   const list = document.createElement("ul");
   list.className = "balance-summary-list";
 
