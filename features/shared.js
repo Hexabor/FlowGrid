@@ -275,18 +275,6 @@ export function syncSharedContactOptions() {
     a.name.localeCompare(b.name, "es", { sensitivity: "base" })
   );
 
-  // Diagnóstico temporal — ayuda a depurar el caso del móvil donde el
-  // optgroup de Grupos aparecía vacío. Si ves [shared dropdown] groups: 0
-  // pero en desktop ves groups: N, hay un mismatch de hidratación.
-  if (typeof console !== "undefined") {
-    console.log("[shared dropdown]", {
-      contacts: contacts.length,
-      groups: groups.length,
-      stateGroupsRaw: state.groups.length,
-      stateGroupMembers: state.groupMembers.length,
-    });
-  }
-
   let html = "";
   if (!contacts.length && !groups.length) {
     html = '<option value="">Sin contactos ni grupos creados</option>';
