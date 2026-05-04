@@ -2,6 +2,15 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Resumen de saldos en móvil: dos columnas más densas",
+    changes: [
+      "El listado de contactos del panel \"Saldos\" en móvil pasa de una fila por contacto a dos columnas. Cada card lleva el nombre en la primera línea y la dirección (TE DEBE / LE DEBES) + cantidad en la segunda. Más contactos visibles a la vez sin scroll.",
+      "En pantallas muy estrechas (<360px) vuelve automáticamente a una columna para que nombre y cantidad respiren.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Modal de movimiento: X arriba a la derecha sin tapar el scrollbar",
     changes: [
       "El botón X vuelve a su posición de siempre (esquina superior derecha) pero más adentro, fuera de la franja del scrollbar. El padding-right del modal sube a 22px para que tampoco el contenido toque la barra. El feedback (\"Editando movimiento\"…) sigue en su propia fila debajo del título.",

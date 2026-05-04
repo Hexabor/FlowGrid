@@ -1827,6 +1827,46 @@ a.primary-action {
     gap: 4px;
     margin-bottom: 14px;
   }
+
+  /* Resumen de saldos en móvil: pasa de una fila por contacto (mucho
+     aire horizontal desperdiciado en pantallas medias) a dos columnas
+     con cards de dos líneas. Cada card lleva el nombre arriba y la
+     direccion + cantidad en una segunda fila más densa. */
+  .balance-summary-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .balance-summary-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name   name"
+      "dir    amount";
+    gap: 4px 8px;
+    padding: 10px 12px;
+  }
+
+  .balance-summary-name {
+    grid-area: name;
+  }
+
+  .balance-summary-direction {
+    grid-area: dir;
+    justify-self: start;
+  }
+
+  .balance-summary-amount {
+    grid-area: amount;
+    justify-self: end;
+  }
+
+  /* En pantallas muy estrechas (<360px) volvemos a 1 columna para
+     que el nombre + cantidad respiren. */
+  @media (max-width: 359px) {
+    .balance-summary-list {
+      grid-template-columns: 1fr;
+    }
+  }
 }
 
 .shared-toolbar {
