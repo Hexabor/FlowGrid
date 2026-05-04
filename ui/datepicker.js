@@ -9,6 +9,11 @@ export function getActiveDateTarget() {
 export function writeDateToTarget(target, date) {
   target.input.value = toIsoDate(date);
   target.trigger.textContent = formatDate(target.input.value);
+  // Notificamos a quien esté escuchando: los inputs hidden no disparan
+  // change por sí solos al asignar value vía propiedad. Sin esto, no
+  // podemos reaccionar al usuario eligiendo fecha en el datepicker
+  // (p.ej. para auto-derivar día/mes en la plantilla periódica).
+  target.input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 export function setSelectedDate(date) {

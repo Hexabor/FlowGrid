@@ -19,6 +19,7 @@ export const elements = {
   concept: document.querySelector("#concept"),
   category: document.querySelector("#category"),
   party: document.querySelector("#party"),
+  partySuggestions: document.querySelector("#party-suggestions"),
   recurrence: document.querySelector("#recurrence"),
   note: document.querySelector("#note"),
   isShared: document.querySelector("#is-shared"),
@@ -148,8 +149,10 @@ export const elements = {
   recurringAmount: document.querySelector("#recurring-amount"),
   recurringPeriodicity: document.querySelector("#recurring-periodicity"),
   recurringDayOfMonth: document.querySelector("#recurring-day-of-month"),
+  recurringDayOfMonthField: document.querySelector("#recurring-day-of-month-field"),
   recurringMonthOfYear: document.querySelector("#recurring-month-of-year"),
   recurringMonthOfYearField: document.querySelector("#recurring-month-of-year-field"),
+  recurringCustomizeDayToggle: document.querySelector("#recurring-customize-day-toggle"),
   recurringStartDate: document.querySelector("#recurring-start-date"),
   recurringStartDateTrigger: document.querySelector("#recurring-start-date-trigger"),
   recurringEndDate: document.querySelector("#recurring-end-date"),
@@ -177,6 +180,7 @@ export const elements = {
   groupNewContactEmail: document.querySelector("#group-new-contact-email"),
   groupLeaveButton: document.querySelector("#group-leave-button"),
   groupDeleteButton: document.querySelector("#group-delete-button"),
+  groupModalDone: document.querySelector("#group-modal-done"),
   // Toggle Contactos/Grupos dentro de la vista "Contactos y grupos".
   // OJO: el selector va con `button[...]` para no matchear contenedores
   // que también lleven el atributo (eso fue el bug del 2026-05-03 — el

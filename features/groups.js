@@ -297,8 +297,12 @@ function transactionsFromSplits(splits) {
 
 // Saldo neto entre dos miembros del mismo grupo. Positivo = `b` debe a
 // `a`; negativo = `a` debe a `b`. Suma sobre todas las entradas no
-// liquidadas (settledAt nulo) y excluye entries de tipo "payment"
-// (esas se modelarán con su propio formato cuando llegue el momento).
+// liquidadas (settledAt nulo) y excluye entries de tipo "payment".
+//
+// Granularidad: una entrada puede tener `settledMembers` con liquidación
+// individual por miembro. Si la deuda corresponde a un par (from→to)
+// donde el deudor (from) está marcado como liquidado en esa entrada,
+// se ignora esa transacción concreta — el resto del grupo sigue contando.
 export function pairwiseBalance(groupId, memberAId, memberBId) {
   let net = 0; // a's perspective: positive = b owes a
   for (const entry of state.sharedEntries) {
@@ -307,11 +311,69 @@ export function pairwiseBalance(groupId, memberAId, memberBId) {
     if (entry.type === "payment") continue;
     const txs = transactionsFromSplits(entry.splits);
     for (const tx of txs) {
+      if (entry.settledMembers?.[tx.from]) continue;
       if (tx.from === memberBId && tx.to === memberAId) net += tx.amount;
       else if (tx.from === memberAId && tx.to === memberBId) net -= tx.amount;
     }
   }
   return Math.round(net * 100) / 100;
+}
+
+// Estado liquidado de un miembro en una entrada concreta. Útil para la
+// UI cuando filtras por contacto y quieres saber si su parte está
+// cerrada en este gasto. Devuelve el timestamp ISO o null.
+export function memberSettledAt(entry, memberId) {
+  if (!entry || !memberId) return null;
+  return entry.settledMembers?.[memberId] ?? null;
+}
+
+// Encuentra el miembro de un grupo que corresponde a un contacto de mi
+// lista. Dos vías: (a) el miembro fue añadido desde ese contacto del
+// admin (inviterContactId apunta al contacto), o (b) el miembro tiene
+// la misma cuenta vinculada que el contacto (authUserId coincide). El
+// segundo caso es el que cubre al miembro que entró por invitación
+// posterior, cuyo group_member.inviterContactId puede no coincidir con
+// nuestro contacto local.
+export function findGroupMemberForContact(groupId, contact) {
+  if (!contact) return null;
+  return state.groupMembers.find((m) =>
+    m.groupId === groupId &&
+    (m.inviterContactId === contact.id ||
+      (contact.authUserId && m.authUserId === contact.authUserId))
+  ) ?? null;
+}
+
+// Saldo total a través de todos los gastos de grupo en los que participa
+// este contacto. Mismo signo que pairwiseBalance: positivo = me debe;
+// negativo = le debo. Suma el saldo pairwise yo↔contacto en cada grupo.
+export function groupBalanceForContact(contact) {
+  if (!contact) return 0;
+  let total = 0;
+  for (const group of state.groups) {
+    const myMember = getMyMemberInGroup(group.id);
+    if (!myMember) continue;
+    const otherMember = findGroupMemberForContact(group.id, contact);
+    if (!otherMember || otherMember.id === myMember.id) continue;
+    total += pairwiseBalance(group.id, myMember.id, otherMember.id);
+  }
+  return Math.round(total * 100) / 100;
+}
+
+// Hay alguna entrada de grupo donde este contacto figura como
+// participante (con paid o owes > 0)? Usado para que contactHasEntries
+// considere a un contacto "activo" aunque solo aparezca en gastos
+// generados desde un grupo.
+export function contactHasGroupEntries(contact) {
+  if (!contact) return false;
+  for (const entry of state.sharedEntries) {
+    if (!entry.groupId || !entry.splits) continue;
+    const otherMember = findGroupMemberForContact(entry.groupId, contact);
+    if (!otherMember) continue;
+    const split = entry.splits[otherMember.id];
+    if (!split) continue;
+    if (Number(split.paid) > 0 || Number(split.owes) > 0) return true;
+  }
+  return false;
 }
 
 // Saldo del viewer actual (member auth_user_id === me) frente a cada

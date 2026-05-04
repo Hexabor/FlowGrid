@@ -4,6 +4,7 @@ import { saveContacts } from "../core/storage.js";
 import { createId } from "../core/utils.js";
 import { entryBalanceImpact, entryAsMyPerspective, renderSharedView, syncSharedContactOptions, syncSharedModeLabels } from "./shared.js";
 import { sendInvitation } from "./invitations.js";
+import { groupBalanceForContact, contactHasGroupEntries } from "./groups.js";
 
 export function getContact(id) {
   return state.contacts.find((contact) => contact.id === id);
@@ -18,13 +19,25 @@ export function contactHasEntries(id) {
   // inviter's contact_id in the cloud row) get attributed to my reciprocal
   // contact for that inviter — that's the contact the user sees in their
   // own list, and it's what callers ask about.
-  return state.sharedEntries.some(
+  const hasOneToOne = state.sharedEntries.some(
     (entry) => entryAsMyPerspective(entry).contactId === id
   );
+  if (hasOneToOne) return true;
+  // Group expenses don't carry a contactId — la membresía del contacto
+  // en cualquier grupo se chequea contra group_members. Sin esto, los
+  // contactos que solo aparecen en gastos de grupo se considerarían
+  // "sin actividad" y no asomarían como tarjeta de saldo.
+  return contactHasGroupEntries(getContact(id));
 }
 
 export function getSharedBalance(contactId) {
-  return state.sharedEntries
+  // Sumamos dos fuentes:
+  //   1) entradas 1↔1 directas (contactId === este contacto, no settled).
+  //   2) gastos de grupo donde ese contacto es miembro vinculado — el
+  //      saldo pairwise yo↔ese miembro a través de TODOS los grupos.
+  // El gasto de grupo de YouTube genera 5 saldos pairwise; cada uno se
+  // imputa a su contacto correspondiente igual que un gasto 1↔1.
+  const oneToOne = state.sharedEntries
     .map(entryAsMyPerspective)
     .filter((entry) => entry.contactId === contactId)
     // Settled entries are excluded from the live balance: that's the whole
@@ -32,6 +45,9 @@ export function getSharedBalance(contactId) {
     // list with a visual cue, just don't contribute to the running total.
     .filter((entry) => !entry.settledAt)
     .reduce((balance, entry) => balance + entryBalanceImpact(entry), 0);
+
+  const groupShare = groupBalanceForContact(getContact(contactId));
+  return Math.round((oneToOne + groupShare) * 100) / 100;
 }
 
 export function renderContacts() {

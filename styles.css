@@ -121,6 +121,16 @@ button {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Dispositivos sin hover real (móvil táctil): el tooltip salía con
+   el tap y resultaba ruido — el nombre del módulo ya se lee en el
+   título de la vista que se abre. Se mantiene aria-label accesible
+   para lectores de pantalla; solo desactivamos el ::after visual. */
+@media (hover: none) {
+  .nav-button::after {
+    display: none;
+  }
+}
+
 .nav-icon {
   display: block;
   width: 20px;
@@ -160,11 +170,11 @@ button {
     min-height: calc(100vh - 110px);
   }
 
-  #home-view.is-active > .panel:not(.home-highlights) {
+  /* Ahora que las "Novedades destacadas" viven en la vista Novedades,
+     el Home solo tiene un panel debajo de la topbar — lo centramos
+     verticalmente con margin-auto arriba y abajo. */
+  #home-view.is-active > .panel {
     margin-top: auto;
-  }
-
-  #home-view.is-active > .home-highlights {
     margin-bottom: auto;
   }
 }
@@ -567,49 +577,104 @@ h2 {
 
 .changelog-list {
   display: grid;
-  gap: 10px;
+  gap: 0;
+}
+
+/* Cada bloque de fecha es el "containing block" del sticky de su
+   propio header. Mismo patrón que .month-section en Movimientos: al
+   pasar al día siguiente el header se desadhiere de forma natural.
+   Margen-bottom amplio para que cada grupo de un mismo día quede
+   claramente separado del siguiente día. */
+.changelog-date-section {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 26px;
+}
+
+.changelog-date-section:last-child {
+  margin-bottom: 0;
+}
+
+.changelog-date-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 10px 6px 6px;
+  margin: 0 0 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid var(--line);
+}
+
+.changelog-date-header time {
+  font: inherit;
+  color: inherit;
 }
 
 .changelog-item {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
   background: #fbfcfd;
   border: 1px solid var(--line);
   border-radius: 8px;
+  overflow: hidden;
 }
 
-.changelog-meta {
+.changelog-item > summary {
+  list-style: none;
+  cursor: pointer;
   display: flex;
-  gap: 8px;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  -webkit-tap-highlight-color: rgba(15, 118, 110, 0.08);
 }
 
-.changelog-item time,
-.changelog-item code {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-transform: uppercase;
+.changelog-item > summary::-webkit-details-marker {
+  display: none;
 }
 
-.changelog-item code {
+.changelog-item > summary::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.changelog-item[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+.changelog-title {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.changelog-commit {
+  flex: 0 0 auto;
   padding: 2px 5px;
   background: #eef2f4;
   border-radius: 4px;
+  color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
-  text-transform: none;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
-.changelog-item h3 {
-  margin-bottom: 0;
-  font-size: 1rem;
-}
-
-.changelog-item ul {
+.changelog-changes {
   display: grid;
   gap: 5px;
-  padding-left: 18px;
+  padding: 0 14px 12px 32px;
   margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
@@ -639,7 +704,11 @@ h2 {
   position: relative;
   width: min(100%, 940px);
   max-height: calc(100vh - 32px);
-  overflow: auto;
+  /* Solo scroll vertical: cualquier overflow horizontal (tooltips
+     posicionados, contenido pegado al borde, etc.) se corta en lugar
+     de sumar una barra horizontal innecesaria. */
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 14px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -685,6 +754,15 @@ h2 {
 label {
   display: grid;
   gap: 6px;
+}
+
+/* `display: grid` arriba pisaba al atributo nativo [hidden] (que pone
+   display: none). Sin esta regla, cualquier <label hidden> seguía
+   ocupando una celda del grid del form. Mantener la semántica nativa
+   del atributo hidden es importante para los campos que ocultamos
+   condicionalmente (día/mes en plantilla, etc.). */
+label[hidden] {
+  display: none;
 }
 
 label span {
@@ -2008,6 +2086,79 @@ a.primary-action {
     grid-column: span 3;
   }
 
+  /* Modal de "Nuevo movimiento" en escritorio: el resto de forms con
+     clase .movement-form (recurring, payment) mantiene la rejilla de
+     4 columnas; aquí pasamos #movement-form a 2 columnas con jerarquía
+     vertical (Concepto+Fecha → Importe+Recurrencia → Emisor → Nota).
+     Los botones Gasto/Ingreso se hacen visibles también en PC para
+     que el toggle sea más obvio que el select hidden. */
+
+  /* Modal-dialog del movimiento: ~30% más estrecho que el default de
+     940px para que no se vea desplomado en escritorios anchos.
+     Otros modales (plantilla periódica, pago, grupo) mantienen su
+     ancho. */
+  #movement-modal .modal-dialog {
+    max-width: 660px;
+  }
+
+  #movement-form {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  #movement-form > * {
+    grid-column: 1 / -1;
+  }
+
+  #movement-form .type-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    order: 1;
+  }
+
+  /* Botones G/I en PC: presentes pero discretos (más bajos, menos
+     padding, borde fino). En móvil siguen con su tamaño grande. */
+  #movement-form .type-toggle-button {
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 0.92rem;
+    border-width: 1px;
+    border-radius: 8px;
+  }
+
+  /* Ocultar el select Tipo legacy en PC también — el toggle visual lo
+     reemplaza igual que en móvil. */
+  #movement-form > .type-select-field { display: none; }
+
+  #movement-form > label:nth-of-type(4) { order: 2; grid-column: span 1; } /* Concepto */
+  #movement-form > label:nth-of-type(2) { order: 3; grid-column: span 1; } /* Fecha */
+  #movement-form > label:nth-of-type(3) { order: 4; grid-column: span 1; } /* Importe */
+  #movement-form > label:nth-of-type(6) { order: 5; grid-column: span 1; } /* Recurrencia */
+  #movement-form > label:nth-of-type(5) { order: 6; grid-column: 1 / -1; } /* Emisor */
+  #movement-form > label.field-wide     { order: 7; grid-column: 1 / -1; } /* Nota */
+  #movement-form > label.toggle-field   { order: 8; grid-column: 1 / -1; }
+  #movement-form > #shared-fields       { order: 9; grid-column: 1 / -1; }
+  #movement-form > #edit-comment-field  { order: 10; grid-column: 1 / -1; }
+  #movement-form > #convert-to-recurring{ order: 11; grid-column: 1 / -1; }
+  #movement-form > button[type="submit"]{ order: 12; grid-column: 1 / -1; }
+
+  /* Nota: más alta verticalmente. El ancho lo dicta el grid (full
+     ancho del modal) para que se alinee con los pares de arriba. */
+  #movement-form #note {
+    min-height: 110px;
+  }
+
+  /* Bloque rosa de "Compartido con grupo": Pagador y Reparto pasan a
+     2 columnas en PC; el grid de partes y el feedback se quedan en
+     fila propia full ancho debajo. */
+  #movement-form .shared-group-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  #movement-form .shared-group-fields > #shared-group-shares,
+  #movement-form .shared-group-fields > .shared-uneven-feedback {
+    grid-column: 1 / -1;
+  }
+
   .primary-action {
     align-self: end;
   }
@@ -2519,16 +2670,26 @@ dt {
     grid-column: 1 / -1;
   }
 
-  .movement-form .type-toggle           { order: 1; }
-  .movement-form > label:nth-of-type(2) { order: 2; grid-column: span 1; } /* Fecha */
-  .movement-form > label:nth-of-type(6) { order: 3; grid-column: span 1; } /* Recurrencia */
-  .movement-form > label:nth-of-type(3) { order: 4; } /* Importe */
-  .movement-form > label:nth-of-type(4) { order: 5; } /* Concepto */
-  .movement-form > label:nth-of-type(5) { order: 6; } /* Emisor / receptor */
-  .movement-form > label.field-wide     { order: 7; } /* Nota */
-  .movement-form > label.toggle-field   { order: 8; } /* Gasto compartido */
-  .movement-form > #shared-fields       { order: 9; }
-  .movement-form > button[type="submit"]{ order: 10; }
+  /* Reorden móvil del modal de movimiento: Concepto + Fecha juntos
+     arriba (más jerarquía), luego Importe, y la Recurrencia baja al
+     5º lugar con tipografía menor para restarle peso visual. La
+     rejilla pasa a 60/40 (Concepto se lleva la columna ancha) — los
+     conceptos suelen ser más largos que la fecha (DD/MM/AAAA), que
+     cabe holgada en menos ancho. Solo afecta a Concepto/Fecha; los
+     demás campos siguen full ancho. */
+  #movement-form {
+    grid-template-columns: 3fr 2fr;
+  }
+  #movement-form .type-toggle           { order: 1; }
+  #movement-form > label:nth-of-type(4) { order: 2; grid-column: span 1; } /* Concepto */
+  #movement-form > label:nth-of-type(2) { order: 3; grid-column: span 1; } /* Fecha */
+  #movement-form > label:nth-of-type(3) { order: 4; } /* Importe */
+  #movement-form > label:nth-of-type(6) { order: 5; } /* Recurrencia */
+  #movement-form > label:nth-of-type(5) { order: 6; } /* Emisor / receptor */
+  #movement-form > label.field-wide     { order: 7; } /* Nota */
+  #movement-form > label.toggle-field   { order: 8; } /* Gasto compartido */
+  #movement-form > #shared-fields       { order: 9; }
+  #movement-form > button[type="submit"]{ order: 10; }
 
   #date-trigger {
     min-height: 48px;
@@ -2553,14 +2714,24 @@ dt {
     right: 16px;
   }
 
-  /* Recurrencia (paired with Fecha) and Concepto (full width below):
-     same content typography as Fecha so the row reads as a unit. */
-  #movement-form #concept,
-  #movement-form #recurrence {
+  /* Concepto: misma jerarquía que Fecha (a su lado) e Importe (debajo).
+     Mantenemos la tipografía grande para que sea el "qué" del gasto. */
+  #movement-form #concept {
     min-height: 48px;
     padding: 4px 10px;
     font-size: 1.7rem;
     font-weight: 700;
+  }
+
+  /* Recurrencia: secundaria. Tipografía menor (1.05rem) y caja más
+     baja para que pese menos visualmente que Concepto/Fecha/Importe.
+     El usuario que solo registra gastos puntuales no necesita verla
+     destacada. */
+  #movement-form #recurrence {
+    min-height: 40px;
+    padding: 4px 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
   }
 
   /* Gasto compartido toggle: turn into a proper tappable strip with
@@ -3587,6 +3758,53 @@ body.is-locked .shell {
      solo concepto + importe + próxima generación + (compartido). Al
      expandir aparece nota, periodicidad, emisor/receptor y botones. */
 
+/* Texto de feedback que aparece bajo el header de un modal (antes
+   estaba dentro del section-heading peleándose con la X — ahora vive
+   en una fila propia para que la X quede limpia a la derecha). */
+.modal-feedback {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.modal-feedback:empty {
+  display: none;
+}
+
+/* Reglas específicas del formulario de plantilla periódica para que
+   los bloques que actúan como "fila propia" no compartan grid con
+   inputs sueltos. Sin esto, el grid de 4 columnas distribuye toggle,
+   bloque rosa y botón submit en celdas raras (al lado de un input). */
+#recurring-form > .recurring-customize-toggle,
+#recurring-form > #recurring-shared-group-info,
+#recurring-form > button[type="submit"] {
+  grid-column: 1 / -1;
+}
+
+.recurring-customize-toggle {
+  justify-self: start;
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  margin: -4px 0 0;
+  font-size: 0.78rem;
+  color: var(--mod-violet, #7c3aed);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+.recurring-customize-toggle:hover {
+  text-decoration-style: solid;
+}
+
+#recurring-form > button[type="submit"] {
+  justify-self: stretch;
+  margin-top: 4px;
+}
+
 .recurring-blurb {
   margin: 6px 0 18px;
   color: var(--muted);
@@ -3981,6 +4199,12 @@ body.is-locked .shell {
   color: var(--mod-violet);
 }
 
+.group-role-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .group-hint {
   margin: 4px 0 14px;
   font-size: 0.85rem;
@@ -4098,6 +4322,89 @@ body.is-locked .shell {
   background: rgba(201, 42, 42, 0.08);
 }
 
+/* Footer del modal de gestión de grupo: dado que cada subform aplica
+   sus cambios al pulsar su propio botón, el footer NO es un "guardar"
+   global — es solo un cierre claro tras terminar de configurar. La
+   nota recuerda al usuario que no hay nada pendiente de aplicar. */
+.group-modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.group-modal-footer-hint {
+  margin: 0;
+  flex: 1 1 auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.group-modal-footer .primary-action {
+  flex: 0 0 auto;
+  min-width: 120px;
+}
+
+@media (max-width: 480px) {
+  .group-modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .group-modal-footer .primary-action {
+    width: 100%;
+  }
+}
+
+/* Collapsible "Crear contacto nuevo" dentro del modal de grupo: cierra
+   por defecto para no comer scroll si solo quieres añadir contactos
+   existentes. El summary cumple la doble función de etiqueta + toggle. */
+.group-new-contact-collapsible {
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.group-new-contact-collapsible > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.group-new-contact-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.group-new-contact-collapsible[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.group-new-contact-collapsible[open] > summary .callout-chevron {
+  transform: rotate(180deg);
+}
+
+.group-new-contact-collapsible > summary .callout-chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 160ms ease;
+}
+
+.group-new-contact-collapsible > .group-new-contact {
+  padding: 12px;
+  margin: 0;
+}
+
 /* Modal de confirmación robusta. Reutilizado en cualquier flujo que
    pida más que un confirm() nativo (borrar movimiento recurrente,
    borrar plantilla, etc.). El layout pone título en la sección-heading
@@ -4190,6 +4497,13 @@ body.is-locked .shell {
   color: var(--mod-orange);
   background: var(--mod-orange-bg);
   border-radius: 4px;
+}
+
+/* Mismo problema que con label[hidden]: el display: block de arriba
+   ganaba al atributo hidden y dejaba un bloque rosa visible aunque el
+   preview estuviera vacío. */
+.placeholder-preview[hidden] {
+  display: none;
 }
 
 /* Bloque "Compartido con un grupo" del modal de gasto. Aparece

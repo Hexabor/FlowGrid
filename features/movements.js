@@ -18,7 +18,7 @@ import { buildSplits, getMyMemberInGroup } from "./groups.js";
 import { getUserIdSync } from "../core/supabase.js";
 import { recordSharedEntryEdit } from "./edit-log.js";
 import { renderAnalysis } from "./analysis.js";
-import { openConvertFromMovement } from "./recurring.js";
+import { openConvertFromMovement, openConvertFromSharedEntry } from "./recurring.js";
 import { setMovementDate } from "../ui/datepicker.js";
 import { showConfirm } from "../ui/confirm.js";
 
@@ -95,6 +95,33 @@ export function syncMovementSelects() {
     ? previousFilterConcept
     : "all";
   syncCategoryFromConcept();
+  syncPartySuggestions();
+}
+
+// Datalist nativo para autocompletar el campo "Emisor / receptor".
+// Recoge cada party único que el usuario haya tecleado en cualquier
+// movimiento o plantilla periódica, normaliza espacios y duplicados
+// (case-insensitive), y los pinta como options. Se llama desde
+// syncMovementSelects, así que se mantiene fresco tras crear, editar
+// o eliminar movimientos. El mismo datalist alimenta el form de
+// movimiento y el de plantilla periódica (comparten id en el HTML).
+export function syncPartySuggestions() {
+  if (!elements.partySuggestions) return;
+  const seen = new Map(); // lower → display original
+  const collect = (value) => {
+    const trimmed = (value ?? "").trim();
+    if (!trimmed) return;
+    const key = trimmed.toLocaleLowerCase("es");
+    if (!seen.has(key)) seen.set(key, trimmed);
+  };
+  for (const m of state.movements) collect(m.party);
+  for (const t of state.recurringTemplates) collect(t.party);
+  const sorted = [...seen.values()].sort((a, b) =>
+    a.localeCompare(b, "es", { sensitivity: "base" })
+  );
+  elements.partySuggestions.innerHTML = sorted
+    .map((label) => `<option value="${label.replace(/"/g, "&quot;")}"></option>`)
+    .join("");
 }
 
 export function syncCategoryFromConcept() {
@@ -583,6 +610,13 @@ function duplicateMovementById(id) {
   if (!movement) return;
   state.editingMovementId = null;
   fillMovementForm(movement);
+  // El botón "Convertir en plantilla periódica" solo opera sobre un
+  // movimiento persistido (lee state.editingMovementId). Aquí estamos
+  // creando uno nuevo a partir de una copia: aún no hay nada que
+  // convertir, así que lo escondemos. Si el modal venía de un edit
+  // previo, fillMovementForm no toca este atributo y se quedaba
+  // visible — pulsarlo no hacía nada.
+  if (elements.convertToRecurring) elements.convertToRecurring.hidden = true;
   elements.submitLabel.textContent = "Anadir movimiento";
   elements.feedback.textContent = "Copia preparada. Ajusta lo que cambie.";
   openMovementModal();
@@ -809,20 +843,36 @@ elements.openMovementModal.addEventListener("click", () => {
 // source data; the recurring submit handler will link the source row.
 elements.convertToRecurring?.addEventListener("click", () => {
   try {
-    if (!state.editingMovementId) {
-      console.warn("[convert] no editingMovementId set");
+    // Dos contextos posibles: editando un movement (1↔1 con mi parte
+    // > 0, y modos equal/uneven) o editando un shared_entry sin
+    // movement asociado (modos `me-full` / `them-full`, donde la app
+    // no crea movement personal). Capturamos el objeto fuente antes
+    // de cerrar/resetear el form, que limpia el estado.
+    if (state.editingMovementId) {
+      const movement = state.movements.find((m) => m.id === state.editingMovementId);
+      if (!movement) {
+        console.warn("[convert] movement not found for id", state.editingMovementId);
+        return;
+      }
+      const captured = movement;
+      closeMovementModal();
+      resetMovementForm();
+      openConvertFromMovement(captured);
       return;
     }
-    const movement = state.movements.find((m) => m.id === state.editingMovementId);
-    if (!movement) {
-      console.warn("[convert] movement not found for id", state.editingMovementId);
+    if (state.editingSharedEntryId) {
+      const entry = state.sharedEntries.find((e) => e.id === state.editingSharedEntryId);
+      if (!entry) {
+        console.warn("[convert] shared entry not found for id", state.editingSharedEntryId);
+        return;
+      }
+      const captured = entry;
+      closeMovementModal();
+      resetMovementForm();
+      openConvertFromSharedEntry(captured);
       return;
     }
-    // Capturar valores ANTES de resetear el form, que limpia state.
-    const captured = movement;
-    closeMovementModal();
-    resetMovementForm();
-    openConvertFromMovement(captured);
+    console.warn("[convert] no editing context (neither movement nor shared entry)");
   } catch (err) {
     console.error("[convert] failed", err);
     alert("No se pudo abrir la conversión a plantilla. Mira consola.");

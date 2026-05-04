@@ -1,5 +1,173 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
+    title: "Móvil: sin tooltip al tocar los botones del menú",
+    changes: [
+      "Al tocar un botón de la barra de navegación en móvil, salía el nombre del módulo como tooltip — innecesario, porque el nombre ya se lee en el título de la vista que se abre. Ahora el tooltip solo aparece en dispositivos con hover real (PC). El aria-label se mantiene para lectores de pantalla.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
+    title: "Home centrado tras mover las novedades destacadas + changelog ordenado por fecha",
+    changes: [
+      "Al sacar las cards de \"Novedades destacadas\" del Home, el panel de módulos se hundía contra el borde inferior. Ahora se centra verticalmente entre la topbar y el final del viewport, como antes.",
+      "Changelog ordenado de más reciente a más antiguo de forma garantizada (el orden ya no depende del orden en el array fuente). Las entradas del mismo día siempre quedan contiguas y el separador del día queda más marcado para que el agrupamiento se lea de un vistazo.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
+    title: "Novedades destacadas se mueven al panel de Cambios + changelog colapsable",
+    changes: [
+      "Las dos tarjetas de Novedades destacadas (Movimientos periódicos y Gastos compartidos en grupo) salen del Home y pasan al panel \"Novedades\" — encima del changelog, que es donde tiene más sentido buscar lo nuevo.",
+      "El copy del card de gastos en grupo se actualiza para reflejar la liquidación parcial: \"Reparte un gasto entre 3 o más personas y liquida con cada uno por separado cuando os Bizumeéis — sin tener que esperar a saldar todo el grupo.\"",
+      "Changelog reorganizado: cada entrada arranca colapsada (solo el título visible) y se expande al pulsarla. La fecha aparece una sola vez por día como separador y queda fija al hacer scroll, igual que los meses en la lista de Movimientos.",
+      "Roadmap actualizado: \"Compartidos en grupo (3 o más personas)\" sale de la lista de próximas mejoras (ya entregado).",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
+    title: "Autocompletar en \"Emisor / receptor\" con valores ya usados",
+    changes: [
+      "El campo Emisor / receptor sugiere automáticamente nombres que ya hayas escrito en cualquier movimiento o plantilla periódica. Los duplicados (case-insensitive) se colapsan y la lista se ordena alfabéticamente.",
+      "Sin botón ni configuración: empieza a escribir y aparecen las coincidencias. La lista se actualiza sola cada vez que se abre el modal, así que las añadidas más recientes ya están disponibles.",
+      "Funciona tanto en el modal de Nuevo movimiento como en el de Nueva plantilla periódica (comparten la misma fuente de sugerencias).",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
+    title: "Móvil: Concepto/Fecha se reparten 60/40 en lugar de 50/50",
+    changes: [
+      "En el modal de \"Nuevo movimiento\" en móvil, la primera fila pasa a ser 60% Concepto y 40% Fecha. Los conceptos suelen ser más largos que un DD/MM/AAAA, así que el reparto les hace más justicia.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
+    title: "Modal de movimiento en PC: ~30% más estrecho",
+    changes: [
+      "El modal de \"Nuevo movimiento\" en escritorio pasa de 940px a 660px de ancho máximo. Los demás modales (plantilla periódica, pago, gestión de grupo) mantienen el ancho que ya tenían.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
+    title: "Modal de movimiento PC: ancho completo, Importe + Recurrencia juntos, Pagador + Reparto en una fila",
+    changes: [
+      "El form ya no se queda estrecho en el centro: ocupa el ancho del modal (940px max) y la nota se alinea con los pares de arriba en lugar de quedarse corta.",
+      "Importe y Recurrencia pasan a la misma fila (cada uno la mitad). Emisor / receptor baja debajo, full ancho.",
+      "Cuando activas \"Gasto compartido\" con un grupo, los campos Pagador y Reparto se ponen en la misma fila. El grid de partes desiguales y el feedback siguen full ancho debajo.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
+    title: "Modal de \"Nuevo movimiento\": jerarquía nueva en móvil y PC",
+    changes: [
+      "Móvil: el Concepto sube a la primera fila junto a la Fecha — son lo más importante para identificar el gasto. La Recurrencia baja al quinto lugar y queda con tipografía menor (1.05rem en lugar de 1.7rem) y caja más baja, ya que la mayoría de movimientos son puntuales y no necesita protagonismo.",
+      "PC: el modal pasa de un grid horizontal de 4 columnas a uno vertical de 2 columnas más estrecho (max 560px, centrado). Orden: botones Gasto/Ingreso (ahora visibles también en PC, pero discretos) → Concepto + Fecha → Importe → Emisor + Recurrencia → Nota → toggle de compartido → campos compartidos si aplican.",
+      "Nota en PC: el textarea queda restringido a 520px de ancho con altura mínima de 110px — menos horizontal y más vertical, más cómoda para escribir varias líneas.",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Convertir en plantilla periódica también desde gastos compartidos sin movimiento personal",
+    changes: [
+      "Si creas un gasto compartido en modo \"Te debe la cantidad total\" o \"Le debes la cantidad total\", FlowGrid no genera movimiento personal en tu lista (porque tu parte es 0). Antes esto significaba que no podías convertirlo en plantilla periódica — el botón vivía solo en el modal de movimiento. Ahora también aparece al editar el gasto compartido directamente desde la sección \"Movimientos compartidos\".",
+      "El flujo de conversión es idéntico: prefilla la plantilla con concepto, importe, contacto/grupo, modo y reparto; al crear, la plantilla queda con `lastGeneratedDate` igual a la fecha del gasto original para que el motor no duplique esa primera ocurrencia.",
+      "Limitación conocida: como las shared_entries no guardan referencia hacia atrás a la plantilla, la entrada original no muestra el badge 🔁. Las generaciones futuras sí lo mostrarán cuando aplique. Si llega a ser un problema, se añade en otra vuelta con una migración.",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Pulido modales: día/mes ocultos de verdad, X arriba a la derecha, sin scroll horizontal en gestionar grupo",
+    changes: [
+      "Modal \"Nueva plantilla periódica\": los campos \"Día del mes\" y \"Mes del año\" estaban marcados como ocultos pero se seguían viendo — una regla CSS global pisaba el atributo `hidden` en los <label>. Arreglado con un override `label[hidden] { display: none }`. Ahora solo aparecen al pulsar \"Personalizar día de repetición\".",
+      "Misma causa con la línea rosa pálida bajo el campo de nota (preview de placeholders): el `display: block` pisaba al `hidden` cuando el preview estaba vacío. Ahora desaparece como debería.",
+      "El texto \"El movimiento original se enlaza a la plantilla…\" del modal de plantilla deja la cabecera y pasa a una fila propia debajo del título, así la X de cerrar queda limpia arriba a la derecha.",
+      "El botón \"Crear plantilla\" / \"Crear plantilla y enlazar\" y el bloque rosa de info de grupo pasan a ocupar el ancho completo del modal en su propia fila — antes compartían celda con un input suelto, dando una sensación de \"tirados\".",
+      "Modal de gestión de grupo en escritorio: aparecía un scrollbar horizontal innecesario. Ahora cualquier overflow horizontal se corta en lugar de añadir barra (todos los modales).",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Plantilla periódica: día/mes derivados de la fecha + reparto del grupo heredado del gasto original",
+    changes: [
+      "Modal \"Nueva plantilla periódica\": los campos \"Día del mes\" y \"Mes del año\" ya no se ven por defecto. Se derivan automáticamente de \"Empieza el\" — si arrancas la plantilla el 03/05, se repite el día 3 de cada mes (o el 3 de mayo si es anual). Bajo \"Personalizar día de repetición\" puedes seguir cambiándolos para casos edge en los que la primera ocurrencia no coincide con el día de repetición.",
+      "Cuando conviertes a plantilla periódica un gasto de grupo con reparto desigual, los porcentajes del gasto original se heredan en la plantilla. Antes el motor usaba siempre el default del grupo (a partes iguales por defecto), perdiendo tu reparto custom.",
+      "El hint rosa del modal pasa a indicar exactamente qué reparto se aplicará: \"según los porcentajes que ya tenía el gasto original\", \"según porcentajes definidos en el grupo\" o \"partes iguales\".",
+      "Detalle interno: nuevo campo `recurring_templates.group_split` JSONB con porcentajes por miembro (suma 100). NULL = usar el default vivo del grupo.",
+      "⚠️ Requiere ejecutar la migración SQL `migrate-11-recurring-template-group-split.sql` en Supabase (añade la columna `group_split JSONB`).",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Copiar movimiento: ya no aparece el botón \"Convertir en plantilla periódica\"",
+    changes: [
+      "Al copiar un movimiento, el botón \"Convertir en plantilla periódica\" dejaba de funcionar (no había movimiento persistido al que apuntar) pero seguía visible si el modal venía de un edit previo. Ahora se oculta correctamente — la copia es un movimiento nuevo aún sin guardar, así que no hay nada que convertir hasta que la añadas. Después podrás convertirla desde su edición habitual.",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Modal de grupo: \"Hecho\" antes que la zona de Salir / Eliminar",
+    changes: [
+      "Reordenado el final del modal: el botón \"Hecho\" aparece justo después de la sección de miembros, y la zona de \"Salir del grupo\" / \"Eliminar grupo\" pasa al fondo del todo. Las acciones destructivas dejan de competir con el cierre habitual del modal — si solo querías añadir miembros y cerrar, lo tienes a mano sin scroll.",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Modal de grupo más compacto: menos scroll vertical",
+    changes: [
+      "El bloque \"Crear contacto nuevo\" ahora arranca colapsado: si solo quieres añadir contactos que ya tienes, no se ve. Pulsa el chevron para abrirlo cuando lo necesites.",
+      "La explicación de qué puedes hacer según tu rol (admin / miembro) deja de ocupar una línea fija y pasa a ser un botón con la \"i\" al lado del badge — pulsa y aparece como tooltip.",
+      "El hint del footer (\"los cambios se aplican al instante…\") se mueve a la izquierda del botón \"Hecho\" en la misma fila, en lugar de robar una línea propia.",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Gestión de grupos: \"Salir\" oculto si te quedarías sin admin + botón \"Hecho\" claro",
+    changes: [
+      "El botón \"Salir del grupo\" se oculta cuando eres el admin y no hay otro miembro vinculado (con cuenta) al que ceder el rol — antes aparecía visible y al pulsarlo te saltaba un error. La acción correcta en ese caso es Eliminar grupo, que destruye el grupo pero deja a los contactos en tu lista como independientes con sus saldos intactos.",
+      "El modal de gestión de grupo añade un botón \"Hecho\" claro al pie. La X arriba a la derecha sigue cerrando igual; el botón es solo para hacer obvio cómo terminar.",
+      "Pequeña nota explicativa al pie aclarando que cada cambio (renombrar, añadir/quitar miembros, ceder admin) se aplica al instante al pulsar su propio botón — no hay un \"guardar global\".",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Compartidos: liquidación independiente de cada parte en gastos de grupo",
+    changes: [
+      "Cuando filtras los movimientos compartidos por un contacto y aparece un gasto de grupo en el que ese contacto participa, la fila ahora muestra la perspectiva pairwise contigo: el desglose añade su parte (\"tu parte X · Oscar Y · resto del grupo Z\") y la cifra de la derecha es solo lo que ese contacto te debe (o tú a él) en ese gasto, no el total agregado.",
+      "Botón \"Marcar liquidado\" sobre esa fila pasa a liquidar SOLO la parte de ese contacto. Si en el grupo de YouTube Oscar te paga su parte vía Bizum, marcas su porción y las de los otros miembros siguen abiertas. \"Reabrir parte\" la vuelve a contar.",
+      "Sin filtro de contacto (o filtrando por grupo), la fila sigue mostrando la cifra agregada y el botón liquida la entrada entera, igual que antes.",
+      "Detalle interno: nuevo campo `settled_members` en `shared_entries` con un mapa member_id → timestamp. Coexiste con `settled_at` (que sigue cubriendo la liquidación global). El historial de cambios anota cuántas partes se marcan o reabren.",
+      "⚠️ Requiere ejecutar la migración SQL `migrate-10-shared-entry-settled-members.sql` en Supabase (añade la columna `settled_members JSONB`).",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    commit: "dev@HEAD",
+    title: "Compartidos: las deudas de grupo se agregan al saldo de cada contacto",
+    changes: [
+      "Cuando metes un gasto de grupo (p. ej. una suscripción de YouTube con 5 personas), FlowGrid ya generaba el reparto pero esos saldos no aparecían en las cards de Saldos por contacto — solo en una vista aparte. Ahora el grupo es lo que siempre fue conceptualmente: una herramienta para soltar varias deudas a la vez. El saldo real se vive con cada contacto, igual que un gasto 1↔1.",
+      "La card de saldo de cada contacto suma su parte 1↔1 + su parte de cualquier grupo en el que participe. Si te debe 5 € por una cena y 4 € por la suscripción de Netflix del grupo, ves 9 €.",
+      "Filtrar los movimientos compartidos por un contacto ahora incluye también los gastos de grupo en los que ese contacto aparece — no solo los 1↔1. El filtro \"Contacto o grupo\" sigue ahí por si quieres aislar un grupo concreto.",
+      "Movimientos de grupo en la lista: el desglose pasa a ser \"Total X — tu parte Y · resto del grupo Z\", y la cifra de la derecha refleja correctamente lo que te deben (o debes) según seas pagador o no. Antes mostraba 0 € porque el cálculo asumía el modelo 1↔1.",
+      "Se ha quitado el panel \"Mis grupos\" experimental que apareció en una versión anterior de hoy — la información que daba ya está en las cards de contactos.",
+    ],
+  },
+  {
     date: "2026-05-03",
     commit: "dev@HEAD",
     title: "Contactos y grupos: vista propia en la barra lateral, ya no en Configuración",

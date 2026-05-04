@@ -80,6 +80,11 @@ function recurringTemplateToCloud(t, ownerId) {
     // Cuando la plantilla apunta a un grupo, los campos shared_* se
     // ignoran y group_id manda. Para 1↔1 legacy va NULL.
     group_id: t.groupId ?? null,
+    // Reparto custom por miembro en plantillas de grupo: {member_id: percent}.
+    // NULL = usar el default_split del grupo al materializar. Cuando se
+    // crea convirtiendo un movimiento desigual existente, se rellena con
+    // los porcentajes calculados desde sus splits.owes.
+    group_split: t.groupSplit ?? null,
     created_at: t.createdAt ?? new Date().toISOString(),
   };
 }
@@ -106,6 +111,7 @@ function recurringTemplateFromCloud(row) {
     sharedMyShare: row.shared_my_share != null ? Number(row.shared_my_share) : null,
     sharedTheirShare: row.shared_their_share != null ? Number(row.shared_their_share) : null,
     groupId: row.group_id ?? null,
+    groupSplit: row.group_split ?? null,
     createdAt: row.created_at,
   };
 }
@@ -159,6 +165,10 @@ function sharedToCloud(e, ownerId) {
     their_share: e.theirShare ?? 0,
     source_movement_id: e.sourceMovementId ?? null,
     settled_at: e.settledAt ?? null,
+    // Liquidación granular por miembro en gastos de grupo: { member_id:
+    // timestamp }. NULL en entradas 1↔1 o en grupos sin partes
+    // liquidadas individualmente.
+    settled_members: e.settledMembers ?? null,
     // Cuando la entrada pertenece a un grupo (3+ personas), group_id y
     // splits llevan el desglose canónico. Para 1↔1 legacy, ambos van NULL.
     group_id: e.groupId ?? null,
@@ -183,6 +193,7 @@ function sharedFromCloud(row) {
     theirShare: Number(row.their_share),
     sourceMovementId: row.source_movement_id ?? null,
     settledAt: row.settled_at ?? null,
+    settledMembers: row.settled_members ?? null,
     groupId: row.group_id ?? null,
     splits: row.splits ?? null,
     createdAt: row.created_at,

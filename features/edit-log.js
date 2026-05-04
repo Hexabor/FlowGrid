@@ -74,6 +74,24 @@ function buildSummary(oldEntry, newEntry) {
   if ((oldEntry.settledAt ?? null) !== (newEntry.settledAt ?? null)) {
     changes.push(newEntry.settledAt ? "marcado como liquidado" : "reabierto");
   }
+  const oldSM = oldEntry.settledMembers || {};
+  const newSM = newEntry.settledMembers || {};
+  const added = Object.keys(newSM).filter((k) => !oldSM[k]);
+  const removed = Object.keys(oldSM).filter((k) => !newSM[k]);
+  if (added.length) {
+    changes.push(
+      added.length === 1
+        ? "parte de un miembro marcada como liquidada"
+        : `partes de ${added.length} miembros marcadas como liquidadas`
+    );
+  }
+  if (removed.length) {
+    changes.push(
+      removed.length === 1
+        ? "parte de un miembro reabierta"
+        : `partes de ${removed.length} miembros reabiertas`
+    );
+  }
   return changes.length ? changes.join(", ") : "sin cambios materiales";
 }
 

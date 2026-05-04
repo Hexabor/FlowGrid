@@ -124,17 +124,34 @@ function openGroupModal(groupId) {
 
   // Rename form: solo visible / activo para admin.
   elements.groupRenameForm.hidden = !admin;
-  // Add-member forms (existente + nuevo) y el divider: solo admin.
+  // Add-member: form de existente y collapsible de nuevo, solo admin.
   elements.groupAddMemberForm.hidden = !admin;
-  if (elements.groupNewContactForm) elements.groupNewContactForm.hidden = !admin;
-  const divider = elements.groupModal?.querySelector(".group-add-member-divider");
-  if (divider) divider.hidden = !admin;
+  const newContactDetails = elements.groupModal?.querySelector(".group-new-contact-collapsible");
+  if (newContactDetails) {
+    newContactDetails.hidden = !admin;
+    // Cada vez que se abre el modal, el collapsible arranca cerrado para
+    // no comer scroll vertical innecesario.
+    newContactDetails.open = false;
+  }
 
   // Botones de salir / eliminar.
-  // - Salir: visible si soy miembro vinculado activo.
+  // - Salir: visible si soy miembro vinculado activo Y, en caso de ser
+  //   admin, hay otro miembro vinculado al que ceder el rol. Si soy el
+  //   único vinculado del grupo, "Salir" no es una acción válida — la
+  //   alternativa es Eliminar (gestos distintos: salir conserva el
+  //   grupo para los demás; eliminar lo destruye y los contactos siguen
+  //   en mi lista como independientes).
   // - Eliminar: visible solo si soy admin.
   const myMember = getMyMemberInGroup(groupId);
-  elements.groupLeaveButton.hidden = !myMember;
+  const otherLinkedActive = state.groupMembers.some(
+    (m) =>
+      m.groupId === groupId &&
+      m.id !== myMember?.id &&
+      m.authUserId &&
+      !m.leftAt
+  );
+  const canLeave = Boolean(myMember) && (!admin || otherLinkedActive);
+  elements.groupLeaveButton.hidden = !canLeave;
   elements.groupDeleteButton.hidden = !admin;
 
   renderMembersList(group);
@@ -263,6 +280,7 @@ elements.groupsList?.addEventListener("click", (event) => {
 });
 
 elements.closeGroupModal?.addEventListener("click", closeGroupModal);
+elements.groupModalDone?.addEventListener("click", closeGroupModal);
 elements.groupModal?.addEventListener("click", (event) => {
   if (event.target === elements.groupModal) closeGroupModal();
 });

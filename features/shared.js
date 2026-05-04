@@ -3,7 +3,7 @@ import { elements, openMovementModal } from "../core/dom.js";
 import { saveMovements, saveSharedEntries, saveContacts } from "../core/storage.js";
 import { SHARED_MODES } from "../core/constants.js";
 import { createId, formatDate, formatMoney, formatMonthLabel } from "../core/utils.js";
-import { getContactName, getSharedBalance, contactHasEntries, renderContacts } from "./contacts.js";
+import { getContact, getContactName, getSharedBalance, contactHasEntries, renderContacts } from "./contacts.js";
 import { renderMovements, syncMovementSelects, fillMovementForm } from "./movements.js";
 import { setMovementDate, setPaymentDate } from "../ui/datepicker.js";
 import { getUserIdSync } from "../core/supabase.js";
@@ -15,7 +15,20 @@ import {
   getMyMemberInGroup,
   resolveMemberView,
   buildSplits,
+  findGroupMemberForContact,
+  memberSettledAt,
 } from "./groups.js";
+
+// Filtro de la lista de movimientos compartidos. Histórico: el state
+// guardaba un id de contacto pelado o "all". Ahora aceptamos también
+// prefijos "contact:<id>" y "group:<id>". Los ids antiguos sin prefijo
+// se siguen interpretando como contactos para no romper compat.
+function parseSharedFilter(value) {
+  if (!value || value === "all") return { kind: "all", id: null };
+  if (value.startsWith("group:")) return { kind: "group", id: value.slice(6) };
+  if (value.startsWith("contact:")) return { kind: "contact", id: value.slice(8) };
+  return { kind: "contact", id: value };
+}
 
 // Helper para parsear el value del select #shared-contact, que ahora
 // mezcla contactos y grupos con prefijos "contact:" / "group:".
@@ -63,6 +76,30 @@ export function entryAsMyPerspective(entry) {
 }
 
 export function entryBalanceImpact(entry) {
+  // Group entries: usar el modelo de splits. Si soy pagador (mi paid >
+  // 0), los demás me deben sus owes — sumo solo los splits NO
+  // liquidados individualmente. Si soy participante no-pagador, debo
+  // mi propia parte salvo que esté ya liquidada.
+  if (entry.groupId && entry.splits) {
+    const myMember = getMyMemberInGroup(entry.groupId);
+    if (!myMember) return 0;
+    const mySplit = entry.splits[myMember.id];
+    if (!mySplit) return 0;
+    const myPaid = Number(mySplit.paid) || 0;
+    const myOwes = Number(mySplit.owes) || 0;
+    const settled = entry.settledMembers || {};
+    if (myPaid > 0) {
+      let owedToMe = 0;
+      for (const [memberId, split] of Object.entries(entry.splits)) {
+        if (memberId === myMember.id) continue;
+        if (settled[memberId]) continue;
+        owedToMe += Number(split.owes) || 0;
+      }
+      return Math.round(owedToMe * 100) / 100;
+    }
+    if (settled[myMember.id]) return 0;
+    return -myOwes;
+  }
   if (entry.type === "expense") {
     return entry.paidBy === "me" ? entry.theirShare : -entry.myShare;
   }
@@ -564,6 +601,15 @@ export function openSharedEntryEdit(entry) {
     // the contact would require updating a contact_id row that lives in
     // the partner's account (which RLS doesn't let us touch).
     elements.sharedContact.disabled = isPartnerEntry;
+    // "Convertir en plantilla periódica": hacemos visible el botón
+    // cuando estamos editando un shared_entry mío sin movement
+    // asociado (típico en modo `me-full` / `them-full`, donde no hay
+    // movement personal y por tanto el flujo habitual del modal de
+    // movimiento no aplica). Solo para el owner — un partner no puede
+    // crear plantillas en mi cuenta.
+    if (elements.convertToRecurring) {
+      elements.convertToRecurring.hidden = isPartnerEntry;
+    }
   }
 
   // Editing any shared entry (own or partner) surfaces the optional
@@ -685,18 +731,25 @@ function renderSharedBalances() {
   // mostramos un mensaje guía. En desktop renderizamos la rejilla
   // entera como hasta ahora.
   const onMobile = window.matchMedia("(max-width: 719px)").matches;
-  const selectedId = state.sharedFilterContactId;
+  const filter = parseSharedFilter(state.sharedFilterContactId);
   let toRender = contactsWithActivity;
 
   if (onMobile) {
-    if (selectedId === "all") {
+    if (filter.kind === "all") {
       // Resumen tappable: un listado plano de todos los contactos con
       // saldo actual. Clicar uno equivale a seleccionarlo en el
       // dropdown — abre la card detallada y filtra los movimientos.
       renderMobileBalanceSummary(contactsWithActivity);
       return;
     }
-    toRender = contactsWithActivity.filter((c) => c.id === selectedId);
+    if (filter.kind === "group") {
+      // Estamos filtrando por un grupo: el panel de Saldos por contacto
+      // no aplica — el saldo del grupo se ve en el panel "Mis grupos"
+      // de abajo. Limpiamos para no mostrar info redundante o errónea.
+      elements.sharedBalances.innerHTML = "";
+      return;
+    }
+    toRender = contactsWithActivity.filter((c) => c.id === filter.id);
     if (!toRender.length) {
       elements.sharedBalances.innerHTML =
         '<p class="empty-state empty-state--inline">Sin actividad con este contacto.</p>';
@@ -769,28 +822,81 @@ function renderSharedBalances() {
 
 function renderSharedFilterOptions() {
   const selected = state.sharedFilterContactId;
-  const optionsMarkup = ['<option value="all">Todos</option>']
-    .concat(state.contacts.map((contact) => `<option value="${contact.id}">${contact.name}</option>`))
-    .join("");
+  const contacts = state.contacts.slice().sort((a, b) =>
+    a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+  );
+  const groups = state.groups.slice().sort((a, b) =>
+    a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+  );
+
+  let optionsMarkup = '<option value="all">Todos</option>';
+  if (contacts.length) {
+    optionsMarkup += '<optgroup label="Contactos">';
+    optionsMarkup += contacts
+      .map((c) => `<option value="contact:${c.id}">${c.name}</option>`)
+      .join("");
+    optionsMarkup += "</optgroup>";
+  }
+  if (groups.length) {
+    optionsMarkup += '<optgroup label="Grupos">';
+    optionsMarkup += groups
+      .map((g) => `<option value="group:${g.id}">${g.name}</option>`)
+      .join("");
+    optionsMarkup += "</optgroup>";
+  }
+
   elements.sharedContactFilter.innerHTML = optionsMarkup;
   elements.sharedMobileContactPicker.innerHTML = optionsMarkup;
 
-  const validSelected = state.contacts.some((contact) => contact.id === selected) ? selected : "all";
+  // Validar el filtro actual contra las opciones disponibles. Si el
+  // valor anterior era un id pelado (legacy), lo normalizamos a
+  // "contact:<id>" si aún existe; si ya no existe, caemos a "all".
+  let normalised = selected;
+  if (selected && selected !== "all" && !selected.startsWith("contact:") && !selected.startsWith("group:")) {
+    normalised = `contact:${selected}`;
+  }
+  const parsed = parseSharedFilter(normalised);
+  let validSelected = "all";
+  if (parsed.kind === "contact" && contacts.some((c) => c.id === parsed.id)) {
+    validSelected = `contact:${parsed.id}`;
+  } else if (parsed.kind === "group" && groups.some((g) => g.id === parsed.id)) {
+    validSelected = `group:${parsed.id}`;
+  }
   elements.sharedContactFilter.value = validSelected;
   elements.sharedMobileContactPicker.value = validSelected;
   state.sharedFilterContactId = validSelected;
 }
 
 function renderSharedEntries() {
-  const contactId = state.sharedFilterContactId;
+  const filter = parseSharedFilter(state.sharedFilterContactId);
+  // Focus contact: cuando filtramos por un contacto, las group entries
+  // se renderizan con la perspectiva pairwise yo↔ese contacto (no la
+  // agregada). buildSharedEntryRow lo recibe como argumento.
+  const focusContact = filter.kind === "contact" ? getContact(filter.id) : null;
 
   // Flip every entry to my perspective up front so the contactId filter
   // and the row builder both see entries as "from my point of view".
   // The original raw entries stay in state.sharedEntries untouched.
   let entries = state.sharedEntries.map(entryAsMyPerspective);
 
-  if (contactId !== "all") {
-    entries = entries.filter((entry) => entry.contactId === contactId);
+  if (filter.kind === "contact") {
+    // Un contacto puede tener actividad por dos vías: entradas 1↔1
+    // (entry.contactId === él) o entradas de grupo donde ese contacto
+    // es miembro. Incluimos ambas para que el filtro refleje TODO lo
+    // que ese contacto te debe (y ya está agregado en su saldo).
+    const contact = getContact(filter.id);
+    entries = entries.filter((entry) => {
+      if (entry.contactId === filter.id) return true;
+      if (entry.groupId && contact) {
+        const member = findGroupMemberForContact(entry.groupId, contact);
+        if (!member) return false;
+        const split = entry.splits?.[member.id];
+        return Boolean(split) && (Number(split.paid) > 0 || Number(split.owes) > 0);
+      }
+      return false;
+    });
+  } else if (filter.kind === "group") {
+    entries = entries.filter((entry) => entry.groupId === filter.id);
   }
 
   entries.sort((a, b) => (b.date + b.createdAt).localeCompare(a.date + a.createdAt));
@@ -814,22 +920,74 @@ function renderSharedEntries() {
       fragment.append(monthHeader);
       lastMonthKey = monthKey;
     }
-    fragment.append(buildSharedEntryRow(entry));
+    fragment.append(buildSharedEntryRow(entry, focusContact));
   });
 
   elements.sharedEntries.append(fragment);
 }
 
-function buildSharedEntryRow(entry) {
+function buildSharedEntryRow(entry, focusContact = null) {
   const myUid = getUserIdSync();
   const isMine = !entry.ownerId || entry.ownerId === myUid;
   const isSettled = Boolean(entry.settledAt);
+
+  // Cuando filtramos por contacto y la entry es de grupo, ajustamos la
+  // fila a la perspectiva pairwise yo↔ese contacto: el desglose pasa a
+  // mostrar solo su parte y la cifra de la derecha es lo que ese
+  // contacto te debe (o tú a él) en este gasto concreto. El botón
+  // "Marcar liquidado" pasa a liquidar la parte de ese contacto en
+  // settledMembers, no la entrada entera.
+  let pairwise = null;
+  if (focusContact && entry.groupId && entry.splits) {
+    const myMember = getMyMemberInGroup(entry.groupId);
+    const otherMember = findGroupMemberForContact(entry.groupId, focusContact);
+    if (myMember && otherMember && myMember.id !== otherMember.id) {
+      const mySplit = entry.splits[myMember.id] || { paid: 0, owes: 0 };
+      const otherSplit = entry.splits[otherMember.id] || { paid: 0, owes: 0 };
+      const myPaid = Number(mySplit.paid) || 0;
+      const myOwes = Number(mySplit.owes) || 0;
+      const otherPaid = Number(otherSplit.paid) || 0;
+      const otherOwes = Number(otherSplit.owes) || 0;
+      let direction = "none"; // 'theyOwe' | 'iOwe' | 'none'
+      let pairAmount = 0;
+      let debtorMemberId = null;
+      let settledTimestamp = null;
+      if (myPaid > 0 && otherOwes > 0) {
+        direction = "theyOwe";
+        pairAmount = otherOwes;
+        debtorMemberId = otherMember.id;
+      } else if (otherPaid > 0 && myOwes > 0) {
+        direction = "iOwe";
+        pairAmount = myOwes;
+        debtorMemberId = myMember.id;
+      }
+      if (debtorMemberId) {
+        settledTimestamp = memberSettledAt(entry, debtorMemberId);
+      }
+      pairwise = {
+        myMember,
+        otherMember,
+        myPaid,
+        myOwes,
+        otherPaid,
+        otherOwes,
+        direction,
+        pairAmount,
+        debtorMemberId,
+        settledTimestamp,
+        otherName: focusContact.name,
+      };
+    }
+  }
+
+  const isPairSettled = Boolean(pairwise?.settledTimestamp);
+  const showAsSettled = isSettled || isPairSettled;
 
   const row = document.createElement("article");
   row.className = "shared-entry";
   row.dataset.id = entry.id;
   row.dataset.type = entry.type;
-  if (isSettled) row.classList.add("is-settled");
+  if (showAsSettled) row.classList.add("is-settled");
   if (!isMine) row.classList.add("is-partner");
 
   const date = document.createElement("span");
@@ -852,8 +1010,28 @@ function buildSharedEntryRow(entry) {
   if (entry.type === "expense" && entry.splitMode !== "full") {
     const breakdown = document.createElement("span");
     breakdown.className = "shared-entry-breakdown";
-    const contactName = getContactName(entry.contactId);
-    breakdown.textContent = `Total ${formatMoney(entry.total)} — tu ${formatMoney(entry.myShare)} · ${contactName} ${formatMoney(entry.theirShare)}`;
+    if (entry.groupId && entry.splits) {
+      const myMember = getMyMemberInGroup(entry.groupId);
+      const myOwes = myMember ? (Number(entry.splits[myMember.id]?.owes) || 0) : 0;
+      if (pairwise) {
+        // Perspectiva pairwise: tu parte + parte del contacto + resto.
+        const otherOwes = pairwise.otherOwes;
+        const rest = Math.max(
+          0,
+          Math.round((Number(entry.total) - myOwes - otherOwes) * 100) / 100
+        );
+        breakdown.textContent =
+          `Total ${formatMoney(entry.total)} — tu parte ${formatMoney(myOwes)}` +
+          ` · ${pairwise.otherName} ${formatMoney(otherOwes)}` +
+          (rest > 0 ? ` · resto del grupo ${formatMoney(rest)}` : "");
+      } else {
+        const others = Math.max(0, Math.round((Number(entry.total) - myOwes) * 100) / 100);
+        breakdown.textContent = `Total ${formatMoney(entry.total)} — tu parte ${formatMoney(myOwes)} · resto del grupo ${formatMoney(others)}`;
+      }
+    } else {
+      const contactName = getContactName(entry.contactId);
+      breakdown.textContent = `Total ${formatMoney(entry.total)} — tu ${formatMoney(entry.myShare)} · ${contactName} ${formatMoney(entry.theirShare)}`;
+    }
     main.append(breakdown);
   }
 
@@ -862,9 +1040,30 @@ function buildSharedEntryRow(entry) {
     settledTag.className = "shared-entry-settled-tag";
     settledTag.textContent = `Liquidado el ${formatDate(entry.settledAt.slice(0, 10))}`;
     main.append(settledTag);
+  } else if (isPairSettled) {
+    const settledTag = document.createElement("span");
+    settledTag.className = "shared-entry-settled-tag";
+    settledTag.textContent =
+      `Parte de ${pairwise.otherName} liquidada el ` +
+      `${formatDate(pairwise.settledTimestamp.slice(0, 10))}`;
+    main.append(settledTag);
   }
 
-  const impact = entryBalanceImpact(entry);
+  // Cifra a la derecha. Sin foco: el impact agregado de la entry. Con
+  // foco: solo la parte yo↔contacto (positiva si me debe, negativa si
+  // le debo, 0 si liquidada o sin deuda directa).
+  let impact;
+  if (pairwise) {
+    if (isPairSettled || pairwise.direction === "none") {
+      impact = 0;
+    } else if (pairwise.direction === "theyOwe") {
+      impact = pairwise.pairAmount;
+    } else {
+      impact = -pairwise.pairAmount;
+    }
+  } else {
+    impact = entryBalanceImpact(entry);
+  }
   const amount = document.createElement("span");
   amount.className = "shared-entry-amount";
   if (impact > 0.005) {
@@ -879,19 +1078,33 @@ function buildSharedEntryRow(entry) {
 
   row.append(date, main, amount);
 
-  // Per-entry liquidate toggle. Available on expenses (settling a
-  // payment row makes no sense — payments already cancel a balance).
-  // Both sides can toggle, last-write-wins via RLS WITH CHECK.
+  // Per-entry liquidate toggle. Sin foco pairwise: liquida la entrada
+  // entera (settledAt). Con foco pairwise en una group entry con deuda
+  // entre nosotros: liquida solo la parte de ese par (settledMembers).
+  // Tipo "payment" no se liquida.
   if (entry.type === "expense") {
-    const settleButton = document.createElement("button");
-    settleButton.type = "button";
-    settleButton.className = "ghost-action shared-entry-settle";
-    settleButton.dataset.action = "toggle-settle";
-    settleButton.textContent = isSettled ? "Reabrir" : "Marcar liquidado";
-    settleButton.title = isSettled
-      ? "Volver a sumar al saldo"
-      : "Quitar este gasto del saldo total";
-    row.append(settleButton);
+    if (pairwise && pairwise.debtorMemberId) {
+      const settleButton = document.createElement("button");
+      settleButton.type = "button";
+      settleButton.className = "ghost-action shared-entry-settle";
+      settleButton.dataset.action = "toggle-settle-member";
+      settleButton.dataset.memberId = pairwise.debtorMemberId;
+      settleButton.textContent = isPairSettled ? "Reabrir parte" : "Marcar liquidado";
+      settleButton.title = isPairSettled
+        ? `Volver a contar la parte de ${pairwise.otherName} en el saldo`
+        : `Cerrar la parte de ${pairwise.otherName} en este gasto sin tocar las de los demás miembros`;
+      row.append(settleButton);
+    } else if (!pairwise) {
+      const settleButton = document.createElement("button");
+      settleButton.type = "button";
+      settleButton.className = "ghost-action shared-entry-settle";
+      settleButton.dataset.action = "toggle-settle";
+      settleButton.textContent = isSettled ? "Reabrir" : "Marcar liquidado";
+      settleButton.title = isSettled
+        ? "Volver a sumar al saldo"
+        : "Quitar este gasto del saldo total";
+      row.append(settleButton);
+    }
   }
 
   // History button on every expense row — opens a modal listing every
@@ -1030,6 +1243,26 @@ elements.sharedEntries.addEventListener("click", async (event) => {
     return;
   }
 
+  if (action === "toggle-settle-member") {
+    // Liquidación granular en una entry de grupo: marca solo la parte
+    // de un miembro (el deudor del par yo↔contacto) en settledMembers.
+    // El campo es un mapa { member_id: timestamp }; ausencia = abierto.
+    const memberId = button.dataset.memberId;
+    if (!memberId) return;
+    const before = { ...entry, settledMembers: { ...(entry.settledMembers || {}) } };
+    const next = { ...(entry.settledMembers || {}) };
+    if (next[memberId]) {
+      delete next[memberId];
+    } else {
+      next[memberId] = new Date().toISOString();
+    }
+    entry.settledMembers = Object.keys(next).length ? next : null;
+    saveSharedEntries();
+    await recordSharedEntryEdit(before, entry, "");
+    renderSharedView();
+    return;
+  }
+
   if (action === "show-history") {
     openHistoryModal(entry.id);
     return;
@@ -1089,7 +1322,7 @@ elements.sharedBalances.addEventListener("click", (event) => {
     return;
   }
 
-  state.sharedFilterContactId = contactId;
+  state.sharedFilterContactId = `contact:${contactId}`;
   elements.sharedContactFilter.value = state.sharedFilterContactId;
   elements.sharedMobileContactPicker.value = state.sharedFilterContactId;
   // Re-render balances too (in móvil cambia el resumen a la card

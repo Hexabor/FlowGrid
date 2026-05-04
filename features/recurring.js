@@ -45,12 +45,26 @@ import {
 } from "./groups.js";
 import { setRecurringStartDate, setRecurringEndDate } from "../ui/datepicker.js";
 import { showConfirm } from "../ui/confirm.js";
+import { syncPartySuggestions } from "./movements.js";
 
 // When the user clicks "Convertir en plantilla periódica" in the movement
 // modal, we stash the source movement's id here so the recurring form's
 // submit handler can link the existing movement to the freshly created
 // template (set its recurringTemplateId so 🔁 shows up immediately).
 let convertingFromMovementId = null;
+// Mismo patrón que convertingFromMovementId, pero para el caso en el
+// que se convierte un shared_entry directamente sin movement asociado
+// (típico en modo "Te debe la cantidad total" / "Le debes la cantidad
+// total", donde no se crea movement personal). El submit usa la fecha
+// del entry para sembrar lastGeneratedDate.
+let convertingFromSharedEntryId = null;
+// Cuando una plantilla se crea convirtiendo un gasto desigual de
+// grupo, propagamos el reparto custom (porcentajes por miembro) en
+// esta variable. createTemplateFromForm la lee al construir la
+// plantilla. Sin UI propia todavía: si el usuario cambia el grupo en
+// el dropdown, el split custom queda invalidado (el grupo nuevo no
+// conoce esos member_ids).
+let pendingGroupSplit = null;
 
 // ---- date helpers -----------------------------------------------------
 
@@ -337,27 +351,31 @@ function materialise(template, isoDate) {
   let skipMovement = false;
 
   if (isSharedGroup) {
-    // Plantilla de grupo: usar el reparto por defecto del grupo,
-    // pagador siempre = yo (el creador de la plantilla, que es el
-    // único que ejecuta el motor en su cliente).
+    // Plantilla de grupo: el reparto sale de template.groupSplit si
+    // está definido (porcentajes custom heredados del gasto desigual
+    // de origen al convertir), o si no, del default del grupo. El
+    // pagador es siempre yo — el motor solo corre en mi cliente.
     const group = getGroupById(template.groupId);
     const myMember = getMyMemberInGroup(template.groupId);
     if (!group || !myMember) {
       // Grupo o membresía perdida — no podemos generar. Saltar.
       return { movement: null, sharedEntry: null };
     }
-    const splitMode = group.defaultSplitMode || "equal";
+    // Decidir fuente del reparto: la plantilla manda si tiene
+    // groupSplit; si no, el default del grupo.
+    const sourceSplit = template.groupSplit ?? group.defaultSplit;
+    const sourceMode = template.groupSplit
+      ? "uneven"
+      : (group.defaultSplitMode || "equal");
     let perMemberShares = null;
-    if (splitMode === "uneven" && group.defaultSplit) {
-      // default_split es {member_id: percent}. Convertir a cantidades
-      // en este importe concreto para pasarlas a buildSplits.
-      const totalPercent = Object.values(group.defaultSplit).reduce(
+    if (sourceMode === "uneven" && sourceSplit) {
+      const totalPercent = Object.values(sourceSplit).reduce(
         (acc, p) => acc + (Number(p) || 0),
         0
       );
       if (totalPercent > 0) {
         perMemberShares = {};
-        for (const [memberId, percent] of Object.entries(group.defaultSplit)) {
+        for (const [memberId, percent] of Object.entries(sourceSplit)) {
           perMemberShares[memberId] = (Number(percent) / totalPercent) * template.amount;
         }
       }
@@ -368,7 +386,7 @@ function materialise(template, isoDate) {
         groupId: template.groupId,
         total: template.amount,
         payerMemberId: myMember.id,
-        mode: splitMode === "uneven" && perMemberShares ? "uneven" : "equal",
+        mode: sourceMode === "uneven" && perMemberShares ? "uneven" : "equal",
         perMemberShares,
       });
     } catch (err) {
@@ -386,7 +404,7 @@ function materialise(template, isoDate) {
       note: renderedNote,
       total: template.amount,
       paidBy: "me",
-      splitMode: splitMode === "uneven" ? "uneven" : "equal",
+      splitMode: sourceMode === "uneven" && perMemberShares ? "uneven" : "equal",
       myShare: myOwes,
       theirShare: 0,
       sourceMovementId: myOwes > 0 ? movementId : null,
@@ -474,6 +492,7 @@ export function createTemplateFromForm(formData) {
   let sharedTheirShare = null;
   let sharedContactId = null;
   let groupId = null;
+  let groupSplit = null;
 
   if (target.kind === "contact") {
     sharedContactId = target.id;
@@ -487,6 +506,13 @@ export function createTemplateFromForm(formData) {
     }
   } else if (target.kind === "group") {
     groupId = target.id;
+    // Si el usuario abrió el modal vía "Convertir en plantilla
+    // periódica" desde un gasto desigual de grupo, propagamos los
+    // porcentajes calculados en pendingGroupSplit. Si el usuario
+    // cambia el grupo después, el listener limpia pendingGroupSplit.
+    if (pendingGroupSplit) {
+      groupSplit = pendingGroupSplit;
+    }
   }
 
   return {
@@ -512,6 +538,7 @@ export function createTemplateFromForm(formData) {
     sharedMyShare,
     sharedTheirShare,
     groupId,
+    groupSplit,
     createdAt: new Date().toISOString(),
   };
 }
@@ -867,10 +894,51 @@ function syncModalSelects() {
   }
 }
 
-function syncMonthOfYearVisibility() {
-  if (!elements.recurringMonthOfYearField) return;
+// Visibilidad del bloque "Día del mes" + "Mes del año". Por defecto se
+// derivan de la fecha de inicio y los inputs quedan ocultos para no
+// añadir ruido. Si el usuario quiere desacoplar (caso edge: empezar el
+// 27 pero repetir el día 1), pulsa "Personalizar día de repetición" y
+// pasamos a modo manual — entonces el cambio de fecha NO machaca los
+// valores.
+let customizeDayMode = false;
+
+function syncDayMonthVisibility() {
   const yearly = elements.recurringPeriodicity?.value === "yearly";
-  elements.recurringMonthOfYearField.hidden = !yearly;
+  if (elements.recurringDayOfMonthField) {
+    elements.recurringDayOfMonthField.hidden = !customizeDayMode;
+  }
+  if (elements.recurringMonthOfYearField) {
+    // Mes del año solo aplica si periodicity es anual; además requiere
+    // que estemos en modo personalizado para mostrarse como input
+    // editable. Si no, el valor sigue presente (lo derivamos en sync)
+    // pero el input no se ve.
+    elements.recurringMonthOfYearField.hidden = !customizeDayMode || !yearly;
+  }
+  if (elements.recurringCustomizeDayToggle) {
+    elements.recurringCustomizeDayToggle.textContent = customizeDayMode
+      ? "Volver a derivar de la fecha"
+      : "Personalizar día de repetición";
+    elements.recurringCustomizeDayToggle.setAttribute("aria-expanded", String(customizeDayMode));
+  }
+}
+
+// Sincroniza día/mes a partir del input "Empieza el". Solo se aplica
+// cuando NO estamos en modo personalizado — si el usuario ya tocó esos
+// campos a mano, respetamos su decisión.
+function syncDayMonthFromStartDate() {
+  if (customizeDayMode) return;
+  const iso = elements.recurringStartDate?.value;
+  if (!iso) return;
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return;
+  if (elements.recurringDayOfMonth) elements.recurringDayOfMonth.value = d;
+  if (elements.recurringMonthOfYear) elements.recurringMonthOfYear.value = m;
+}
+
+// Mantenido para compat con llamadas existentes a la antigua función:
+// ahora delega en el sync conjunto.
+function syncMonthOfYearVisibility() {
+  syncDayMonthVisibility();
 }
 
 function syncSharedFieldsVisibility() {
@@ -884,19 +952,28 @@ function syncSharedFieldsVisibility() {
     elements.recurringSharedFields.hidden = !isContact;
   }
   // Info de grupo: cuando se selecciona un grupo, mostrar pista con
-  // el reparto por defecto que aplicará el motor.
+  // el reparto que aplicará el motor. Tres casos posibles:
+  //   - hay groupSplit pendiente (heredado de un gasto desigual al
+  //     convertir): se respetan esos porcentajes.
+  //   - el grupo tiene default uneven: se usa ese.
+  //   - en otro caso: partes iguales.
   if (elements.recurringSharedGroupInfo) {
     elements.recurringSharedGroupInfo.hidden = !isGroup;
     if (isGroup) {
       const group = getGroupById(target.id);
       const members = getGroupMembers(target.id);
-      const modeText = group?.defaultSplitMode === "uneven"
-        ? "porcentajes definidos en el grupo"
-        : "partes iguales";
+      let modeText;
+      if (pendingGroupSplit) {
+        modeText = "los porcentajes que ya tenía el gasto original";
+      } else if (group?.defaultSplitMode === "uneven") {
+        modeText = "porcentajes definidos en el grupo";
+      } else {
+        modeText = "partes iguales";
+      }
       const memberCount = members.length;
       if (elements.recurringGroupHint) {
         elements.recurringGroupHint.textContent =
-          `Cada generación creará una entrada compartida en "${group?.name ?? "el grupo"}" repartiendo el importe entre ${memberCount} miembro${memberCount === 1 ? "" : "s"} a ${modeText}. El pagador será siempre tú.`;
+          `Cada generación creará una entrada compartida en "${group?.name ?? "el grupo"}" repartiendo el importe entre ${memberCount} miembro${memberCount === 1 ? "" : "s"} según ${modeText}. El pagador será siempre tú.`;
       }
     }
   }
@@ -921,7 +998,16 @@ function resetRecurringForm(template = null, prefill = null) {
   if (!form) return;
   form.reset();
 
+  // Estado del split custom para esta apertura del modal: si el seed
+  // (template editada o prefill de conversión) trae groupSplit, lo
+  // arrastramos al submit.
+  pendingGroupSplit = template?.groupSplit ?? prefill?.groupSplit ?? null;
+
   syncModalSelects();
+  // Refrescar sugerencias del datalist de Emisor / receptor — el form
+  // de plantilla comparte el mismo datalist (#party-suggestions) que
+  // el modal de movimiento.
+  syncPartySuggestions();
 
   const seed = template ?? prefill;
   const today = todayLocal();
@@ -935,8 +1021,18 @@ function resetRecurringForm(template = null, prefill = null) {
   elements.recurringParty.value = seed?.party ?? "";
   elements.recurringNote.value = seed?.note ?? "";
   elements.recurringPeriodicity.value = seed?.periodicity ?? "monthly";
-  elements.recurringDayOfMonth.value = seed?.dayOfMonth ?? startDate.getDate();
-  elements.recurringMonthOfYear.value = seed?.monthOfYear ?? (startDate.getMonth() + 1);
+  // Derivamos día y mes desde la fecha de inicio salvo que el seed
+  // traiga valores explícitos que no coincidan con la fecha — en ese
+  // caso entramos en modo "personalizado" y los exponemos.
+  const dayFromStart = startDate.getDate();
+  const monthFromStart = startDate.getMonth() + 1;
+  const seedDay = seed?.dayOfMonth ?? dayFromStart;
+  const seedMonth = seed?.monthOfYear ?? monthFromStart;
+  elements.recurringDayOfMonth.value = seedDay;
+  elements.recurringMonthOfYear.value = seedMonth;
+  const yearly = (seed?.periodicity ?? "monthly") === "yearly";
+  customizeDayMode =
+    seedDay !== dayFromStart || (yearly && seedMonth !== monthFromStart);
   setRecurringStartDate(startDate);
   setRecurringEndDate(endDate);
 
@@ -962,7 +1058,7 @@ function resetRecurringForm(template = null, prefill = null) {
     elements.recurringSharedTheirShare.value = seed?.sharedTheirShare ?? "";
   }
 
-  syncMonthOfYearVisibility();
+  syncDayMonthVisibility();
   syncSharedFieldsVisibility();
   refreshNotePreview();
 
@@ -976,6 +1072,7 @@ function resetRecurringForm(template = null, prefill = null) {
 
 function openCreateRecurringModal() {
   convertingFromMovementId = null;
+  convertingFromSharedEntryId = null;
   resetRecurringForm(null);
   if (elements.recurringFeedback) elements.recurringFeedback.textContent = "";
   openRecurringModal();
@@ -984,6 +1081,7 @@ function openCreateRecurringModal() {
 
 function openEditRecurringModal(template) {
   convertingFromMovementId = null;
+  convertingFromSharedEntryId = null;
   resetRecurringForm(template);
   if (elements.recurringFeedback) elements.recurringFeedback.textContent = "";
   openRecurringModal();
@@ -997,6 +1095,7 @@ function openEditRecurringModal(template) {
 export function openConvertFromMovement(movement) {
   if (!movement) return;
   convertingFromMovementId = movement.id;
+  convertingFromSharedEntryId = null;
   const date = movement.date ? parseIsoDate(movement.date) : todayLocal();
 
   // Si el movimiento de origen está asociado a una shared_entry de
@@ -1006,6 +1105,7 @@ export function openConvertFromMovement(movement) {
   // sin compartido, el prefill se queda como hasta ahora.
   let totalAmount = movement.amount;
   let groupId = null;
+  let groupSplit = null;
   let sharedContactId = null;
   let sharedSplitMode = null;
   let sharedPaidBy = null;
@@ -1017,6 +1117,23 @@ export function openConvertFromMovement(movement) {
       totalAmount = Number(linkedEntry.total) || movement.amount;
       if (linkedEntry.groupId) {
         groupId = linkedEntry.groupId;
+        // Si la entrada origen tiene un reparto desigual (p. ej. 50/30/20%),
+        // lo persistimos en la plantilla como porcentajes para que las
+        // generaciones futuras lo respeten incluso si cambia el importe.
+        // Si la entrada usaba el default del grupo (modo "equal"), lo
+        // dejamos null para que herede el default vivo del grupo.
+        if (
+          linkedEntry.splitMode === "uneven" &&
+          linkedEntry.splits &&
+          totalAmount > 0
+        ) {
+          const percents = {};
+          for (const [memberId, split] of Object.entries(linkedEntry.splits)) {
+            const owes = Number(split?.owes) || 0;
+            percents[memberId] = (owes / totalAmount) * 100;
+          }
+          groupSplit = percents;
+        }
       } else if (linkedEntry.contactId) {
         sharedContactId = linkedEntry.contactId;
         sharedSplitMode = linkedEntry.splitMode;
@@ -1037,6 +1154,7 @@ export function openConvertFromMovement(movement) {
     monthOfYear: date.getMonth() + 1,
     startDate: movement.date,
     groupId,
+    groupSplit,
     sharedContactId,
     sharedSplitMode,
     sharedPaidBy,
@@ -1044,6 +1162,85 @@ export function openConvertFromMovement(movement) {
   if (elements.recurringFeedback) {
     elements.recurringFeedback.textContent =
       "El movimiento original se enlaza a la plantilla; la siguiente ocurrencia se generará automáticamente.";
+  }
+  if (elements.recurringSubmitLabel) {
+    elements.recurringSubmitLabel.textContent = "Crear plantilla y enlazar";
+  }
+  openRecurringModal();
+  elements.recurringConcept?.focus();
+}
+
+// Variante para gastos compartidos sin movement asociado (modos `me-full`
+// y `them-full`, donde la app no crea movement personal). El botón
+// "Convertir en plantilla periódica" del modal de edición de shared
+// entry llama aquí. La plantilla queda con lastGeneratedDate = entry.date
+// para evitar que el motor duplique esa primera ocurrencia.
+//
+// Nota: hoy no enlazamos hacia atrás (el shared_entry no guarda
+// recurringTemplateId — añadirlo requeriría migración SQL). Si el
+// usuario borra la plantilla más tarde, la entry origen sigue viva
+// como gasto puntual, sin badge 🔁. Aceptable v1.
+export function openConvertFromSharedEntry(entry) {
+  if (!entry) return;
+  convertingFromMovementId = null;
+  convertingFromSharedEntryId = entry.id;
+  const date = entry.date ? parseIsoDate(entry.date) : todayLocal();
+  const totalAmount = Number(entry.total) || 0;
+
+  // Las shared_entries no llevan category. La inferimos del concept
+  // catalog del usuario, con fallback a la primera categoría conocida.
+  const conceptDef = state.settings.concepts.find((c) => c.label === entry.concept);
+  const category = conceptDef?.category ?? state.settings.categories[0]?.value ?? "extra";
+
+  let groupId = null;
+  let groupSplit = null;
+  let sharedContactId = null;
+  let sharedSplitMode = null;
+  let sharedPaidBy = null;
+  let sharedMyShare = null;
+  let sharedTheirShare = null;
+  if (entry.groupId) {
+    groupId = entry.groupId;
+    if (entry.splitMode === "uneven" && entry.splits && totalAmount > 0) {
+      const percents = {};
+      for (const [memberId, split] of Object.entries(entry.splits)) {
+        const owes = Number(split?.owes) || 0;
+        percents[memberId] = (owes / totalAmount) * 100;
+      }
+      groupSplit = percents;
+    }
+  } else if (entry.contactId) {
+    sharedContactId = entry.contactId;
+    sharedSplitMode = entry.splitMode;
+    sharedPaidBy = entry.paidBy;
+    if (entry.splitMode === "uneven") {
+      sharedMyShare = entry.myShare;
+      sharedTheirShare = entry.theirShare;
+    }
+  }
+
+  resetRecurringForm(null, {
+    type: "expense",
+    concept: entry.concept,
+    amount: totalAmount,
+    category,
+    party: "",
+    note: entry.note ?? "",
+    periodicity: "monthly",
+    dayOfMonth: date.getDate(),
+    monthOfYear: date.getMonth() + 1,
+    startDate: entry.date,
+    groupId,
+    groupSplit,
+    sharedContactId,
+    sharedSplitMode,
+    sharedPaidBy,
+    sharedMyShare,
+    sharedTheirShare,
+  });
+  if (elements.recurringFeedback) {
+    elements.recurringFeedback.textContent =
+      "El gasto compartido se enlaza a la plantilla; las próximas ocurrencias se generarán automáticamente.";
   }
   if (elements.recurringSubmitLabel) {
     elements.recurringSubmitLabel.textContent = "Crear plantilla y enlazar";
@@ -1060,7 +1257,21 @@ elements.recurringModal?.addEventListener("click", (event) => {
   if (event.target === elements.recurringModal) closeRecurringModal();
 });
 
-elements.recurringPeriodicity?.addEventListener("change", syncMonthOfYearVisibility);
+elements.recurringPeriodicity?.addEventListener("change", syncDayMonthVisibility);
+
+// Cambio de fecha "Empieza el": si NO estamos en modo personalizado,
+// re-derivamos día/mes para que sigan reflejando la nueva fecha.
+elements.recurringStartDate?.addEventListener("change", syncDayMonthFromStartDate);
+
+elements.recurringCustomizeDayToggle?.addEventListener("click", () => {
+  customizeDayMode = !customizeDayMode;
+  if (!customizeDayMode) {
+    // Al volver al modo derivado, re-sincronizamos por si el usuario
+    // había puesto valores distintos a la fecha.
+    syncDayMonthFromStartDate();
+  }
+  syncDayMonthVisibility();
+});
 
 elements.recurringConcept?.addEventListener("change", () => {
   const concept = state.settings.concepts.find(
@@ -1083,7 +1294,13 @@ elements.recurringType?.addEventListener("change", () => {
   syncSharedFieldsVisibility();
 });
 
-elements.recurringSharedContact?.addEventListener("change", syncSharedFieldsVisibility);
+elements.recurringSharedContact?.addEventListener("change", () => {
+  // Cambiar de grupo (o pasar a contacto / sin compartir) invalida el
+  // split custom del seed previo: sus member_ids ya no apuntan al grupo
+  // seleccionado. El motor usará el default del nuevo grupo.
+  pendingGroupSplit = null;
+  syncSharedFieldsVisibility();
+});
 elements.recurringSharedMode?.addEventListener("change", syncSharedUnevenVisibility);
 
 // Live preview of placeholder substitution under the note input. Shown
@@ -1150,6 +1367,11 @@ elements.recurringList?.addEventListener("click", (event) => {
 
 elements.recurringForm?.addEventListener("submit", (event) => {
   event.preventDefault();
+  // Garantía: si los campos día/mes están ocultos (modo derivado), nos
+  // aseguramos de que sus values están alineados con "Empieza el" antes
+  // de leer el FormData. Sin esto, una secuencia como cambiar la fecha
+  // tras un reset podría dejar el value vacío en algún navegador.
+  syncDayMonthFromStartDate();
   const formData = new FormData(elements.recurringForm);
 
   const editingId = state.editingRecurringTemplateId;
@@ -1181,9 +1403,11 @@ elements.recurringForm?.addEventListener("submit", (event) => {
       isActive: existing.isActive,
     });
   } else {
-    // Convert mode: seed lastGeneratedDate with the source movement's
-    // date so the engine treats that occurrence as already produced
-    // (avoids generating a duplicate on next reload).
+    // Convert mode: seed lastGeneratedDate with the source's date so
+    // the engine treats that occurrence as already produced (avoids
+    // generating a duplicate on next reload). Dos variantes según
+    // la fuente sea un movement (típico) o un shared_entry sin
+    // movement asociado (modo `me-full` / `them-full`).
     if (convertingFromMovementId) {
       const source = state.movements.find((m) => m.id === convertingFromMovementId);
       if (source) {
@@ -1191,6 +1415,17 @@ elements.recurringForm?.addEventListener("submit", (event) => {
         // Backreference so the original movement renders the 🔁 badge.
         source.recurringTemplateId = draft.id;
         saveMovements();
+      }
+    } else if (convertingFromSharedEntryId) {
+      const sourceEntry = state.sharedEntries.find(
+        (e) => e.id === convertingFromSharedEntryId
+      );
+      if (sourceEntry) {
+        draft.lastGeneratedDate = sourceEntry.date;
+        // Sin backreference (las shared_entries no tienen
+        // recurringTemplateId field). El badge 🔁 solo aparece en
+        // movements que vienen de plantilla; las entries originales
+        // siguen como gasto puntual.
       }
     }
     state.recurringTemplates = [draft, ...state.recurringTemplates];
@@ -1201,6 +1436,7 @@ elements.recurringForm?.addEventListener("submit", (event) => {
   // Reset before closing so a follow-up "Nueva plantilla" doesn't carry
   // the convert state over.
   convertingFromMovementId = null;
+  convertingFromSharedEntryId = null;
   // Re-render movements so the source row immediately picks up the
   // 🔁 indicator after a convert-and-link.
   import("./movements.js").then((m) => m.renderMovements?.());
