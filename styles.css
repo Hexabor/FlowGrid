@@ -709,6 +709,10 @@ h2 {
      de sumar una barra horizontal innecesaria. */
   overflow-x: hidden;
   overflow-y: auto;
+  /* Reservamos espacio para el scrollbar siempre — sin esto, cuando
+     aparece la barra come 14-16px del padding-right y tapa el borde
+     derecho de inputs y la X de cerrar. */
+  scrollbar-gutter: stable;
   padding: 14px;
   background: var(--surface);
   border: 1px solid var(--line);

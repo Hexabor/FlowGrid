@@ -348,7 +348,23 @@ export function createMovementCard(movement, compact = false) {
     card.querySelector(".exp-shared-contact").textContent = contactName;
     card.querySelector(".exp-shared-mode").textContent = getSharedModeLabel(linkedEntry, contactName);
     const sharesRow = card.querySelector('[data-row="shared-shares"]');
-    if (linkedEntry.splitMode === "uneven") {
+    if (linkedEntry.groupId && linkedEntry.splits) {
+      // Group entry: el reparto real vive en `splits` (no en
+      // myShare/theirShare, que para grupos quedan como 0). Mostramos
+      // mi parte y la suma del resto del grupo, igual que la fila de
+      // Movimientos compartidos.
+      const myMember = getMyMemberInGroup(linkedEntry.groupId);
+      const myOwes = myMember
+        ? Number(linkedEntry.splits[myMember.id]?.owes) || 0
+        : 0;
+      const others = Math.max(
+        0,
+        Math.round((Number(linkedEntry.total) - myOwes) * 100) / 100
+      );
+      card.querySelector(".exp-shared-shares").textContent =
+        `Tu parte ${formatMoney(myOwes)} · resto del grupo ${formatMoney(others)}`;
+      sharesRow.hidden = false;
+    } else if (linkedEntry.splitMode === "uneven") {
       card.querySelector(".exp-shared-shares").textContent =
         `Tu parte ${formatMoney(linkedEntry.myShare)} · Su parte ${formatMoney(linkedEntry.theirShare)}`;
       sharesRow.hidden = false;

@@ -2,6 +2,15 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Card expandida en móvil: reparto correcto en gastos de grupo + scrollbar de modales no tapa el borde",
+    changes: [
+      "Al expandir una tarjeta de movimiento en móvil que viene de un gasto de grupo, el reparto decía \"Tu parte X · Su parte 0,00 €\" porque usaba los campos legacy de 1↔1. Ahora muestra \"Tu parte X · resto del grupo Y\" calculado desde los splits reales — coherente con la lista de Movimientos compartidos y con el modal de edición.",
+      "En PC, el scrollbar de los modales (cuando aparece) comía 14-16px y tapaba el borde derecho de inputs y la X de cerrar. Ahora se reserva su espacio siempre con `scrollbar-gutter: stable`, así el contenido nunca queda solapado.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Form de feedback en PC: Asunto alineado arriba",
     changes: [
       "El input de Asunto se hundía al fondo (alineado con la base del textarea de Mensaje), dejando un hueco vacío encima. Ahora se alinea arriba; solo el botón \"Enviar feedback\" sigue al fondo, junto a la esquina del textarea.",
