@@ -720,12 +720,11 @@ h2 {
   box-shadow: var(--shadow);
 }
 
-#close-movement-modal {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
-}
+/* #close-movement-modal vivía absolute en la esquina del modal-dialog
+   porque competía dentro del .section-heading con el feedback. Ahora
+   que el feedback sale a su propia fila debajo, el botón puede ir en
+   el flujo flex normal del header — así nunca cae sobre el scrollbar
+   del modal cuando aparece. */
 
 .modal-dialog .section-heading {
   padding-right: 40px;

@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-05-0054">
+    <link rel="stylesheet" href="styles.css?v=2026-05-05-0103">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -331,8 +331,8 @@
             <div class="section-heading">
               <h2 id="form-title">Nuevo movimiento</h2>
               <button id="close-movement-modal" class="delete-action" type="button" aria-label="Cerrar">x</button>
-              <p id="form-feedback" role="status" aria-live="polite"></p>
             </div>
+            <p id="form-feedback" class="modal-feedback" role="status" aria-live="polite"></p>
 
             <form id="movement-form" class="movement-form">
               <div class="type-toggle" role="group" aria-label="Tipo de movimiento">
@@ -1326,7 +1326,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-05 00:54:35";
+      window.__FG_BUILD__ = "2026-05-05 01:03:53";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1384,6 +1384,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-05-0054"></script>
+    <script type="module" src="app.js?v=2026-05-05-0103"></script>
   </body>
 </html>

@@ -2,6 +2,14 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Modal de movimiento: la X de cerrar ya no queda tapada por el scrollbar",
+    changes: [
+      "El botón X estaba posicionado en la esquina (absolute) y, cuando aparecía la barra de scroll del modal, le caía encima. Ahora vive en el flujo flex del header (igual que en el resto de modales), y el feedback (\"Editando movimiento\", etc.) baja a una fila propia debajo del título.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Card expandida en móvil: reparto correcto en gastos de grupo + scrollbar de modales no tapa el borde",
     changes: [
       "Al expandir una tarjeta de movimiento en móvil que viene de un gasto de grupo, el reparto decía \"Tu parte X · Su parte 0,00 €\" porque usaba los campos legacy de 1↔1. Ahora muestra \"Tu parte X · resto del grupo Y\" calculado desde los splits reales — coherente con la lista de Movimientos compartidos y con el modal de edición.",
