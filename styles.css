@@ -156,27 +156,46 @@ button {
   display: block;
 }
 
-/* Home en desktop: el panel de tiles + las novedades destacadas se
-   centran verticalmente en el espacio disponible del navegador en
-   lugar de pegarse al borde superior. La topbar (eyebrow + título
-   "Home") sigue arriba; los dos paneles de debajo se centran entre
-   ella y el final del viewport con margin-auto encima/debajo. */
+/* Home: el panel de tiles se centra verticalmente en el espacio
+   disponible del navegador en lugar de pegarse al borde superior.
+   La topbar (eyebrow + título "Home") sigue arriba; el panel se
+   reparte el aire restante con margin-auto encima/debajo. Aplica
+   tanto en móvil como en escritorio — solo cambia el min-height
+   según el padding del .app contenedor. */
+#home-view.is-active {
+  display: flex;
+  flex-direction: column;
+}
+
+#home-view.is-active > .panel {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
 @media (min-width: 720px) {
   #home-view.is-active {
-    display: flex;
-    flex-direction: column;
-    /* 100vh menos los paddings top/bottom de .app (18px + 92px) deja
-       el viewport del cliente para distribuir vertical. */
+    /* 100vh menos los paddings top/bottom de .app (18px + 92px). */
     min-height: calc(100vh - 110px);
   }
+}
 
-  /* Ahora que las "Novedades destacadas" viven en la vista Novedades,
-     el Home solo tiene un panel debajo de la topbar — lo centramos
-     verticalmente con margin-auto arriba y abajo. */
-  #home-view.is-active > .panel {
-    margin-top: auto;
-    margin-bottom: auto;
+@media (max-width: 719px) {
+  #home-view.is-active {
+    /* 100vh menos los paddings top/bottom de .app móvil (12px + 140px
+       para librar la sidebar fija del fondo). */
+    min-height: calc(100vh - 152px);
   }
+}
+
+/* El panel del Home pierde el cuadro contenedor en móvil y en
+   escritorio: sin fondo, sin borde, sin sombra ni padding propio.
+   Las cards "flotan" directamente sobre el fondo del .app. El padding
+   lateral viene del .app (14px en desktop, 10px en móvil). */
+#home-view .panel {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .topbar {
@@ -227,6 +246,17 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
+}
+
+/* Borders más redondeados para las tarjetas del Home (CTA, módulos
+   y meta-links). El estilo base de .module-card es 8px; aquí
+   subimos a 14px solo en el contexto del home-view. */
+#home-view .module-card {
+  border-radius: 14px;
+}
+
+#home-view .home-add-cta {
+  /* El CTA ya es pill (999px); sin cambios. */
 }
 
 .metric {
@@ -480,17 +510,9 @@ h2 {
   grid-template-columns: 1fr;
 }
 
-/* Más aire alrededor de los botones del Home: padding generoso en
-   el panel que los contiene y gap holgado entre tarjetas. */
-#home-view .panel {
-  padding: 28px 26px;
-}
-
-@media (max-width: 719px) {
-  #home-view .panel {
-    padding: 22px 18px;
-  }
-}
+/* (El reset del .panel del Home — sin background, border ni padding —
+   está más arriba junto al centrado vertical, y aplica en ambos
+   viewports.) */
 
 /* Movil: primary lleva el mismo layout horizontal que las secundarias
    pero con padding más generoso y tipografía algo mayor para destacar

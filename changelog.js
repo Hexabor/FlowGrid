@@ -2,6 +2,17 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Home sin cuadro contenedor + redondeo y centrado + adiós al cache pegajoso en móvil",
+    changes: [
+      "El panel del Home pierde su marco (fondo, borde y sombra) en móvil y en escritorio. Las tarjetas \"flotan\" directamente sobre el fondo del app — diseño más respirado.",
+      "Tarjetas con bordes más redondeados (de 8px a 14px) — encaja mejor con la estética suave del CTA pill.",
+      "El bloque del Home se centra verticalmente también en móvil (antes solo en PC), evitando que todo se concentre arriba dejando aire muerto abajo.",
+      "Nuevo archivo `_headers` en la raíz del repo para Cloudflare Pages: fuerza revalidación con ETag para `.js`, `.css` y `.html`. Significa que tras un push, refrescar en móvil basta para ver los cambios — sin tener que borrar caché. Aplica en `flowgrid.arcdev.app` y `dev.flowgrid.arcdev.app` (GitHub Pages no soporta esta config).",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Home rediseñado: CTA + Movimientos destacado + grid 2x2 con el resto",
     changes: [
       "Nuevo botón pill verde teal con icono \"+\" arriba del Home: \"Añadir / movimiento\" en dos líneas, ajustado al contenido y centrado. Atajo directo al modal de Nuevo movimiento sin pasar por la vista Movimientos — el flujo más usado de la app pasa de tres clics a uno.",

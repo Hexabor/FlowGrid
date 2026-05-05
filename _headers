@@ -1,0 +1,23 @@
+# Cloudflare Pages headers: forzar revalidación de los assets
+# críticos para que el navegador no se quede con módulos JS / CSS
+# viejos cacheados a fuego (problema típico en móvil tras un push).
+#
+# `no-cache` significa "puedes guardar la respuesta, pero antes de
+# servirla pregunta al servidor si sigue siendo válida". El servidor
+# responde 304 Not Modified (sin body) si nada cambió — barato. Si
+# cambió, descarga la versión nueva.
+#
+# Aplica solo en Cloudflare Pages (flowgrid.arcdev.app y
+# dev.flowgrid.arcdev.app). GitHub Pages no soporta `_headers`.
+
+/
+  Cache-Control: no-cache
+
+/*.html
+  Cache-Control: no-cache
+
+/*.js
+  Cache-Control: no-cache
+
+/*.css
+  Cache-Control: no-cache
