@@ -4,6 +4,27 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FlowGrid</title>
+    <script>
+      // En el host de desarrollo (dev.flowgrid.arcdev.app) cambiamos
+      // título y manifest a la versión "Dev FlowGrid" antes de que
+      // el navegador procese el manifest. Así, al instalar como
+      // PWA o añadir al home screen, el atajo se llama distinto que
+      // el de producción y se puede tener ambos sin confundirlos.
+      // Importante: este script tiene que ir ANTES del <link
+      // rel="manifest"> para que la sustitución del href ocurra a
+      // tiempo. Hacemos el rewrite vía DOMContentLoaded pero
+      // también seteamos el title de inmediato.
+      (function () {
+        if (!/^dev\./.test(location.hostname)) return;
+        document.title = "Dev FlowGrid";
+        document.addEventListener("DOMContentLoaded", function () {
+          const link = document.getElementById("app-manifest");
+          if (link) {
+            link.href = "manifest-dev.webmanifest?v=2026-05-05-1332";
+          }
+        });
+      })();
+    </script>
     <!-- Iconos. Los archivos viven en /icons; al cambiarlos conviene
          bumpear el query-string ?v= para forzar refresh en clientes con
          caché agresivo (favicons en especial). -->
@@ -11,9 +32,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png?v=2026-05-02-2144">
     <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png?v=2026-05-02-2144">
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
-    <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
+    <link id="app-manifest" rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-05-1332">
+    <link rel="stylesheet" href="styles.css?v=2026-05-05-1422">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -1370,7 +1391,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-05 13:32:33";
+      window.__FG_BUILD__ = "2026-05-05 14:22:38";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1450,6 +1471,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-05-1332"></script>
+    <script type="module" src="app.js?v=2026-05-05-1422"></script>
   </body>
 </html>
