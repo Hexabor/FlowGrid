@@ -347,6 +347,14 @@ h2 {
   flex: 0 0 auto;
 }
 
+/* Hijos del CTA sin pointer-events propios: en móvil, a veces el SVG
+   o el span captura el tap y el click no se sintetiza correctamente
+   al <button> padre. Con esto, el tap siempre cuenta como click del
+   button y el listener dispara fiable. */
+.home-add-cta > * {
+  pointer-events: none;
+}
+
 /* Label en dos líneas: "Añadir" arriba y "movimiento" debajo.
    Dos spans block dentro de un wrapper flex column. */
 .home-add-cta-label {

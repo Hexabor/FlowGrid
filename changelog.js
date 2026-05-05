@@ -2,6 +2,14 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Fix: el CTA \"Añadir movimiento\" del Home no respondía al tap en móvil",
+    changes: [
+      "El SVG y los spans internos del botón estaban capturando el tap en móvil sin propagar el click al `<button>` padre — patrón típico de bug en touch. Añadido `pointer-events: none` a los hijos del CTA para que el tap siempre cuente como click del botón. En PC nunca falló porque el evento de mouse sí se propaga correctamente.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Más aire lateral en toda la app",
     changes: [
       "Padding lateral del contenedor `.app` doblado: 14px → 28px en escritorio, 10px → 20px en móvil. Las cards rectangulares dejan de verse tan estiradas y todo respira un poco más por los lados — afecta a Home y al resto de vistas por consistencia.",
