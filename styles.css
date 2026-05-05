@@ -1906,26 +1906,52 @@ a.primary-action {
   }
 }
 
-/* Leyenda del resumen de saldos (móvil): puntos de color con la
-   etiqueta correspondiente a cada estado (te debe / le debes). */
-.balance-summary-legend {
+/* Cabecera del resumen de saldos (móvil): título a la izquierda +
+   leyenda en chip a la derecha. Si no caben, wrap a 2 líneas. */
+.balance-summary-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 4px 12px;
-  margin: -4px 0 8px;
+  gap: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.balance-summary-header .balance-summary-title {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Leyenda como chip: caja sutil con fondo grisáceo, dos items
+   (verde "te debe" + rojo "le debes") con punto de color al lado. */
+.balance-summary-legend {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 4px 10px;
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: 999px;
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   line-height: 1.4;
+  white-space: nowrap;
+}
+
+.balance-summary-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .balance-summary-legend-dot {
   display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 4px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  vertical-align: -1px;
 }
 
 .balance-summary-legend-dot.is-positive {

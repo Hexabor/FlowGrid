@@ -653,19 +653,28 @@ function renderMobileBalanceSummary(contactsWithActivity) {
   const wrapper = document.createElement("div");
   wrapper.className = "balance-summary";
 
+  // Cabecera: título a la izquierda + leyenda en chip a la derecha.
+  // La leyenda explica los puntos verde/rojo de cada card sin tener
+  // que repetir "TE DEBE / LE DEBES" en cada fila.
+  const header = document.createElement("div");
+  header.className = "balance-summary-header";
+
   const title = document.createElement("p");
   title.className = "balance-summary-title";
   title.textContent = "Toca un contacto para ver detalle y liquidar:";
-  wrapper.append(title);
 
-  // Leyenda discreta: explica los puntos verde/rojo de cada card sin
-  // tener que repetir "TE DEBE / LE DEBES" en cada fila.
   const legend = document.createElement("p");
   legend.className = "balance-summary-legend";
   legend.innerHTML =
-    '<span class="balance-summary-legend-dot is-positive"></span> te debe' +
-    '<span class="balance-summary-legend-dot is-negative"></span> le debes';
-  wrapper.append(legend);
+    '<span class="balance-summary-legend-item">' +
+      '<span class="balance-summary-legend-dot is-positive"></span> te debe' +
+    '</span>' +
+    '<span class="balance-summary-legend-item">' +
+      '<span class="balance-summary-legend-dot is-negative"></span> le debes' +
+    '</span>';
+
+  header.append(title, legend);
+  wrapper.append(header);
 
   const list = document.createElement("ul");
   list.className = "balance-summary-list";
@@ -1303,6 +1312,7 @@ elements.sharedContactFilter.addEventListener("change", () => {
   elements.sharedMobileContactPicker.value = state.sharedFilterContactId;
   renderSharedBalances();
   renderSharedEntries();
+  syncMobileBackToAllVisibility();
 });
 
 // Mobile-only picker at the top of the Saldos panel: drives both the
@@ -1349,6 +1359,7 @@ elements.sharedBalances.addEventListener("click", (event) => {
   // detallada del contacto recién seleccionado).
   renderSharedBalances();
   renderSharedEntries();
+  syncMobileBackToAllVisibility();
   // Scroll al panel de movimientos solo en desktop. En móvil la card
   // detallada aparece en el sitio del resumen, no necesita salto.
   if (!window.matchMedia("(max-width: 719px)").matches) {

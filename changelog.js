@@ -2,10 +2,10 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
-    title: "Saldos móvil: botón \"Volver a Todos\" como atajo del dropdown",
+    title: "Saldos móvil: botón \"Volver a Todos\" + leyenda en chip a la derecha del título",
     changes: [
-      "Cuando estás viendo el detalle de un contacto o grupo, aparece a la izquierda del selector un botón \"← Volver a Todos\" que devuelve la vista al resumen de un toque, sin tener que abrir el dropdown.",
-      "El botón se oculta cuando ya estás en \"Todos\" para no añadir ruido.",
+      "Atajo \"← Volver a Todos\" a la izquierda del dropdown del panel Saldos. Aparece solo cuando hay un filtro activo; oculto en \"Todos\" para no añadir ruido. Bug del primer intento corregido: ahora también se oculta correctamente al pulsar la card de un contacto o cambiar el filtro desde otros sitios.",
+      "La leyenda de los puntos verde/rojo (\"te debe / le debes\") deja de ocupar línea propia y pasa a un pequeño chip a la derecha del título del resumen.",
     ],
   },
   {
