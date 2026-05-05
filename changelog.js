@@ -2,6 +2,14 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Más aire lateral en toda la app",
+    changes: [
+      "Padding lateral del contenedor `.app` doblado: 14px → 28px en escritorio, 10px → 20px en móvil. Las cards rectangulares dejan de verse tan estiradas y todo respira un poco más por los lados — afecta a Home y al resto de vistas por consistencia.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Home sin cuadro contenedor + redondeo y centrado + adiós al cache pegajoso en móvil",
     changes: [
       "El panel del Home pierde su marco (fondo, borde y sombra) en móvil y en escritorio. Las tarjetas \"flotan\" directamente sobre el fondo del app — diseño más respirado.",

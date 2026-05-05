@@ -145,7 +145,7 @@ button {
 .app {
   width: min(100%, 1180px);
   margin: 0 auto;
-  padding: 18px 14px 92px;
+  padding: 18px 28px 92px;
 }
 
 .view {
@@ -2719,7 +2719,7 @@ a.primary-action {
   /* Bottom space large enough to clear the fixed mobile sidebar (nav row +
      session-footer row with the email/logout) so the last list item can
      be scrolled fully into view. Desktop overrides this further down. */
-  padding: 12px 10px 140px;
+  padding: 12px 20px 140px;
 }
 
 .topbar {
