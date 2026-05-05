@@ -268,16 +268,35 @@ export function setAnalysisMode(mode) {
   }
 }
 
-export function setView(viewName) {
+// La vista activa se persiste en sessionStorage (vive solo durante la
+// sesión del navegador): así si el usuario refresca dentro de la app
+// no pierde contexto, pero al cerrar y volver a abrir arranca en
+// Home. localStorage hacía que la última vista persistiera para
+// siempre, comportamiento que el usuario consideró ruido al abrir.
+export function setView(viewName, { skipHistoryPush = false } = {}) {
   const resolved = VIEW_ALIASES[viewName] ?? viewName;
   elements.views.forEach((view) => view.classList.toggle("is-active", view.dataset.view === resolved));
   elements.navButtons.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.viewTarget === resolved);
   });
   try {
-    localStorage.setItem(VIEW_STORAGE_KEY, resolved);
+    sessionStorage.setItem(VIEW_STORAGE_KEY, resolved);
   } catch {
-    // localStorage may be unavailable (private mode, quota); ignore.
+    // sessionStorage may be unavailable (private mode, quota); ignore.
+  }
+  // History API: cada cambio de vista deja una entrada en el historial
+  // del navegador, así el gesto "atrás" del móvil (o el botón back del
+  // browser) deshace el último cambio en lugar de salir de la app.
+  // skipHistoryPush evita el bucle cuando el cambio viene de popstate.
+  if (!skipHistoryPush) {
+    const currentState = history.state;
+    if (!currentState || currentState.view !== resolved) {
+      try {
+        history.pushState({ view: resolved }, "", "");
+      } catch {
+        // Algunos navegadores rechazan pushState en file:// o limites.
+      }
+    }
   }
   if (resolved === "analysis") {
     setAnalysisMode(readAnalysisMode());
@@ -290,13 +309,31 @@ export function setView(viewName) {
 export function restoreLastView() {
   let stored;
   try {
-    stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    stored = sessionStorage.getItem(VIEW_STORAGE_KEY);
   } catch {
     return;
   }
   if (!stored) return;
   const exists = Array.from(elements.views).some((view) => view.dataset.view === stored);
-  if (exists) setView(stored);
+  if (exists) setView(stored, { skipHistoryPush: true });
+}
+
+// Inicializa el History API al arrancar la app: replaceState con la
+// vista actual para que cualquier pushState posterior tenga un estado
+// "anterior" al que volver via popstate. Sin esto, el primer back
+// del usuario sacaría de la app (no hay entry previa que restaurar).
+export function initHistoryNav() {
+  const activeView =
+    document.querySelector(".view.is-active")?.dataset.view ?? "home";
+  try {
+    history.replaceState({ view: activeView }, "", "");
+  } catch {
+    // ignore
+  }
+  window.addEventListener("popstate", (event) => {
+    const view = event.state?.view ?? "home";
+    setView(view, { skipHistoryPush: true });
+  });
 }
 
 export function setSettingsPanel(panelName) {

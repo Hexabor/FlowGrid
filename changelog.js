@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Vista al abrir y navegación con back: comportamiento más natural",
+    changes: [
+      "Al abrir la app por primera vez (cerrar y reabrir, o pestaña nueva) ahora arrancas siempre en Home, no en la última vista visitada. Un refresh accidental dentro de la sesión sí te mantiene en la vista en la que estabas — la persistencia se hace en `sessionStorage` en vez de `localStorage`.",
+      "El gesto \"atrás\" del móvil (o el botón back del navegador) ahora deshace el último cambio de vista en lugar de salir de la app. Cada navegación entre módulos (Movimientos → Compartidos → Análisis...) deja una entrada en el historial; los backs sucesivos te van devolviendo paso a paso hasta que solo queda Home, momento en el que sí sales.",
+      "Detalle interno: integración con History API (`pushState` por cada `setView` + listener `popstate`). El script inline que pre-aplica la vista antes del bootstrap también pasa a `sessionStorage` y limpia el localStorage antiguo en una migración automática.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Fix: el CTA \"Añadir movimiento\" del Home no respondía al tap en móvil",
     changes: [
       "El SVG y los spans internos del botón estaban capturando el tap en móvil sin propagar el click al `<button>` padre — patrón típico de bug en touch. Añadido `pointer-events: none` a los hijos del CTA para que el tap siempre cuente como click del botón. En PC nunca falló porque el evento de mouse sí se propaga correctamente.",

@@ -1,7 +1,7 @@
 import { initState } from "./core/storage.js";
 import { setInitialDate, toggleDatePicker } from "./ui/datepicker.js";
 import { render } from "./ui/render.js";
-import { closeMovementModal, elements, restoreLastView, setView } from "./core/dom.js";
+import { closeMovementModal, elements, restoreLastView, setView, initHistoryNav } from "./core/dom.js";
 import { closePaymentModal } from "./features/shared.js";
 import { collapseExpandedCard } from "./features/movements.js";
 import { checkPendingInvitations, closeInvitationModal, runInvitationBackfills } from "./features/invitations.js";
@@ -40,6 +40,11 @@ async function bootApp() {
   render();
   refreshSessionBadge();
   restoreLastView();
+  // Inicializa la integración con el History API: cualquier cambio
+  // de vista posterior pushea estado al historial del browser, y el
+  // gesto "atrás" (móvil o button) navega entre vistas en lugar de
+  // salir de la app.
+  initHistoryNav();
   // Self-heal any prior invitations that were accepted before the
   // reciprocal-contact auto-create existed, and populate owner_email
   // on contacts saved before that column was around. Both are no-ops

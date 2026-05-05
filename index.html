@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-05-1221">
+    <link rel="stylesheet" href="styles.css?v=2026-05-05-1228">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -1348,7 +1348,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-05 12:21:16";
+      window.__FG_BUILD__ = "2026-05-05 12:28:03";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1356,12 +1356,15 @@
 
       // Restore the saved view before the module bootstrap completes, so the
       // user doesn't see a flash of Home while bootApp is still hydrating.
+      // sessionStorage (no localStorage): la vista se mantiene tras un
+      // refresh dentro de la misma sesión, pero al cerrar y volver a abrir
+      // la app arranca en Home. Migra una vez del key viejo si existe.
       (function () {
         let target = "home";
         try {
-          target = localStorage.getItem("flowgrid.view.v1") || "home";
+          target = sessionStorage.getItem("flowgrid.view.v1") || "home";
         } catch (_) {
-          // localStorage unavailable; stay on home.
+          // sessionStorage unavailable; stay on home.
         }
         document.querySelectorAll("[data-view]").forEach((view) => {
           view.classList.toggle("is-active", view.dataset.view === target);
@@ -1369,6 +1372,9 @@
         document.querySelectorAll(".nav-button[data-view-target]").forEach((button) => {
           button.classList.toggle("is-active", button.dataset.viewTarget === target);
         });
+        // Limpia el localStorage previo (residuo del comportamiento
+        // antiguo donde la vista persistia entre sesiones).
+        try { localStorage.removeItem("flowgrid.view.v1"); } catch (_) {}
       })();
 
       // Restore the saved collapsed state of the Compartidos info panel
@@ -1406,6 +1412,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-05-1221"></script>
+    <script type="module" src="app.js?v=2026-05-05-1228"></script>
   </body>
 </html>
