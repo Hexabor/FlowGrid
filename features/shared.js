@@ -820,10 +820,13 @@ function renderSharedBalances() {
       settleButton.className = "balance-action settle";
       settleButton.dataset.action = "settle";
       settleButton.disabled = Math.abs(balance) < 0.005;
-      const direction = balance > 0 ? `${contact.name} te paga` : `Tu pagas a ${contact.name}`;
+      // Direction corto sin nombre: cabe en la misma linea que "Liquidar
+      // saldo". El nombre del contacto ya esta en la cabecera de la card,
+      // asi que repetirlo aqui era redundante.
+      const direction = balance > 0 ? "te paga" : "le pagas";
       settleButton.innerHTML = Math.abs(balance) < 0.005
         ? `<strong>Saldo al dia</strong>`
-        : `<strong>Liquidar saldo</strong><small>${direction}</small>`;
+        : `<strong>Liquidar saldo</strong> <small>(${direction})</small>`;
 
       actions.append(viewButton, settleButton);
 

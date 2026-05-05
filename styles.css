@@ -1694,6 +1694,10 @@ a.primary-action {
 }
 
 .balance-action.settle {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
   color: #ffffff;
   background: var(--nav);
   border-color: var(--nav);
@@ -3088,12 +3092,9 @@ dt {
     display: none;
   }
 
-  /* En móvil, la subcadena "Raquel te paga / tú pagas a Raquel" se
-     omite para no apilar dos líneas en cada botón. La intención del
-     botón ya queda clara con el texto principal + el contexto del card. */
-  .balance-card .balance-action small {
-    display: none;
-  }
+  /* En móvil mostramos también la coletilla "(te paga)" / "(le pagas)"
+     porque ahora cabe en la misma línea que "Liquidar saldo" gracias
+     a haber quitado el nombre redundante. */
 
   .balance-card .balance-action strong {
     font-size: 0.82rem;

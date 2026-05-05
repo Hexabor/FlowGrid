@@ -2,6 +2,14 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Botón \"Liquidar saldo\" en una sola línea",
+    changes: [
+      "El botón pasa de dos líneas (\"Liquidar saldo\" + \"Raquel te paga\") a una sola: \"Liquidar saldo (te paga)\". El nombre del contacto se omite porque ya está en la cabecera de la card. Se aplica también en móvil, que antes ocultaba la coletilla por falta de espacio.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Cards de saldo en PC: nombre + saldo en una línea + leyenda con puntos color",
     changes: [
       "Cada tarjeta de Saldos en PC pierde la línea \"TE DEBE / LE DEBES\". El nombre y el importe pasan a compartir la primera línea (nombre a la izquierda, importe a la derecha), ahorrando una línea por tarjeta.",
