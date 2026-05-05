@@ -5,6 +5,7 @@ export const elements = {
   form: document.querySelector("#movement-form"),
   movementModal: document.querySelector("#movement-modal"),
   openMovementModal: document.querySelector("#open-movement-modal"),
+  homeAddMovementCta: document.querySelector("#home-add-movement-cta"),
   closeMovementModal: document.querySelector("#close-movement-modal"),
   type: document.querySelector("#type"),
   typeToggleButtons: document.querySelectorAll(".type-toggle-button"),

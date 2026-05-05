@@ -2,6 +2,15 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Home: atajo grande \"Añadir movimiento\" arriba del menú",
+    changes: [
+      "Nuevo botón pill verde con icono \"+\" en el Home, encima de los módulos. Pulsar abre directamente el modal de Nuevo movimiento sin tener que ir a la vista Movimientos primero — el flujo más usado de la app pasa de tres clics a uno.",
+      "En PC, ancho moderado (max 360px) centrado para que se sienta como acción destacada y no como banner. En móvil ocupa todo el ancho del panel para que se pueda tocar cómodamente con el pulgar.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Botón \"Liquidar saldo\" en una sola línea",
     changes: [
       "El botón pasa de dos líneas (\"Liquidar saldo\" + \"Raquel te paga\") a una sola: \"Liquidar saldo (te paga)\". El nombre del contacto se omite porque ya está en la cabecera de la card. Se aplica también en móvil, que antes ocultaba la coletilla por falta de espacio.",

@@ -853,6 +853,14 @@ elements.openMovementModal.addEventListener("click", () => {
   openMovementModal();
 });
 
+// CTA del Home: atajo al modal de Nuevo movimiento sin tener que ir
+// a la vista Movimientos primero. Mismo flujo que el botón principal.
+elements.homeAddMovementCta?.addEventListener("click", () => {
+  resetMovementForm();
+  elements.feedback.textContent = "";
+  openMovementModal();
+});
+
 // "Convertir en plantilla periódica" — visible only while editing an
 // existing, non-virtual, non-already-linked movement. Closes the
 // movement modal and opens the recurring modal pre-filled with the

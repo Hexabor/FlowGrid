@@ -265,6 +265,57 @@ h2 {
   gap: 12px;
 }
 
+/* CTA principal del Home: pill grande verde teal con icono "+" y
+   "Añadir movimiento". Es el atajo al modal de Nuevo movimiento
+   que es el flujo más usado de la app — un toque desde Home y
+   estás dentro. Centrado y de ancho moderado para que sienta como
+   acción destacada (no banner). En móvil ocupa todo el ancho del
+   panel para que se pueda tap-ear cómodamente. */
+.home-add-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 22px;
+  padding: 18px 28px;
+  background: var(--nav);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(15, 118, 110, 0.28);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.home-add-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(15, 118, 110, 0.36);
+}
+
+.home-add-cta:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.32);
+}
+
+.home-add-cta svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 719px) {
+  .home-add-cta {
+    max-width: none;
+    padding: 18px 24px;
+    margin-bottom: 18px;
+  }
+}
+
 .module-group {
   display: grid;
   gap: 8px;
