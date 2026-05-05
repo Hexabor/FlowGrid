@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Tema lavanda en Configuración → Tema",
+    changes: [
+      "Nuevo selector de tema visual en Configuración → Tema. Dos opciones: \"Clásico\" (default, verde teal sobre fondo gris suave) y \"Lavanda\" (rosa pastel sobre fondo lavanda muy claro).",
+      "El cambio se aplica al instante y se recuerda entre sesiones. Aplica al fondo de toda la app y a los botones primarios (CTA \"Añadir movimiento\", Liquidar saldo, submits de formularios, etc.) más al color del nav. Los iconos de los módulos del Home y los semánticos verde/rojo de saldos se mantienen sin cambios.",
+      "Detalle interno: implementado vía custom properties CSS y atributo `data-theme` en el `<html>`. Script inline aplica el tema antes del bootstrap para evitar flash inicial de tema clásico cuando tienes elegido lavanda.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Vista al abrir y navegación con back: comportamiento más natural",
     changes: [
       "Al abrir la app por primera vez (cerrar y reabrir, o pestaña nueva) ahora arrancas siempre en Home, no en la última vista visitada. Un refresh accidental dentro de la sesión sí te mantiene en la vista en la que estabas — la persistencia se hace en `sessionStorage` en vez de `localStorage`.",

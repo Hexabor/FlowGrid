@@ -8,6 +8,7 @@
   --line: #d8e0e4;
   --nav: #22304a;
   --teal: #0f766e;
+  --teal-hover: #0b5f59;
   --green: #18794e;
   --red: #c92a2a;
   --mod-blue: #2563eb;
@@ -25,6 +26,83 @@
   --shadow: 0 16px 48px rgba(23, 32, 38, 0.07);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 75%;
+}
+
+/* Tema lavanda: fondo lavanda muy suave, acentos primarios en rosa
+   pastel y nav en rosa más oscuro. Los iconos de los módulos
+   (azul, violeta, verde, naranja, rosa) y los semánticos verde/rojo
+   de saldos se mantienen sin cambios para no perder señalética. */
+[data-theme="lavanda"] {
+  --bg: #fdf3f6;
+  --teal: #d97a98;
+  --teal-hover: #c45e80;
+  --nav: #7a4a5f;
+}
+
+/* Selector de tema en Configuración → Tema. Dos cards lado a lado
+   con un swatch visual del tema, etiqueta y pequeña descripción. */
+.theme-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.theme-option {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.theme-option:hover {
+  border-color: var(--teal);
+}
+
+.theme-option.is-active {
+  border-color: var(--teal);
+  background: var(--surface-soft);
+  box-shadow: 0 0 0 2px var(--teal) inset;
+}
+
+.theme-option > span:not(.theme-swatch) {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.theme-option small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.theme-swatch {
+  display: block;
+  width: 100%;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+
+/* Swatches: una banda con el fondo y un círculo con el botón
+   primario, para que se vea de un vistazo el resultado. */
+.theme-swatch--classic {
+  background: linear-gradient(90deg, #f5f7f8 0%, #f5f7f8 70%, #0f766e 70%, #0f766e 100%);
+}
+
+.theme-swatch--lavanda {
+  background: linear-gradient(90deg, #fdf3f6 0%, #fdf3f6 70%, #d97a98 70%, #d97a98 100%);
+}
+
+@media (max-width: 480px) {
+  .theme-toggle {
+    grid-template-columns: 1fr;
+  }
 }
 
 * {
@@ -331,7 +409,7 @@ h2 {
 }
 
 .home-add-cta:hover {
-  background: #0b5f59;
+  background: var(--teal-hover);
   transform: translateY(-1px);
   box-shadow: 0 12px 28px rgba(15, 118, 110, 0.34);
 }
@@ -1070,7 +1148,7 @@ button:focus-visible {
 }
 
 .primary-action:hover {
-  background: #0b5f59;
+  background: var(--teal-hover);
 }
 
 .date-trigger {

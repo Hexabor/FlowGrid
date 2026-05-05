@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-05-1228">
+    <link rel="stylesheet" href="styles.css?v=2026-05-05-1332">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -898,6 +898,7 @@
 
           <div class="settings-tabs" aria-label="Secciones de configuracion">
             <button class="settings-tab is-active" type="button" data-settings-target="concepts">Conceptos y categorias</button>
+            <button class="settings-tab" type="button" data-settings-target="theme">Tema</button>
             <button class="settings-tab" type="button" data-settings-target="csv">CSV</button>
             <button class="settings-tab" type="button" data-settings-target="backup">Backup JS</button>
           </div>
@@ -959,6 +960,27 @@
             </section>
           </section>
 
+
+          <section class="settings-panel" data-settings-panel="theme">
+            <section class="panel">
+              <div class="section-heading">
+                <h2>Tema visual</h2>
+              </div>
+              <p>Elige c&oacute;mo se ve la app. El cambio se aplica al instante y se recuerda entre sesiones.</p>
+              <div class="theme-toggle" role="group" aria-label="Tema de la app">
+                <button class="theme-option is-active" type="button" data-theme-value="classic">
+                  <span class="theme-swatch theme-swatch--classic" aria-hidden="true"></span>
+                  <span>Cl&aacute;sico</span>
+                  <small>Verde teal sobre fondo gris suave.</small>
+                </button>
+                <button class="theme-option" type="button" data-theme-value="lavanda">
+                  <span class="theme-swatch theme-swatch--lavanda" aria-hidden="true"></span>
+                  <span>Lavanda</span>
+                  <small>Rosa pastel sobre fondo lavanda muy claro.</small>
+                </button>
+              </div>
+            </section>
+          </section>
 
           <section class="settings-panel" data-settings-panel="csv">
             <section class="panel">
@@ -1348,10 +1370,26 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-05 12:28:03";
+      window.__FG_BUILD__ = "2026-05-05 13:32:33";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
+      })();
+
+      // Aplicar el tema (classic / lavanda) ANTES de que el browser pinte
+      // cualquier cosa, para evitar el flash del tema clásico en una
+      // sesión donde el usuario eligió lavanda. Persistencia en
+      // localStorage. El módulo features/theme.js lee también esta
+      // misma key al cargar y mantiene el selector sincronizado.
+      (function () {
+        try {
+          const theme = localStorage.getItem("flowgrid.theme.v1");
+          if (theme === "lavanda") {
+            document.documentElement.dataset.theme = "lavanda";
+          }
+        } catch (_) {
+          // localStorage unavailable; stay on classic.
+        }
       })();
 
       // Restore the saved view before the module bootstrap completes, so the
@@ -1412,6 +1450,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-05-1228"></script>
+    <script type="module" src="app.js?v=2026-05-05-1332"></script>
   </body>
 </html>
