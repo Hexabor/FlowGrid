@@ -1841,6 +1841,14 @@ a.primary-action {
     margin-bottom: 0;
   }
 
+  /* Override del atributo hidden — sin estos, los display:flex/grid
+     y display:inline-flex de arriba pisaban a [hidden]. */
+  .shared-mobile-picker-row[hidden],
+  .shared-mobile-picker[hidden],
+  .shared-mobile-back[hidden] {
+    display: none !important;
+  }
+
   /* Atajo "Volver a Todos": aparece a la izquierda del dropdown solo
      cuando hay un filtro activo. Botón cuadrado con chevron y texto
      corto para que se entienda de un vistazo. */

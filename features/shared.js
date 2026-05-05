@@ -874,13 +874,24 @@ function renderSharedFilterOptions() {
   syncMobileBackToAllVisibility();
 }
 
-// Botón "Volver a Todos" del panel Saldos (solo móvil): visible
-// cuando el filtro NO está en "all", oculto cuando ya estás viendo
-// a todos. Permite salir del detalle de un contacto/grupo sin
-// abrir el dropdown.
+// Controles del filtro móvil del panel Saldos. Dos estados:
+//   - vista "Todos": no se ve nada (ni dropdown ni back-button); las
+//     cards del resumen son la nav.
+//   - vista contacto/grupo: solo se ve el botón "Volver a Todos";
+//     el dropdown se mantiene oculto porque para cambiar de detalle
+//     basta con volver y pinchar otra card.
 function syncMobileBackToAllVisibility() {
   if (!elements.sharedMobileBackToAll) return;
   const isAll = !state.sharedFilterContactId || state.sharedFilterContactId === "all";
+  // Picker label oculto siempre en móvil — nunca aporta vs. tocar la card.
+  if (elements.sharedMobilePickerLabel) {
+    elements.sharedMobilePickerLabel.hidden = true;
+  }
+  // Row entera oculta cuando estamos en Todos (para no dejar margen
+  // vertical de un contenedor sin contenido).
+  if (elements.sharedMobilePickerRow) {
+    elements.sharedMobilePickerRow.hidden = isAll;
+  }
   elements.sharedMobileBackToAll.hidden = isAll;
 }
 

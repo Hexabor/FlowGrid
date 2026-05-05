@@ -84,6 +84,8 @@ export const elements = {
   sharedContactFilter: document.querySelector("#shared-contact-filter"),
   sharedMobileContactPicker: document.querySelector("#shared-mobile-contact-picker"),
   sharedMobileBackToAll: document.querySelector("#shared-mobile-back-to-all"),
+  sharedMobilePickerRow: document.querySelector(".shared-mobile-picker-row"),
+  sharedMobilePickerLabel: document.querySelector(".shared-mobile-picker"),
   sharedEntries: document.querySelector("#shared-entries"),
   paymentModal: document.querySelector("#payment-modal"),
   closePaymentModal: document.querySelector("#close-payment-modal"),

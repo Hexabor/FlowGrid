@@ -2,6 +2,15 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Saldos móvil: dropdown oculto + botón \"Volver a Todos\" se oculta de verdad",
+    changes: [
+      "El dropdown \"Contacto o grupo\" en móvil queda oculto siempre — para seleccionar a alguien basta con pinchar la card del resumen. En vista \"Todos\" no se ve nada arriba; en vista detalle solo aparece el botón \"← Volver a Todos\".",
+      "Bug del intento anterior: el botón seguía visible en \"Todos\" porque el `display: inline-flex` ganaba al atributo `hidden`. Añadido el override correspondiente.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Saldos móvil: botón \"Volver a Todos\" + leyenda en chip a la derecha del título",
     changes: [
       "Atajo \"← Volver a Todos\" a la izquierda del dropdown del panel Saldos. Aparece solo cuando hay un filtro activo; oculto en \"Todos\" para no añadir ruido. Bug del primer intento corregido: ahora también se oculta correctamente al pulsar la card de un contacto o cambiar el filtro desde otros sitios.",
