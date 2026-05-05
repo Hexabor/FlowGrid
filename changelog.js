@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Cards de saldo en PC: nombre + saldo en una línea + leyenda con puntos color",
+    changes: [
+      "Cada tarjeta de Saldos en PC pierde la línea \"TE DEBE / LE DEBES\". El nombre y el importe pasan a compartir la primera línea (nombre a la izquierda, importe a la derecha), ahorrando una línea por tarjeta.",
+      "Mismo patrón que en móvil: leyenda con dos puntos (verde \"te debe\" / rojo \"le debes\") arriba del grid de cards explica el código del borde de color izquierdo.",
+      "Móvil: misma simplificación interna — el header de la tarjeta deja de ocupar dos columnas y queda en una sola con nombre + saldo en flex row.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Saldos móvil: dropdown oculto + botón \"Volver a Todos\" se oculta de verdad",
     changes: [
       "El dropdown \"Contacto o grupo\" en móvil queda oculto siempre — para seleccionar a alguien basta con pinchar la card del resumen. En vista \"Todos\" no se ve nada arriba; en vista detalle solo aparece el botón \"← Volver a Todos\".",

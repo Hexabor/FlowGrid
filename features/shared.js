@@ -765,6 +765,20 @@ function renderSharedBalances() {
 
   const fragment = document.createDocumentFragment();
 
+  // Leyenda con los puntos de color (igual que en móvil): explica el
+  // significado del borde verde/rojo de cada card sin tener que repetir
+  // "TE DEBE / LE DEBES" en cada una. Ocupa ancho completo del grid.
+  const legend = document.createElement("p");
+  legend.className = "balance-summary-legend balance-summary-legend--desktop";
+  legend.innerHTML =
+    '<span class="balance-summary-legend-item">' +
+      '<span class="balance-summary-legend-dot is-positive"></span> te debe' +
+    '</span>' +
+    '<span class="balance-summary-legend-item">' +
+      '<span class="balance-summary-legend-dot is-negative"></span> le debes' +
+    '</span>';
+  fragment.append(legend);
+
   toRender
     .map((contact) => ({ contact, balance: getSharedBalance(contact.id) }))
     .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
@@ -772,7 +786,6 @@ function renderSharedBalances() {
       const card = document.createElement("article");
       const header = document.createElement("div");
       const name = document.createElement("strong");
-      const hint = document.createElement("span");
       const value = document.createElement("span");
       const actions = document.createElement("div");
 
@@ -784,20 +797,15 @@ function renderSharedBalances() {
 
       header.className = "balance-header";
       name.textContent = contact.name;
-      hint.className = "balance-hint";
-
-      if (Math.abs(balance) < 0.005) {
-        hint.textContent = "Saldado";
-      } else if (balance > 0) {
-        hint.textContent = "te debe";
-      } else {
-        hint.textContent = "le debes";
-      }
-
-      header.append(name, hint);
 
       value.className = "balance-amount";
       value.textContent = formatMoney(Math.abs(balance));
+
+      // Header: nombre a la izquierda, importe a la derecha, en una
+      // sola línea. Antes había hint "TE DEBE / LE DEBES" + amount en
+      // línea propia debajo. El color del borde-left de la card +
+      // la leyenda del panel ya transmiten la dirección.
+      header.append(name, value);
 
       actions.className = "balance-actions";
 
@@ -819,7 +827,7 @@ function renderSharedBalances() {
 
       actions.append(viewButton, settleButton);
 
-      card.append(header, value, actions);
+      card.append(header, actions);
       fragment.append(card);
     });
 

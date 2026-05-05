@@ -1638,9 +1638,23 @@ a.primary-action {
 
 .balance-header {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: baseline;
   justify-content: space-between;
+  min-width: 0;
+}
+
+.balance-header .balance-amount {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.balance-header strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .balance-actions {
@@ -1968,6 +1982,14 @@ a.primary-action {
 
 .balance-summary-legend-dot.is-negative {
   background: var(--red);
+}
+
+/* Variante desktop de la leyenda: vive como hijo del .balance-grid
+   y ocupa toda la fila (las cards están en auto-fill repeat). */
+.balance-summary-legend--desktop {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin: 0 0 4px;
 }
 
 .shared-toolbar {
@@ -3014,21 +3036,21 @@ dt {
   }
 
   .balance-card {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 1fr;
     grid-template-rows: auto auto;
     grid-template-areas:
-      "header   amount"
-      "actions  actions";
-    gap: 8px 12px;
-    align-items: center;
+      "header"
+      "actions";
+    gap: 8px;
     padding: 10px 12px;
   }
 
   .balance-card .balance-header {
     grid-area: header;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
     min-width: 0;
   }
 
@@ -3039,13 +3061,11 @@ dt {
     max-width: 100%;
   }
 
-  .balance-card .balance-amount {
-    grid-area: amount;
-    align-self: center;
-    justify-self: end;
-    font-size: 1.4rem;
+  .balance-card .balance-header .balance-amount {
+    font-size: 1.2rem;
     font-weight: 800;
     white-space: nowrap;
+    flex: 0 0 auto;
   }
 
   .balance-card .balance-actions {
