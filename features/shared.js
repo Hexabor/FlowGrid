@@ -673,7 +673,7 @@ function renderMobileBalanceSummary(contactsWithActivity) {
       '<span class="balance-summary-legend-dot is-negative"></span> le debes' +
     '</span>';
 
-  header.append(title, legend);
+  header.append(legend, title);
   wrapper.append(header);
 
   const list = document.createElement("ul");
