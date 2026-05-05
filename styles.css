@@ -278,15 +278,18 @@ h2 {
   width: auto;
   margin: 0 auto 22px;
   padding: 14px 26px;
-  background: var(--nav);
+  /* Verde sage (grisáceo) — más discreto que el azul/teal de la
+     marca; encaja bien en una pantalla limpia como el Home sin
+     gritar. La sombra acompaña en el mismo tono atenuado. */
+  background: #7a9b8f;
   color: #ffffff;
   border: none;
   border-radius: 999px;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(15, 118, 110, 0.28);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 8px 22px rgba(106, 138, 128, 0.28);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
 /* El padre es un .panel (display: block); para centrar un inline-flex
@@ -298,13 +301,14 @@ h2 {
 }
 
 .home-add-cta:hover {
+  background: #6c8c81;
   transform: translateY(-1px);
-  box-shadow: 0 14px 32px rgba(15, 118, 110, 0.36);
+  box-shadow: 0 12px 28px rgba(106, 138, 128, 0.34);
 }
 
 .home-add-cta:active {
   transform: translateY(0);
-  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.32);
+  box-shadow: 0 6px 16px rgba(106, 138, 128, 0.3);
 }
 
 .home-add-cta svg {

@@ -2,6 +2,14 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "CTA del Home: color verde sage en lugar del azul de la marca",
+    changes: [
+      "El pill de \"Añadir movimiento\" pasa al verde sage (#7a9b8f), un tono grisáceo más discreto que el azul oscuro de la marca. La sombra acompaña en el mismo tono atenuado.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "CTA del Home: a dos líneas y ajustado al contenido",
     changes: [
       "El pill de \"Añadir movimiento\" pasa a dos líneas (\"Añadir\" arriba, \"movimiento\" debajo) y deja de ocupar todo el ancho — se ajusta al contenido y se centra. Mucho menos invasivo que la versión banner del intento anterior.",
