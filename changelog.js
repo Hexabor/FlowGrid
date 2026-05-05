@@ -2,26 +2,13 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
-    title: "CTA del Home: color verde sage en lugar del azul de la marca",
+    title: "Home rediseñado: CTA + Movimientos destacado + grid 2x2 con el resto",
     changes: [
-      "El pill de \"Añadir movimiento\" pasa al verde sage (#7a9b8f), un tono grisáceo más discreto que el azul oscuro de la marca. La sombra acompaña en el mismo tono atenuado.",
-    ],
-  },
-  {
-    date: "2026-05-05",
-    commit: "dev@HEAD",
-    title: "CTA del Home: a dos líneas y ajustado al contenido",
-    changes: [
-      "El pill de \"Añadir movimiento\" pasa a dos líneas (\"Añadir\" arriba, \"movimiento\" debajo) y deja de ocupar todo el ancho — se ajusta al contenido y se centra. Mucho menos invasivo que la versión banner del intento anterior.",
-    ],
-  },
-  {
-    date: "2026-05-05",
-    commit: "dev@HEAD",
-    title: "Home: atajo grande \"Añadir movimiento\" arriba del menú",
-    changes: [
-      "Nuevo botón pill verde con icono \"+\" en el Home, encima de los módulos. Pulsar abre directamente el modal de Nuevo movimiento sin tener que ir a la vista Movimientos primero — el flujo más usado de la app pasa de tres clics a uno.",
-      "En PC, ancho moderado (max 360px) centrado para que se sienta como acción destacada y no como banner. En móvil ocupa todo el ancho del panel para que se pueda tocar cómodamente con el pulgar.",
+      "Nuevo botón pill verde teal con icono \"+\" arriba del Home: \"Añadir / movimiento\" en dos líneas, ajustado al contenido y centrado. Atajo directo al modal de Nuevo movimiento sin pasar por la vista Movimientos — el flujo más usado de la app pasa de tres clics a uno.",
+      "Movimientos pasa a ser la card destacada del menú: en PC ocupa la columna izquierda (45% del ancho) con icono grande arriba centrado, título a 1.7rem y descripción debajo. En móvil va arriba del todo, ligeramente más alta que el resto.",
+      "Las otras cuatro vistas (Compartidos, Análisis, Periódicos, Contactos y grupos) se reorganizan en un grid 2×2 a la derecha en PC (55% del ancho), apiladas en móvil. Layout horizontal con icono cuadrado coloreado a la izquierda + título y descripción a la derecha.",
+      "Más aire alrededor: padding del panel del Home subido a 28px y gap entre tarjetas a 18px en PC. En móvil 22px / 14px.",
+      "Pequeño fix de gramática: \"Anadir movimiento\" y \"Anadir contacto\" pasan a \"Añadir\" con tilde correcta (3 sitios en JS, 2 en HTML).",
     ],
   },
   {

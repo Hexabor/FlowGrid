@@ -559,7 +559,7 @@ export function resetMovementForm(movement) {
   elements.editCommentField.hidden = true;
   elements.editComment.value = "";
   if (elements.convertToRecurring) elements.convertToRecurring.hidden = true;
-  elements.submitLabel.textContent = "Anadir movimiento";
+  elements.submitLabel.textContent = "Añadir movimiento";
   state.editingMovementId = null;
   state.editingSharedEntryId = null;
   state.editingPartnerEntry = false;
@@ -633,7 +633,7 @@ function duplicateMovementById(id) {
   // previo, fillMovementForm no toca este atributo y se quedaba
   // visible — pulsarlo no hacía nada.
   if (elements.convertToRecurring) elements.convertToRecurring.hidden = true;
-  elements.submitLabel.textContent = "Anadir movimiento";
+  elements.submitLabel.textContent = "Añadir movimiento";
   elements.feedback.textContent = "Copia preparada. Ajusta lo que cambie.";
   openMovementModal();
   elements.concept.focus();
@@ -1170,7 +1170,7 @@ elements.form.addEventListener("submit", async (event) => {
     }
     state.editingMovementId = null;
     state.editingSharedEntryId = null;
-    elements.submitLabel.textContent = "Anadir movimiento";
+    elements.submitLabel.textContent = "Añadir movimiento";
     elements.feedback.textContent = "Cambios guardados.";
   } else {
     elements.feedback.textContent = skipMovement

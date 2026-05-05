@@ -278,17 +278,17 @@ h2 {
   width: auto;
   margin: 0 auto 22px;
   padding: 14px 26px;
-  /* Verde sage (grisáceo) — más discreto que el azul/teal de la
-     marca; encaja bien en una pantalla limpia como el Home sin
-     gritar. La sombra acompaña en el mismo tono atenuado. */
-  background: #7a9b8f;
+  /* Mismo verde teal de var(--teal) que usan "Nuevo movimiento" y
+     "Añadir contacto" en sus paneles. Coherencia con el resto de
+     CTAs primarios de la app. */
+  background: var(--teal);
   color: #ffffff;
   border: none;
   border-radius: 999px;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgba(106, 138, 128, 0.28);
+  box-shadow: 0 8px 22px rgba(15, 118, 110, 0.28);
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
@@ -301,14 +301,14 @@ h2 {
 }
 
 .home-add-cta:hover {
-  background: #6c8c81;
+  background: #0b5f59;
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px rgba(106, 138, 128, 0.34);
+  box-shadow: 0 12px 28px rgba(15, 118, 110, 0.34);
 }
 
 .home-add-cta:active {
   transform: translateY(0);
-  box-shadow: 0 6px 16px rgba(106, 138, 128, 0.3);
+  box-shadow: 0 6px 16px rgba(15, 118, 110, 0.3);
 }
 
 .home-add-cta svg {
@@ -460,6 +460,141 @@ h2 {
 .module-card[data-color="rose"] {
   --module-tile-bg: var(--mod-rose-bg);
   --module-tile-fg: var(--mod-rose);
+}
+
+/* ==== Home modules layout: jerarquía Movimientos > resto ====
+   Movimientos pasa a ser la card destacada (columna izquierda en PC,
+   fila grande arriba en móvil). Las otras 4 viven en un grid 2x2 en
+   PC, apiladas en columna en móvil. Mismos colores de tile que ya
+   existían (data-color con su par de variables). */
+
+.home-modules-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+.home-modules-secondary {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+/* Más aire alrededor de los botones del Home: padding generoso en
+   el panel que los contiene y gap holgado entre tarjetas. */
+#home-view .panel {
+  padding: 28px 26px;
+}
+
+@media (max-width: 719px) {
+  #home-view .panel {
+    padding: 22px 18px;
+  }
+}
+
+/* Movil: primary lleva el mismo layout horizontal que las secundarias
+   pero con padding más generoso y tipografía algo mayor para destacar
+   sin romper el ritmo visual. */
+.module-card.home-module-primary {
+  padding: 26px 16px;
+}
+
+.module-card.home-module-primary .module-icon {
+  width: 44px;
+  height: 44px;
+}
+
+.module-card.home-module-primary .module-icon .nav-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.module-card.home-module-primary strong {
+  font-size: 1.15rem;
+}
+
+@media (min-width: 720px) {
+  /* PC: 2 cols 45/55. La card de Movimientos ocupa todo el alto del
+     row gracias a align-items: stretch (default) + override de
+     aspect-ratio. */
+  .home-modules-layout {
+    grid-template-columns: 45fr 55fr;
+    gap: 18px;
+  }
+
+  .home-modules-secondary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  /* PC primary (Movimientos): icono grande arriba centrado + título
+     grande + descripción debajo. Sin aspect-ratio 3/4 para que llene
+     el alto del row. */
+  .module-card.home-module-primary {
+    aspect-ratio: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 14px;
+    text-align: center;
+    justify-items: center;
+    align-content: center;
+    padding: 36px 20px;
+  }
+
+  .module-card.home-module-primary .module-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+  }
+
+  .module-card.home-module-primary .module-icon .nav-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .module-card.home-module-primary strong {
+    font-size: 1.7rem;
+  }
+
+  .module-card.home-module-primary small {
+    font-size: 0.95rem;
+  }
+
+  /* PC secondary: layout horizontal (icono izquierda + texto derecha),
+     sin aspect-ratio. Mismo reparto que en mobile pero ajustado. */
+  .module-card.home-module-secondary {
+    aspect-ratio: auto;
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: auto auto;
+    gap: 2px 14px;
+    text-align: left;
+    justify-items: stretch;
+    align-content: center;
+    padding: 18px 18px;
+  }
+
+  .module-card.home-module-secondary .module-icon {
+    grid-row: 1 / span 2;
+    align-self: center;
+    width: 48px;
+    height: 48px;
+  }
+
+  .module-card.home-module-secondary .module-icon .nav-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .module-card.home-module-secondary strong {
+    font-size: 1.02rem;
+    text-align: left;
+  }
+
+  .module-card.home-module-secondary small {
+    font-size: 0.84rem;
+    text-align: left;
+    line-height: 1.35;
+  }
 }
 
 /* ==== Novedades destacadas (panel debajo del grid del Home) ====
