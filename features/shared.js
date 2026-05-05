@@ -862,6 +862,17 @@ function renderSharedFilterOptions() {
   elements.sharedContactFilter.value = validSelected;
   elements.sharedMobileContactPicker.value = validSelected;
   state.sharedFilterContactId = validSelected;
+  syncMobileBackToAllVisibility();
+}
+
+// Botón "Volver a Todos" del panel Saldos (solo móvil): visible
+// cuando el filtro NO está en "all", oculto cuando ya estás viendo
+// a todos. Permite salir del detalle de un contacto/grupo sin
+// abrir el dropdown.
+function syncMobileBackToAllVisibility() {
+  if (!elements.sharedMobileBackToAll) return;
+  const isAll = !state.sharedFilterContactId || state.sharedFilterContactId === "all";
+  elements.sharedMobileBackToAll.hidden = isAll;
 }
 
 function renderSharedEntries() {
@@ -1302,6 +1313,18 @@ elements.sharedMobileContactPicker.addEventListener("change", () => {
   elements.sharedContactFilter.value = state.sharedFilterContactId;
   renderSharedBalances();
   renderSharedEntries();
+  syncMobileBackToAllVisibility();
+});
+
+// Botón "Volver a Todos": atajo a la izquierda del dropdown que
+// resetea el filtro sin tener que abrir el desplegable.
+elements.sharedMobileBackToAll?.addEventListener("click", () => {
+  state.sharedFilterContactId = "all";
+  elements.sharedMobileContactPicker.value = "all";
+  elements.sharedContactFilter.value = "all";
+  renderSharedBalances();
+  renderSharedEntries();
+  syncMobileBackToAllVisibility();
 });
 
 elements.sharedBalances.addEventListener("click", (event) => {

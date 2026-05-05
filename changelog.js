@@ -2,6 +2,15 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "Saldos móvil: botón \"Volver a Todos\" como atajo del dropdown",
+    changes: [
+      "Cuando estás viendo el detalle de un contacto o grupo, aparece a la izquierda del selector un botón \"← Volver a Todos\" que devuelve la vista al resumen de un toque, sin tener que abrir el dropdown.",
+      "El botón se oculta cuando ya estás en \"Todos\" para no añadir ruido.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Resumen de saldos en móvil: dos columnas con cards de una sola línea",
     changes: [
       "Cada card pasa a una sola línea (nombre + cantidad). El \"TE DEBE / LE DEBES\" se omite; el color del borde izquierdo (verde / rojo) ya señala la dirección. Una pequeña leyenda arriba con dos puntitos de color explica el código sin gastar línea por card.",

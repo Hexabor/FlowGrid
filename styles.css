@@ -1817,15 +1817,55 @@ a.primary-action {
 /* Mobile-only contact picker en la cabecera del panel Saldos — no se ve
    en desktop. Su valor está sincronizado con el dropdown de la sección
    "Movimientos compartidos" para que ambos viewports compartan estado. */
+.shared-mobile-picker-row {
+  display: none;
+}
+
 .shared-mobile-picker {
   display: none;
 }
 
 @media (max-width: 719px) {
+  .shared-mobile-picker-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
   .shared-mobile-picker {
     display: grid;
     gap: 4px;
-    margin-bottom: 14px;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+
+  /* Atajo "Volver a Todos": aparece a la izquierda del dropdown solo
+     cuando hay un filtro activo. Botón cuadrado con chevron y texto
+     corto para que se entienda de un vistazo. */
+  .shared-mobile-back {
+    flex: 0 0 auto;
+    align-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 46px;
+    padding: 0 12px;
+    background: #fbfcfd;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--nav);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(15, 118, 110, 0.08);
+  }
+
+  .shared-mobile-back svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
   }
 
   /* Resumen de saldos en móvil: dos columnas con una fila por card
