@@ -2,6 +2,14 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-05",
     commit: "dev@HEAD",
+    title: "CTA del Home: a dos líneas y ajustado al contenido",
+    changes: [
+      "El pill de \"Añadir movimiento\" pasa a dos líneas (\"Añadir\" arriba, \"movimiento\" debajo) y deja de ocupar todo el ancho — se ajusta al contenido y se centra. Mucho menos invasivo que la versión banner del intento anterior.",
+    ],
+  },
+  {
+    date: "2026-05-05",
+    commit: "dev@HEAD",
     title: "Home: atajo grande \"Añadir movimiento\" arriba del menú",
     changes: [
       "Nuevo botón pill verde con icono \"+\" en el Home, encima de los módulos. Pulsar abre directamente el modal de Nuevo movimiento sin tener que ir a la vista Movimientos primero — el flujo más usado de la app pasa de tres clics a uno.",

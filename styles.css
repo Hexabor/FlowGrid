@@ -265,31 +265,36 @@ h2 {
   gap: 12px;
 }
 
-/* CTA principal del Home: pill grande verde teal con icono "+" y
-   "Añadir movimiento". Es el atajo al modal de Nuevo movimiento
-   que es el flujo más usado de la app — un toque desde Home y
-   estás dentro. Centrado y de ancho moderado para que sienta como
-   acción destacada (no banner). En móvil ocupa todo el ancho del
-   panel para que se pueda tap-ear cómodamente. */
+/* CTA principal del Home: pill verde teal con icono "+" y
+   "Añadir/movimiento" en dos líneas. Atajo al modal de Nuevo
+   movimiento — el flujo más usado pasa de tres clics a uno. El
+   botón se ajusta a su contenido (no banner full ancho) y se
+   centra horizontalmente con margin auto. */
 .home-add-cta {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  width: 100%;
-  max-width: 360px;
+  width: auto;
   margin: 0 auto 22px;
-  padding: 18px 28px;
+  padding: 14px 26px;
   background: var(--nav);
   color: #ffffff;
   border: none;
   border-radius: 999px;
-  font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
   box-shadow: 0 10px 26px rgba(15, 118, 110, 0.28);
   transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+/* El padre es un .panel (display: block); para centrar un inline-flex
+   forzamos display: block en el botón con margin auto. Mantenemos los
+   children como flex via la propia regla del button. */
+.home-add-cta {
+  display: flex;
+  width: fit-content;
 }
 
 .home-add-cta:hover {
@@ -303,17 +308,20 @@ h2 {
 }
 
 .home-add-cta svg {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
 }
 
-@media (max-width: 719px) {
-  .home-add-cta {
-    max-width: none;
-    padding: 18px 24px;
-    margin-bottom: 18px;
-  }
+/* Label en dos líneas: "Añadir" arriba y "movimiento" debajo.
+   Dos spans block dentro de un wrapper flex column. */
+.home-add-cta-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+  font-size: 1.05rem;
+  text-align: left;
 }
 
 .module-group {

@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-05-1006">
+    <link rel="stylesheet" href="styles.css?v=2026-05-05-1008">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -187,7 +187,10 @@
                 <path d="M12 5v14"></path>
                 <path d="M5 12h14"></path>
               </svg>
-              <span>A&ntilde;adir movimiento</span>
+              <span class="home-add-cta-label">
+                <span>A&ntilde;adir</span>
+                <span>movimiento</span>
+              </span>
             </button>
 
             <div class="module-groups">
@@ -1342,7 +1345,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-05 10:06:21";
+      window.__FG_BUILD__ = "2026-05-05 10:08:49";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1400,6 +1403,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-05-1006"></script>
+    <script type="module" src="app.js?v=2026-05-05-1008"></script>
   </body>
 </html>
