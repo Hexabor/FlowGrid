@@ -15,6 +15,7 @@ import { showAuthGate, hideAuthGate, refreshSessionBadge } from "./ui/auth-gate.
 import "./features/csv.js";
 import "./features/backup.js";
 import "./features/feedback.js";
+import "./features/theme.js";
 
 let appBooted = false;
 
