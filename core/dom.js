@@ -143,6 +143,7 @@ export const elements = {
   recurringList: document.querySelector("#recurring-list"),
   recurringEmpty: document.querySelector("#recurring-empty"),
   recurringCount: document.querySelector("#recurring-count"),
+  recurringFilter: document.querySelector("#recurring-filter"),
   recurringModal: document.querySelector("#recurring-modal"),
   openRecurringModal: document.querySelector("#open-recurring-modal"),
   closeRecurringModal: document.querySelector("#close-recurring-modal"),

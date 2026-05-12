@@ -611,6 +611,12 @@
               Si pausas una plantilla, deja de generar nuevos movimientos hasta que la reactives, y al hacerlo arranca desde la pr&oacute;xima ocurrencia (no recupera los meses de la pausa).
             </p>
 
+            <div id="recurring-filter" class="recurring-filter" role="group" aria-label="Filtrar plantillas">
+              <button type="button" class="recurring-filter-btn is-active" data-filter="all">Todas</button>
+              <button type="button" class="recurring-filter-btn" data-filter="individual">Individuales</button>
+              <button type="button" class="recurring-filter-btn" data-filter="shared">Compartidas</button>
+            </div>
+
             <div id="recurring-list" class="recurring-list"></div>
             <p id="recurring-empty" class="empty-state" hidden>
               A&uacute;n no tienes plantillas. Crea la primera para que FlowGrid genere tus movimientos recurrentes.
@@ -1391,7 +1397,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-12 17:33:01";
+      window.__FG_BUILD__ = "2026-05-12 17:42:34";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;

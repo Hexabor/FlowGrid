@@ -669,6 +669,16 @@ function summarisePeriodicity(template) {
 }
 
 function summariseSharedTarget(template) {
+  if (template.groupId) {
+    const group = getGroupById(template.groupId);
+    if (!group) return "Con grupo (no disponible)";
+    const memberCount = getGroupMembers(template.groupId).length;
+    const memberLabel = `${memberCount} miembro${memberCount === 1 ? "" : "s"}`;
+    const isUneven =
+      Boolean(template.groupSplit) || group.defaultSplitMode === "uneven";
+    const splitLabel = isUneven ? "reparto desigual" : "partes iguales";
+    return `Con grupo ${group.name} · ${memberLabel} · ${splitLabel}`;
+  }
   if (!template.sharedContactId) return "";
   const name = getContactName(template.sharedContactId) || "—";
   const modeKey = sharedModeKeyOfTemplate(template);
@@ -684,24 +694,52 @@ function summariseSharedTarget(template) {
   return modeLabel;
 }
 
+function templateIsShared(template) {
+  return Boolean(template.sharedContactId) || Boolean(template.groupId);
+}
+
+// Filtro de la lista: "all" | "individual" | "shared". Se mantiene en
+// memoria mientras dura la sesión: cambiar de vista y volver lo conserva,
+// recargar la página lo resetea a "all". El usuario casi nunca quiere
+// que un filtro persista entre sesiones.
+let recurringFilter = "all";
+
 export function renderRecurringView() {
   const list = elements.recurringList;
   const empty = elements.recurringEmpty;
   const count = elements.recurringCount;
   if (!list) return;
 
-  const items = state.recurringTemplates.slice().sort((a, b) => {
+  const all = state.recurringTemplates.slice().sort((a, b) => {
     if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
     return a.concept.localeCompare(b.concept, "es", { sensitivity: "base" });
   });
 
+  const items =
+    recurringFilter === "individual"
+      ? all.filter((t) => !templateIsShared(t))
+      : recurringFilter === "shared"
+        ? all.filter(templateIsShared)
+        : all;
+
   if (count) {
-    count.textContent = `${items.length} plantilla${items.length === 1 ? "" : "s"}`;
+    count.textContent =
+      recurringFilter === "all"
+        ? `${all.length} plantilla${all.length === 1 ? "" : "s"}`
+        : `${items.length} de ${all.length} plantilla${all.length === 1 ? "" : "s"}`;
   }
 
   list.innerHTML = "";
   if (!items.length) {
-    if (empty) empty.hidden = false;
+    if (empty) {
+      empty.hidden = false;
+      empty.textContent =
+        recurringFilter === "all"
+          ? "Aún no tienes plantillas. Crea la primera para que FlowGrid genere tus movimientos recurrentes."
+          : recurringFilter === "individual"
+            ? "No tienes plantillas individuales."
+            : "No tienes plantillas compartidas.";
+    }
     return;
   }
   if (empty) empty.hidden = true;
@@ -1253,6 +1291,18 @@ export function openConvertFromSharedEntry(entry) {
 
 elements.openRecurringModal?.addEventListener("click", openCreateRecurringModal);
 elements.closeRecurringModal?.addEventListener("click", closeRecurringModal);
+
+elements.recurringFilter?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-filter]");
+  if (!btn) return;
+  const next = btn.dataset.filter;
+  if (next === recurringFilter) return;
+  recurringFilter = next;
+  for (const candidate of elements.recurringFilter.querySelectorAll("[data-filter]")) {
+    candidate.classList.toggle("is-active", candidate.dataset.filter === next);
+  }
+  renderRecurringView();
+});
 elements.recurringModal?.addEventListener("click", (event) => {
   if (event.target === elements.recurringModal) closeRecurringModal();
 });

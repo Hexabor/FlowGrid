@@ -5212,6 +5212,54 @@ body.is-locked .shell {
   gap: 4px;
 }
 
+/* ==== Filtro segmentado de plantillas periódicas ==== */
+.recurring-filter {
+  display: inline-flex;
+  gap: 0;
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  background: var(--surface-soft);
+  flex-wrap: wrap;
+}
+
+.recurring-filter-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.recurring-filter-btn:hover {
+  color: var(--text);
+}
+
+.recurring-filter-btn.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(23, 32, 38, 0.08);
+}
+
+@media (max-width: 719px) {
+  .recurring-filter {
+    display: flex;
+    width: 100%;
+  }
+  .recurring-filter-btn {
+    flex: 1 1 0;
+    padding: 8px 10px;
+    text-align: center;
+  }
+}
+
 /* ==== Toast transitorio ==== */
 .fg-toast {
   position: fixed;

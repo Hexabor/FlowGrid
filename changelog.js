@@ -2,6 +2,15 @@ window.FlowGridChangelog = [
   {
     date: "2026-05-12",
     commit: "dev@HEAD",
+    title: "Periódicos: filtro Individuales / Compartidas y nombre del grupo en la tarjeta",
+    changes: [
+      "Sobre la lista de plantillas periódicas hay ahora un filtro segmentado con tres opciones: \"Todas\" (default), \"Individuales\" y \"Compartidas\". El contador del topbar refleja el filtro activo (\"X de Y plantillas\"). El filtro vive en memoria mientras dura la sesión y se resetea al recargar.",
+      "Las plantillas que apuntan a un grupo ahora muestran su destino en la columna Compartido igual que las 1↔1: \"Con grupo YouTube · 6 miembros · partes iguales\" (o \"reparto desigual\" si la plantilla heredó porcentajes de un gasto desigual o el grupo tiene default uneven). Antes este texto estaba en blanco y solo se veía el nombre del grupo abriendo a editar la plantilla.",
+    ],
+  },
+  {
+    date: "2026-05-12",
+    commit: "dev@HEAD",
     title: "Invitar contacto: aviso visible al enviar o reenviar",
     changes: [
       "El botón \"Invitar\" / \"Reinvitar\" en Configuración → Contactos ahora muestra un toast en la parte inferior cuando la invitación sale: \"Invitación enviada a …\" (verde) o \"Invitación reenviada a …\". Antes el único cambio era el texto del botón pasando de \"Invitar\" a \"Reinvitar\", muy fácil de pasar por alto en móvil.",
