@@ -1,5 +1,14 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-05-12",
+    commit: "dev@HEAD",
+    title: "Invitar contacto: aviso visible al enviar o reenviar",
+    changes: [
+      "El botón \"Invitar\" / \"Reinvitar\" en Configuración → Contactos ahora muestra un toast en la parte inferior cuando la invitación sale: \"Invitación enviada a …\" (verde) o \"Invitación reenviada a …\". Antes el único cambio era el texto del botón pasando de \"Invitar\" a \"Reinvitar\", muy fácil de pasar por alto en móvil.",
+      "Si el contacto todavía no tiene email guardado o si Supabase rechaza el envío (rate-limit, etc.), también sale un toast en rojo con el motivo en vez del alert nativo del navegador.",
+    ],
+  },
+  {
     date: "2026-05-05",
     commit: "dev@HEAD",
     title: "PWA: el atajo del host de dev se llama \"Dev FlowGrid\"",

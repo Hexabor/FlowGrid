@@ -5,6 +5,7 @@ import { createId } from "../core/utils.js";
 import { entryBalanceImpact, entryAsMyPerspective, renderSharedView, syncSharedContactOptions, syncSharedModeLabels } from "./shared.js";
 import { sendInvitation } from "./invitations.js";
 import { groupBalanceForContact, contactHasGroupEntries } from "./groups.js";
+import { showToast } from "../ui/toast.js";
 
 export function getContact(id) {
   return state.contacts.find((contact) => contact.id === id);
@@ -199,23 +200,34 @@ elements.contactsList.addEventListener("click", (event) => {
 
   if (button.dataset.action === "invite-contact") {
     if (!contact.email) {
-      alert(`Añade primero un email a ${contact.name} para poder invitarle.`);
+      showToast(`Añade primero un email a ${contact.name}.`, "error");
       return;
     }
     if (contact.authUserId) {
       // Defensive: button should be disabled when linked, but never trust UI.
       return;
     }
+    const wasReinvite = Boolean(contact.invitedAt);
     button.disabled = true;
     const previousText = button.textContent;
     button.textContent = "Enviando…";
     sendInvitation(contact)
       .then(() => {
         // sendInvitation re-renders contacts, so we don't restore manually.
+        showToast(
+          wasReinvite
+            ? `Invitación reenviada a ${contact.email}.`
+            : `Invitación enviada a ${contact.email}.`,
+          "success"
+        );
       })
       .catch((error) => {
         console.error("[contacts] invite failed:", error);
-        alert(`No se pudo enviar la invitación: ${error.message ?? error}`);
+        showToast(
+          `No se pudo enviar la invitación: ${error.message ?? error}`,
+          "error",
+          5000
+        );
         button.textContent = previousText;
         button.disabled = false;
       });

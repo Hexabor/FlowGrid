@@ -5211,3 +5211,37 @@ body.is-locked .shell {
   display: grid;
   gap: 4px;
 }
+
+/* ==== Toast transitorio ==== */
+.fg-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 16px);
+  z-index: 90;
+  max-width: min(92vw, 420px);
+  padding: 10px 16px;
+  background: var(--nav);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 12px 32px rgba(23, 32, 38, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.fg-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.fg-toast[data-kind="success"] {
+  background: var(--green);
+}
+
+.fg-toast[data-kind="error"] {
+  background: var(--red);
+}
