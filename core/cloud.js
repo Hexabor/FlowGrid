@@ -164,6 +164,10 @@ function sharedToCloud(e, ownerId) {
     my_share: e.myShare ?? 0,
     their_share: e.theirShare ?? 0,
     source_movement_id: e.sourceMovementId ?? null,
+    // Adelanto: pago anticipado por un gasto que aún no ha ocurrido.
+    // Solo cambia la etiqueta en la UI; el saldo lo trata como cualquier
+    // otro pago. Ver migrate-12-shared-entry-advance.sql.
+    advance: e.advance ?? false,
     settled_at: e.settledAt ?? null,
     // Liquidación granular por miembro en gastos de grupo: { member_id:
     // timestamp }. NULL en entradas 1↔1 o en grupos sin partes
@@ -192,6 +196,7 @@ function sharedFromCloud(row) {
     myShare: Number(row.my_share),
     theirShare: Number(row.their_share),
     sourceMovementId: row.source_movement_id ?? null,
+    advance: row.advance ?? false,
     settledAt: row.settled_at ?? null,
     settledMembers: row.settled_members ?? null,
     groupId: row.group_id ?? null,

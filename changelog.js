@@ -1,5 +1,16 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-06-01",
+    commit: "dev@HEAD",
+    title: "Adelantos: registrar pagos por gastos que aún no han ocurrido",
+    changes: [
+      "Nuevo botón \"Registrar adelanto\" en el panel de Saldos de Compartidos. Sirve cuando alguien te paga (o tú le pagas) por adelantado un gasto compartido que todavía no ha sucedido: una cena del mes que viene, un viaje, etc. A diferencia de \"Liquidar saldo\", el adelanto se puede registrar aunque no haya saldo previo con ese contacto.",
+      "El adelanto se descuenta solo: cuando más adelante registras el gasto real, su importe se neto contra lo ya adelantado, sin tener que cuadrar nada a mano. Ejemplo: te adelantan 50 € para una cena; al registrar la cena (80 €, partes iguales) el saldo queda en los 10 € que sobran.",
+      "Para distinguirlo de una deuda real, el adelanto aparece etiquetado como \"Adelanto de …\" (con el concepto del gasto previsto) en el historial, y la tarjeta del contacto muestra el aviso \"incluye adelantos por gastos futuros\".",
+      "El modal de pago ahora tiene una casilla \"Es un adelanto por un gasto futuro\" que, al marcarla, pide el concepto del gasto previsto y la dirección (te paga el contacto / pagas tú). Requiere aplicar la migración 12 en Supabase.",
+    ],
+  },
+  {
     date: "2026-05-12",
     commit: "dev@HEAD",
     title: "Periódicos: filtro Individuales / Compartidas y nombre del grupo en la tarjeta",

@@ -1061,6 +1061,12 @@ h2 {
   font-size: 0.86rem;
 }
 
+.section-heading-aside {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .movement-form,
 .filters,
 .settings-form,
@@ -2128,6 +2134,26 @@ a.primary-action {
 
 .balance-summary-row.is-negative .balance-summary-amount {
   color: var(--red);
+}
+
+/* Etiqueta de adelanto: aclara que parte del saldo es un pago
+   anticipado por un gasto futuro, no una deuda real. */
+.balance-advance-tag,
+.balance-summary-advance-tag {
+  display: inline-flex;
+  align-self: start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(124, 92, 196, 0.12);
+  color: #6d4fb0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.balance-summary-advance-tag {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 
 .balance-card.is-positive .balance-amount {

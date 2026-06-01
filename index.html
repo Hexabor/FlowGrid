@@ -786,7 +786,10 @@
           <section class="panel">
             <div class="section-heading">
               <h2>Saldos</h2>
-              <span id="shared-contacts-count"></span>
+              <div class="section-heading-aside">
+                <span id="shared-contacts-count"></span>
+                <button id="register-advance" class="ghost-action" type="button">Registrar adelanto</button>
+              </div>
             </div>
             <div class="shared-mobile-picker-row">
               <button id="shared-mobile-back-to-all" class="shared-mobile-back" type="button" hidden>
@@ -832,9 +835,24 @@
             </div>
 
             <form id="payment-form" class="movement-form">
+              <label class="field-wide toggle-field">
+                <input id="payment-advance" name="advance" type="checkbox">
+                <span>Es un adelanto por un gasto futuro</span>
+              </label>
               <label>
                 <span>Contacto</span>
                 <select id="payment-contact" name="contactId" required></select>
+              </label>
+              <label id="payment-direction-field" hidden>
+                <span>&iquest;Qui&eacute;n adelanta?</span>
+                <select id="payment-direction" name="direction">
+                  <option value="them">Te paga el contacto</option>
+                  <option value="me">Pagas t&uacute;</option>
+                </select>
+              </label>
+              <label id="payment-concept-field" class="field-wide" hidden>
+                <span>&iquest;Para qu&eacute; es? <small class="label-hint">(gasto previsto)</small></span>
+                <input id="payment-concept" name="concept" type="text" autocomplete="off" placeholder="Ej. Cena de cumplea&ntilde;os">
               </label>
               <label>
                 <span>Importe</span>
@@ -849,7 +867,7 @@
                 <span>Nota</span>
                 <input id="payment-note" name="note" type="text" autocomplete="off">
               </label>
-              <button class="primary-action" type="submit">Liquidar</button>
+              <button id="payment-submit" class="primary-action" type="submit">Liquidar</button>
             </form>
           </div>
         </div>
@@ -1397,7 +1415,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-05-12 17:42:34";
+      window.__FG_BUILD__ = "2026-06-01 20:56:18";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
