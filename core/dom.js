@@ -123,6 +123,8 @@ export const elements = {
   categoryCount: document.querySelector("#category-count"),
   settingsTabs: document.querySelectorAll(".settings-tab"),
   settingsPanels: document.querySelectorAll("[data-settings-panel]"),
+  notifySharedEmail: document.querySelector("#notify-shared-email"),
+  notifySharedStatus: document.querySelector("#notify-shared-status"),
   csvFile: document.querySelector("#csv-file"),
   csvImportButton: document.querySelector("#csv-import-button"),
   csvImportStatus: document.querySelector("#csv-import-status"),

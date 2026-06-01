@@ -415,6 +415,7 @@ export async function cloudPushSettings() {
       owner_id: ownerId,
       categories: state.settings.categories,
       concepts: state.settings.concepts,
+      notify_shared_email: state.settings.notifySharedEmail ?? false,
     }],
     "owner_id"
   );
@@ -518,8 +519,9 @@ export async function cloudHydrate() {
     ? {
         categories: settingsRow.categories?.length ? settingsRow.categories : defaultCategories,
         concepts: settingsRow.concepts?.length ? settingsRow.concepts : defaultConcepts,
+        notifySharedEmail: settingsRow.notify_shared_email ?? false,
       }
-    : { categories: defaultCategories, concepts: defaultConcepts };
+    : { categories: defaultCategories, concepts: defaultConcepts, notifySharedEmail: false };
 
   // One-shot migration (2026-05-01): "Recuperados" moved from category
   // "extra" to "ingreso". Idempotent; runs only on accounts that still have
@@ -686,15 +688,16 @@ function readLocalArray(key) {
 
 function readLocalSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
-  if (!raw) return { categories: defaultCategories, concepts: defaultConcepts };
+  if (!raw) return { categories: defaultCategories, concepts: defaultConcepts, notifySharedEmail: false };
   try {
     const parsed = JSON.parse(raw);
     return {
       categories: parsed.categories?.length ? parsed.categories : defaultCategories,
       concepts: parsed.concepts?.length ? parsed.concepts : defaultConcepts,
+      notifySharedEmail: parsed.notifySharedEmail ?? false,
     };
   } catch {
-    return { categories: defaultCategories, concepts: defaultConcepts };
+    return { categories: defaultCategories, concepts: defaultConcepts, notifySharedEmail: false };
   }
 }
 

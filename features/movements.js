@@ -17,6 +17,7 @@ import {
 import { buildSplits, getMyMemberInGroup } from "./groups.js";
 import { getUserIdSync } from "../core/supabase.js";
 import { recordSharedEntryEdit } from "./edit-log.js";
+import { notifyNewSharedExpense } from "./notify.js";
 import { renderAnalysis } from "./analysis.js";
 import { openConvertFromMovement, openConvertFromSharedEntry } from "./recurring.js";
 import { setMovementDate } from "../ui/datepicker.js";
@@ -1197,6 +1198,14 @@ elements.form.addEventListener("submit", async (event) => {
   // of racing with the in-flight insert.
   if (sharedEntry) {
     await recordSharedEntryEdit(oldSharedEntry, sharedEntry, formData.get("editComment"));
+  }
+
+  // Aviso por email al otro lado SOLO en creación real de un gasto
+  // compartido (no en edición, y este handler no corre para recurrentes).
+  // El destinatario debe tener el opt-in activado; la Edge Function lo
+  // comprueba. Fire-and-forget: no bloquea el cierre del formulario.
+  if (sharedEntry && !wasEditing) {
+    notifyNewSharedExpense(sharedEntry);
   }
 
   renderMovements();

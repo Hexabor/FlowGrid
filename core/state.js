@@ -1,6 +1,6 @@
 export const state = {
   movements: [],
-  settings: { categories: [], concepts: [] },
+  settings: { categories: [], concepts: [], notifySharedEmail: false },
   contacts: [],
   sharedEntries: [],
   recurringTemplates: [],

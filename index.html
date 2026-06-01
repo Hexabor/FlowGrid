@@ -943,6 +943,7 @@
 
           <div class="settings-tabs" aria-label="Secciones de configuracion">
             <button class="settings-tab is-active" type="button" data-settings-target="concepts">Conceptos y categorias</button>
+            <button class="settings-tab" type="button" data-settings-target="avisos">Avisos</button>
             <button class="settings-tab" type="button" data-settings-target="theme">Tema</button>
             <button class="settings-tab" type="button" data-settings-target="csv">CSV</button>
             <button class="settings-tab" type="button" data-settings-target="backup">Backup JS</button>
@@ -1005,6 +1006,21 @@
             </section>
           </section>
 
+
+          <section class="settings-panel" data-settings-panel="avisos">
+            <section class="panel">
+              <div class="section-heading">
+                <h2>Avisos por email</h2>
+              </div>
+              <p>Decide si quieres recibir un correo cuando alguien te a&ntilde;ade un gasto compartido. Est&aacute; desactivado por defecto; t&uacute; eliges.</p>
+              <label class="toggle-field">
+                <input id="notify-shared-email" type="checkbox">
+                <span>Av&iacute;same por email cuando un contacto me a&ntilde;ada un gasto compartido</span>
+              </label>
+              <p class="callout-hint">El correo incluye el concepto, tu parte y el saldo que queda con esa persona &mdash; as&iacute; ves de un vistazo si el gasto ya estaba cubierto por un adelanto. Solo funciona con contactos vinculados (que tengan cuenta y hay&aacute;is aceptado la invitaci&oacute;n).</p>
+              <p id="notify-shared-status" class="feedback-status" role="status" aria-live="polite"></p>
+            </section>
+          </section>
 
           <section class="settings-panel" data-settings-panel="theme">
             <section class="panel">
@@ -1415,7 +1431,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-06-01 21:23:32";
+      window.__FG_BUILD__ = "2026-06-01 21:57:44";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;

@@ -2,6 +2,17 @@ window.FlowGridChangelog = [
   {
     date: "2026-06-01",
     commit: "dev@HEAD",
+    title: "Avisos por email cuando un contacto te añade un gasto compartido",
+    changes: [
+      "Nueva pestaña Configuración → Avisos con un interruptor para recibir un email cada vez que un contacto vinculado te añade un gasto compartido (1↔1 o de grupo). Está DESACTIVADO por defecto: no recibes nada salvo que lo actives tú.",
+      "El correo incluye el concepto, el total, tu parte y el saldo que queda con esa persona. Si ese saldo ya estaba cubierto por un adelanto tuyo, el email lo indica — así ves de un vistazo que no tienes que pagar nada todavía.",
+      "Solo funciona con contactos vinculados (que tengan cuenta y hayáis aceptado la invitación). El aviso lo controla quien lo RECIBE, no quien crea el gasto.",
+      "Requiere aplicar la migración 13 en Supabase y desplegar la nueva Edge Function de avisos.",
+    ],
+  },
+  {
+    date: "2026-06-01",
+    commit: "dev@HEAD",
     title: "El tema \"Lavanda\" pasa a llamarse \"Rosa palo\"",
     changes: [
       "El tema visual que hasta ahora se llamaba \"Lavanda\" se renombra a \"Rosa palo\": el color real (acento rosa empolvado sobre fondo rosa muy claro) nunca fue lavanda. Es solo el nombre — los colores no cambian.",

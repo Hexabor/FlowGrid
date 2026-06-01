@@ -240,3 +240,24 @@ elements.conceptGroup.addEventListener("input", renderConcepts);
 elements.settingsTabs.forEach((button) => {
   button.addEventListener("click", () => setSettingsPanel(button.dataset.settingsTarget));
 });
+
+// Avisos por email: opt-in del DESTINATARIO, desactivado por defecto.
+// Refleja state.settings.notifySharedEmail en el checkbox; cada cambio
+// actualiza el estado y lo persiste (local + cloud vía saveSettings).
+export function renderNotifySettings() {
+  if (!elements.notifySharedEmail) return;
+  elements.notifySharedEmail.checked = Boolean(state.settings.notifySharedEmail);
+}
+
+if (elements.notifySharedEmail) {
+  elements.notifySharedEmail.addEventListener("change", () => {
+    state.settings.notifySharedEmail = elements.notifySharedEmail.checked;
+    saveSettings();
+    if (elements.notifySharedStatus) {
+      elements.notifySharedStatus.textContent = elements.notifySharedEmail.checked
+        ? "Activado. Recibirás un email cuando un contacto te añada un gasto compartido."
+        : "Desactivado. No recibirás avisos de gastos compartidos.";
+      elements.notifySharedStatus.dataset.state = "success";
+    }
+  });
+}
