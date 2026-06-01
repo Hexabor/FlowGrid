@@ -1018,10 +1018,10 @@
                   <span>Cl&aacute;sico</span>
                   <small>Verde teal sobre fondo gris suave.</small>
                 </button>
-                <button class="theme-option" type="button" data-theme-value="lavanda">
-                  <span class="theme-swatch theme-swatch--lavanda" aria-hidden="true"></span>
-                  <span>Lavanda</span>
-                  <small>Rosa pastel sobre fondo lavanda muy claro.</small>
+                <button class="theme-option" type="button" data-theme-value="rosa-palo">
+                  <span class="theme-swatch theme-swatch--rosa-palo" aria-hidden="true"></span>
+                  <span>Rosa palo</span>
+                  <small>Rosa empolvado sobre fondo rosa muy claro.</small>
                 </button>
               </div>
             </section>
@@ -1415,22 +1415,23 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-06-01 20:56:18";
+      window.__FG_BUILD__ = "2026-06-01 21:23:32";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
       })();
 
-      // Aplicar el tema (classic / lavanda) ANTES de que el browser pinte
-      // cualquier cosa, para evitar el flash del tema clásico en una
-      // sesión donde el usuario eligió lavanda. Persistencia en
-      // localStorage. El módulo features/theme.js lee también esta
-      // misma key al cargar y mantiene el selector sincronizado.
+      // Aplicar el tema (classic / rosa-palo) ANTES de que el browser
+      // pinte cualquier cosa, para evitar el flash del tema clásico en
+      // una sesión donde el usuario eligió rosa palo. Persistencia en
+      // localStorage. "lavanda" es el nombre antiguo (erróneo) del mismo
+      // tema; lo aceptamos aquí para no fallar antes de que el módulo
+      // features/theme.js migre la key.
       (function () {
         try {
           const theme = localStorage.getItem("flowgrid.theme.v1");
-          if (theme === "lavanda") {
-            document.documentElement.dataset.theme = "lavanda";
+          if (theme === "rosa-palo" || theme === "lavanda") {
+            document.documentElement.dataset.theme = "rosa-palo";
           }
         } catch (_) {
           // localStorage unavailable; stay on classic.

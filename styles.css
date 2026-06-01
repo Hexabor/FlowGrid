@@ -28,11 +28,12 @@
   font-size: 75%;
 }
 
-/* Tema lavanda: fondo lavanda muy suave, acentos primarios en rosa
-   pastel y nav en rosa más oscuro. Los iconos de los módulos
+/* Tema rosa palo: fondo rosa muy suave, acento primario en rosa
+   empolvado (#d97a98) y nav en malva oscuro. Los iconos de los módulos
    (azul, violeta, verde, naranja, rosa) y los semánticos verde/rojo
-   de saldos se mantienen sin cambios para no perder señalética. */
-[data-theme="lavanda"] {
+   de saldos se mantienen sin cambios para no perder señalética.
+   Antes se llamaba "lavanda", nombre que no correspondía al color. */
+[data-theme="rosa-palo"] {
   --bg: #fdf3f6;
   --teal: #d97a98;
   --teal-hover: #c45e80;
@@ -95,7 +96,7 @@
   background: linear-gradient(90deg, #f5f7f8 0%, #f5f7f8 70%, #0f766e 70%, #0f766e 100%);
 }
 
-.theme-swatch--lavanda {
+.theme-swatch--rosa-palo {
   background: linear-gradient(90deg, #fdf3f6 0%, #fdf3f6 70%, #d97a98 70%, #d97a98 100%);
 }
 

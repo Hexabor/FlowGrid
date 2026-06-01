@@ -2,6 +2,15 @@ window.FlowGridChangelog = [
   {
     date: "2026-06-01",
     commit: "dev@HEAD",
+    title: "El tema \"Lavanda\" pasa a llamarse \"Rosa palo\"",
+    changes: [
+      "El tema visual que hasta ahora se llamaba \"Lavanda\" se renombra a \"Rosa palo\": el color real (acento rosa empolvado sobre fondo rosa muy claro) nunca fue lavanda. Es solo el nombre — los colores no cambian.",
+      "Si ya tenías el tema elegido, se conserva automáticamente: la app migra el valor antiguo al nuevo sin que tengas que volver a seleccionarlo.",
+    ],
+  },
+  {
+    date: "2026-06-01",
+    commit: "dev@HEAD",
     title: "Adelantos: registrar pagos por gastos que aún no han ocurrido",
     changes: [
       "Nuevo botón \"Registrar adelanto\" en el panel de Saldos de Compartidos. Sirve cuando alguien te paga (o tú le pagas) por adelantado un gasto compartido que todavía no ha sucedido: una cena del mes que viene, un viaje, etc. A diferencia de \"Liquidar saldo\", el adelanto se puede registrar aunque no haya saldo previo con ese contacto.",
