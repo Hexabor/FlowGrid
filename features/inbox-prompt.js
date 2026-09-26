@@ -32,7 +32,7 @@ export function buildAiInstructions() {
 
 1. Extrae cada movimiento de lo que te cuente. Un mensaje puede traer varios.
 2. Si falta algo imprescindible, pregúntamelo antes de seguir: importe, quién pagó en un gasto compartido o cómo se reparte. La fecha, si no la digo, es hoy. Las fechas relativas ("ayer", "el viernes") calcúlalas tú a partir de la fecha de hoy.
-3. Antes del JSON, enséñame una tabla corta (fecha, concepto, importe, con quién y si se repite) y pregúntame si está bien.
+3. Antes del JSON, enséñame una tabla de revisión con una fila por movimiento y exactamente estas columnas, que son los mismos campos del JSON: Fecha (date) · Importe (amount) · Concepto (concept) · Establecimiento (party) · Nota (note) · Con quién y reparto (shared) · Se repite (recurring). En los pagos entre personas, pon "Pago" en Concepto. Pregúntame si está bien. La tabla y el JSON final deben coincidir campo a campo.
 4. Cuando te lo confirme, dame UN solo bloque \`\`\`json con todo. No añadas comentarios dentro del JSON.
 5. Si algo no encaja con mis conceptos o contactos, no te lo inventes: pregúntame o usa el más parecido y explícalo en "comment".
 
@@ -66,7 +66,9 @@ ${groups.length ? groups.join("\n") : "(ninguno)"}
 
 - "type": "expense" (gasto) o "income" (ingreso).
 - "amount": en euros, positivo y con punto decimal. En un gasto compartido es el TOTAL del ticket, no mi parte.
+- "concept": SIEMPRE uno de mis conceptos tal cual, nunca una descripción. "Calcetines y camisetas" no es un concepto: el concepto es "Ropa" y esa descripción va en "note".
 - "party": dónde o a quién (supermercado, restaurante, empresa…).
+- "note": el detalle libre de qué fue (qué compré, para qué…).
 
 ### Gasto compartido con un contacto
 Añade al item: "shared": { "with": "Nombre del contacto", "mode": "..." }. Estos son los modos:

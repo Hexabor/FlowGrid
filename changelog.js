@@ -9,6 +9,7 @@ window.FlowGridChangelog = [
       "Admite gastos e ingresos normales, compartidos con un contacto o con un grupo (incluido \"lo pagué yo todo\" o \"me lo pagó él\"), gastos periódicos, liquidaciones y adelantos.",
       "Cada propuesta te dice exactamente qué se va a crear. Si se parece a algo que ya tienes (misma fecha aproximada e importe o concepto), te lo marca como posible duplicado. Si la IA escribe un concepto o un contacto que no existe, lo eliges ahí mismo.",
       "\"Aceptar las listas\" mete de golpe todas las que no tienen dudas. Las demás se aceptan una a una o se abren con \"Revisar\" en el formulario de siempre. Requiere aplicar la migración 14 en Supabase.",
+      "Las instrucciones para la IA piden una tabla de revisión con las mismas columnas que los datos que se suben (fecha, importe, concepto, establecimiento, nota, con quién y si se repite), y dejan claro que el concepto es siempre uno de los tuyos: las descripciones van en la nota. Si ya las habías copiado, vuelve a copiarlas.",
     ],
   },
   {
