@@ -1,5 +1,15 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-09-26",
+    commit: "dev@HEAD",
+    title: "Arreglado: con más de 1.000 movimientos, la app no los cargaba todos",
+    changes: [
+      "La base de datos entrega como máximo un número fijo de filas por consulta (1.000). La app pedía todos tus movimientos de golpe y, si tenías más, recibía solo una parte sin avisar: los demás no aparecían en listados, totales ni análisis, aunque seguían guardados.",
+      "Ahora la app los pide por páginas hasta tenerlos todos. Lo mismo para compartidos, contactos, plantillas periódicas y grupos.",
+      "Consecuencia: puede que veas movimientos que llevaban tiempo sin salir, y alguno repetido si en su día lo volviste a apuntar al no verlo. No se ha perdido nada.",
+    ],
+  },
+  {
     date: "2026-05-05",
     commit: "dev@HEAD",
     title: "PWA: el atajo del host de dev se llama \"Dev FlowGrid\"",

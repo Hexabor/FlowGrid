@@ -266,6 +266,24 @@ async function restGet(path) {
   return await res.json();
 }
 
+// Lectura completa por páginas. PostgREST corta cada respuesta en el
+// "Max rows" del proyecto (1000 por defecto en Supabase) sin avisar: un
+// GET con limit=50000 devuelve solo 1000 filas. Con más de 1000
+// movimientos, la app cargaba una parte y el resto quedaba invisible
+// (y fuera de la diff-delete del push). Pedimos páginas con orden
+// estable hasta que una llega vacía; así funciona con cualquier tope.
+async function restGetAll(path) {
+  const sep = path.includes("?") ? "&" : "?";
+  const order = /(^|[?&])order=/.test(path) ? "" : "&order=id.asc";
+  const rows = [];
+  for (;;) {
+    const chunk = await restGet(`${path}${sep}offset=${rows.length}${order}`);
+    if (!chunk.length) break;
+    rows.push(...chunk);
+  }
+  return rows;
+}
+
 async function restUpsert(table, rows, conflictColumn = "id") {
   if (!rows.length) return;
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?on_conflict=${conflictColumn}`, {
@@ -295,7 +313,7 @@ async function restDelete(table, ids) {
 const ROW_LIMIT = 50000;
 
 async function syncTable(table, ownerId, localRows, toCloud) {
-  const existing = await restGet(`${table}?owner_id=eq.${ownerId}&select=id&limit=${ROW_LIMIT}`);
+  const existing = await restGetAll(`${table}?owner_id=eq.${ownerId}&select=id`);
   const localIds = new Set(localRows.map((r) => r.id));
   const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
   await restDelete(table, toDelete);
@@ -328,8 +346,8 @@ export async function cloudPushSharedEntries() {
   const myEntries = state.sharedEntries.filter(
     (e) => (e.ownerId ?? ownerId) === ownerId
   );
-  const existing = await restGet(
-    `shared_entries?owner_id=eq.${ownerId}&select=id&limit=${ROW_LIMIT}`
+  const existing = await restGetAll(
+    `shared_entries?owner_id=eq.${ownerId}&select=id`
   );
   const localIds = new Set(myEntries.map((e) => e.id));
   const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
@@ -390,8 +408,8 @@ export async function cloudPushGroupMembers() {
   const groupIdsParam = [...myGroupIds]
     .map((id) => `"${encodeURIComponent(id)}"`)
     .join(",");
-  const existing = await restGet(
-    `group_members?group_id=in.(${groupIdsParam})&select=id&limit=${ROW_LIMIT}`
+  const existing = await restGetAll(
+    `group_members?group_id=in.(${groupIdsParam})&select=id`
   );
   const localIds = new Set(myMembers.map((m) => m.id));
   const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
@@ -437,21 +455,21 @@ export async function cloudHydrate() {
   if (!ownerId) return;
 
   const [movementsData, settingsData, contactsData, sharedData, templatesData, groupsData, groupMembersData] = await Promise.all([
-    restGet(`movements?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
+    restGetAll(`movements?owner_id=eq.${ownerId}&select=*`),
     restGet(`settings?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
-    restGet(`contacts?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
+    restGetAll(`contacts?owner_id=eq.${ownerId}&select=*`),
     // shared_entries: NO owner_id filter — RLS already returns my own
     // entries plus those owned by linked partners (contacts where the
     // partner has set me as auth_user_id). We hydrate them as a single
     // pool keyed by ownerId so the UI can display them seamlessly.
-    restGet(`shared_entries?select=*&limit=${ROW_LIMIT}`),
-    restGet(`recurring_templates?owner_id=eq.${ownerId}&select=*&limit=${ROW_LIMIT}`),
+    restGetAll(`shared_entries?select=*`),
+    restGetAll(`recurring_templates?owner_id=eq.${ownerId}&select=*`),
     // groups y group_members: SIN filtro de owner_id. RLS devuelve los
     // grupos donde soy admin O miembro activo, y los miembros de esos
     // grupos. La UI los rendea sin distinguir: para el usuario es lo
     // mismo "mi grupo Casa" que "el grupo Casa de Juan donde estoy".
-    restGet(`groups?select=*&limit=${ROW_LIMIT}`),
-    restGet(`group_members?select=*&limit=${ROW_LIMIT}`),
+    restGetAll(`groups?select=*`),
+    restGetAll(`group_members?select=*`),
   ]);
 
   const settingsRow = settingsData[0] ?? null;
