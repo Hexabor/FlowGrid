@@ -5320,3 +5320,238 @@ body.is-locked .shell {
 .fg-toast[data-kind="error"] {
   background: var(--red);
 }
+
+/* ==== Bandeja de propuestas de IA (features/inbox.js) ==== */
+.inbox-open-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inbox-count-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  color: #ffffff;
+  background: var(--mod-orange);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.inbox-count-badge[hidden] {
+  display: none;
+}
+
+.home-inbox-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  color: var(--text);
+  text-align: left;
+  background: var(--mod-orange-bg);
+  border: 1px solid var(--mod-orange);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.home-inbox-banner[hidden] {
+  display: none;
+}
+
+.home-inbox-banner svg {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  color: var(--mod-orange);
+}
+
+.home-inbox-banner span {
+  flex: 1 1 auto;
+}
+
+.home-inbox-banner strong {
+  color: var(--mod-orange);
+}
+
+.inbox-blurb {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.inbox-tools,
+.inbox-bulk,
+.inbox-paste-row,
+.inbox-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.inbox-tools {
+  margin-bottom: 12px;
+}
+
+.inbox-instructions textarea,
+.inbox-paste textarea {
+  width: 100%;
+  margin: 8px 0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.inbox-paste {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.inbox-paste summary {
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.inbox-paste-status {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.inbox-paste-status[data-state="error"] {
+  color: var(--red);
+}
+
+.inbox-paste-status[data-state="ok"] {
+  color: var(--green);
+}
+
+.inbox-bulk {
+  margin-bottom: 12px;
+}
+
+.inbox-bulk[hidden] {
+  display: none;
+}
+
+.inbox-discard:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.inbox-list {
+  display: grid;
+  gap: 10px;
+}
+
+.inbox-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green);
+  border-radius: 8px;
+}
+
+.inbox-card[data-state="duplicate"] {
+  border-left-color: var(--mod-amber);
+}
+
+.inbox-card[data-state="blocked"] {
+  border-left-color: var(--red);
+}
+
+.inbox-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inbox-card-title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inbox-card-meta {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.inbox-card-amount {
+  flex: 0 0 auto;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.inbox-card-amount.is-income {
+  color: var(--green);
+}
+
+.inbox-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.inbox-card-comment {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.inbox-card-issue {
+  color: var(--mod-amber);
+}
+
+.inbox-card-issue.is-blocking {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.inbox-card-fix {
+  display: grid;
+  gap: 4px;
+  max-width: 320px;
+  font-size: 0.86rem;
+}
+
+.inbox-card-dupes {
+  padding: 8px 10px;
+  background: var(--mod-amber-bg);
+  border-radius: 6px;
+}
+
+.inbox-card-dupes-title {
+  font-weight: 800;
+}
+
+.inbox-card-dupes ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 0.86rem;
+}
+
+.inbox-card-actions {
+  margin-top: 4px;
+}
+
+@media (max-width: 719px) {
+  .inbox-open-button {
+    padding: 0 10px;
+  }
+}
+
+.inbox-card-actions button:disabled,
+.inbox-bulk button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

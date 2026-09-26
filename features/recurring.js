@@ -1117,6 +1117,17 @@ function openCreateRecurringModal() {
   elements.recurringConcept?.focus();
 }
 
+// Entrada desde la bandeja: rellena el formulario con una propuesta. Con
+// show=false el modal queda oculto para que la bandeja lo envíe por
+// detrás (requestSubmit) usando exactamente la lógica del submit.
+export function prefillRecurringForm(seed, { show = true } = {}) {
+  convertingFromMovementId = null;
+  convertingFromSharedEntryId = null;
+  resetRecurringForm(null, seed);
+  if (elements.recurringFeedback) elements.recurringFeedback.textContent = "";
+  if (show) openRecurringModal();
+}
+
 function openEditRecurringModal(template) {
   convertingFromMovementId = null;
   convertingFromSharedEntryId = null;
@@ -1482,6 +1493,12 @@ elements.recurringForm?.addEventListener("submit", (event) => {
   }
 
   saveRecurringTemplates();
+  if (!editingId) {
+    // Lo escucha la bandeja (features/inbox.js) para cerrar la propuesta.
+    document.dispatchEvent(new CustomEvent("fg:recurring-form-saved", {
+      detail: { templateId: draft.id },
+    }));
+  }
   renderRecurringView();
   // Reset before closing so a follow-up "Nueva plantilla" doesn't carry
   // the convert state over.

@@ -6,6 +6,9 @@ export const state = {
   recurringTemplates: [],
   groups: [],
   groupMembers: [],
+  // Propuestas pendientes de la bandeja (IA). Solo viven en la nube; no
+  // se persisten en localStorage. Ver features/inbox.js.
+  inboxItems: [],
   datePickerMonth: new Date(),
   editingMovementId: null,
   pendingCsvMovements: [],

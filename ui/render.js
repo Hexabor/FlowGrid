@@ -6,6 +6,7 @@ import { renderCategories, renderConcepts, renderNotifySettings } from "../featu
 import { renderRecurringView } from "../features/recurring.js";
 import { renderGroupsList } from "../features/groups-view.js";
 import { renderChangelog } from "./changelog-view.js";
+import { renderInbox } from "../features/inbox.js";
 
 export function render() {
   // Populate the form selects + the inline filter dropdowns BEFORE
@@ -24,4 +25,5 @@ export function render() {
   renderRecurringView();
   renderGroupsList();
   renderChangelog();
+  renderInbox();
 }

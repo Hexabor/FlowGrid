@@ -224,6 +224,23 @@ export const elements = {
   recurringGroupHint: document.querySelector("#recurring-group-hint"),
   recurringFeedback: document.querySelector("#recurring-feedback"),
   recurringSubmitLabel: document.querySelector("#recurring-submit-label"),
+  // Bandeja de propuestas de IA (features/inbox.js).
+  inboxList: document.querySelector("#inbox-list"),
+  inboxCount: document.querySelector("#inbox-count"),
+  inboxEmpty: document.querySelector("#inbox-empty"),
+  inboxBulk: document.querySelector("#inbox-bulk"),
+  inboxAcceptReady: document.querySelector("#inbox-accept-ready"),
+  inboxDiscardAll: document.querySelector("#inbox-discard-all"),
+  inboxPastePanel: document.querySelector("#inbox-paste-panel"),
+  inboxPasteText: document.querySelector("#inbox-paste-text"),
+  inboxPasteSubmit: document.querySelector("#inbox-paste-submit"),
+  inboxPasteStatus: document.querySelector("#inbox-paste-status"),
+  inboxCopyInstructions: document.querySelector("#inbox-copy-instructions"),
+  inboxInstructionsBox: document.querySelector("#inbox-instructions-box"),
+  inboxInstructionsText: document.querySelector("#inbox-instructions-text"),
+  inboxOpenCount: document.querySelector("#inbox-open-count"),
+  homeInboxBanner: document.querySelector("#home-inbox-banner"),
+  homeInboxBannerText: document.querySelector("#home-inbox-banner-text"),
 };
 
 export function openMovementModal() {

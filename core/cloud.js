@@ -436,6 +436,64 @@ export async function cloudPushAll() {
   ]);
 }
 
+// ---- inbox (bandeja de propuestas) ----
+//
+// La bandeja NO entra en el sync por foto completa: se lee aparte y cada
+// fila se actualiza individualmente (aceptar / descartar). Así las filas
+// que escribe un conector externo no se pierden con el push de un
+// dispositivo desactualizado. Ver migrate-14-inbox.sql.
+
+function inboxFromCloud(row) {
+  return {
+    id: row.id,
+    batchId: row.batch_id ?? null,
+    source: row.source,
+    payload: row.payload ?? {},
+    status: row.status,
+    result: row.result ?? null,
+    createdAt: row.created_at,
+    resolvedAt: row.resolved_at ?? null,
+  };
+}
+
+export async function cloudFetchInbox() {
+  const ownerId = await getUserId();
+  if (!ownerId) return [];
+  const rows = await restGet(
+    `inbox_items?owner_id=eq.${ownerId}&status=eq.pending&select=*&order=created_at.asc&limit=${ROW_LIMIT}`
+  );
+  return rows.map(inboxFromCloud);
+}
+
+export async function cloudInsertInbox(items) {
+  const ownerId = await getUserId();
+  if (!ownerId || !items.length) return;
+  await restUpsert(
+    "inbox_items",
+    items.map((item) => ({
+      id: item.id,
+      owner_id: ownerId,
+      batch_id: item.batchId ?? null,
+      source: item.source ?? "paste",
+      payload: item.payload,
+      status: "pending",
+    }))
+  );
+}
+
+export async function cloudResolveInboxItem(id, status, result = null) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/inbox_items?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({ status, result, resolved_at: new Date().toISOString() }),
+  });
+  if (!res.ok) throw new Error(`resolve inbox ${id} failed: ${res.status} ${await res.text()}`);
+}
+
 // ---- hydrate (cloud is authoritative; first login pushes local seed up) ----
 
 export async function cloudHydrate() {

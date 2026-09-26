@@ -16,6 +16,7 @@ import "./features/csv.js";
 import "./features/backup.js";
 import "./features/feedback.js";
 import "./features/theme.js";
+import { loadInbox } from "./features/inbox.js";
 
 let appBooted = false;
 
@@ -54,6 +55,8 @@ async function bootApp() {
   // Surface any pending invitations addressed to this user's email. Runs
   // last so the rest of the app is already painted underneath the modal.
   checkPendingInvitations();
+  // Bandeja de propuestas de IA: vive solo en la nube, se carga aparte.
+  loadInbox();
   // Start the hybrid real-time scheduler for recurring templates: a
   // setTimeout to the next local midnight + a visibilitychange listener
   // that re-runs generation when the tab returns to the foreground.

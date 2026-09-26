@@ -1,5 +1,17 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-09-26",
+    commit: "dev@HEAD",
+    title: "Bandeja: apunta tus gastos hablando con una IA",
+    changes: [
+      "Nueva Bandeja (botón en Movimientos y aviso en el Inicio cuando hay algo pendiente). Aquí llegan los movimientos que te prepara un chat como ChatGPT o Claude, y no se guarda nada hasta que lo aceptas.",
+      "\"Copiar instrucciones para la IA\" genera un texto con tus conceptos, contactos y grupos reales. Pégalo en el chat (o en las instrucciones de un proyecto), cuéntale tus gastos a tu manera y te devolverá un bloque que pegas en \"Pegar respuesta de la IA\".",
+      "Admite gastos e ingresos normales, compartidos con un contacto o con un grupo (incluido \"lo pagué yo todo\" o \"me lo pagó él\"), gastos periódicos, liquidaciones y adelantos.",
+      "Cada propuesta te dice exactamente qué se va a crear. Si se parece a algo que ya tienes (misma fecha aproximada e importe o concepto), te lo marca como posible duplicado. Si la IA escribe un concepto o un contacto que no existe, lo eliges ahí mismo.",
+      "\"Aceptar las listas\" mete de golpe todas las que no tienen dudas. Las demás se aceptan una a una o se abren con \"Revisar\" en el formulario de siempre. Requiere aplicar la migración 14 en Supabase.",
+    ],
+  },
+  {
     date: "2026-06-01",
     commit: "dev@HEAD",
     title: "Avisos por email cuando un contacto te añade un gasto compartido",

@@ -34,7 +34,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link id="app-manifest" rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-05-05-1422">
+    <link rel="stylesheet" href="styles.css?v=2026-09-26-1808">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -214,6 +214,15 @@
               </span>
             </button>
 
+            <button id="home-inbox-banner" class="home-inbox-banner" type="button" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-6l-2 3h-4l-2-3H2"></path>
+                <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+              </svg>
+              <span id="home-inbox-banner-text">Tienes propuestas esperando en la bandeja.</span>
+              <strong>Revisar</strong>
+            </button>
+
             <div class="module-groups">
               <section class="module-group">
                 <div class="home-modules-layout">
@@ -330,6 +339,10 @@
                 <h2 id="movement-count">0 movimientos</h2>
                 <div class="ledger-actions">
                   <button id="reset-search-top" class="filter-clear-button filter-clear-button--top" data-role="reset" type="button" aria-label="Limpiar filtros" hidden>x</button>
+                  <button id="open-inbox" class="ghost-action inbox-open-button" type="button" data-view-target="inbox" title="Bandeja de propuestas de IA">
+                    Bandeja
+                    <span id="inbox-open-count" class="inbox-count-badge" hidden></span>
+                  </button>
                   <button id="open-filter" class="primary-action ledger-filter-toggle" type="button" aria-expanded="false" aria-controls="filter-bar">Filtrar</button>
                   <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
                 </div>
@@ -502,6 +515,48 @@
             </form>
           </div>
         </div>
+
+        <section class="view" id="inbox-view" data-view="inbox" aria-labelledby="inbox-title">
+          <header class="topbar">
+            <div>
+              <h1 id="inbox-title">Bandeja</h1>
+            </div>
+            <p id="inbox-count" class="period">0 propuestas</p>
+          </header>
+
+          <section class="panel">
+            <p class="inbox-blurb">
+              Aqu&iacute; llegan los movimientos que te prepara una IA. Nada se guarda hasta que lo aceptas.
+              Si una propuesta se parece a algo que ya tienes, te lo marco para que no lo metas dos veces.
+            </p>
+
+            <div class="inbox-tools">
+              <button id="inbox-copy-instructions" class="ghost-action" type="button">Copiar instrucciones para la IA</button>
+              <button type="button" class="ghost-action" data-view-target="movements">Volver a movimientos</button>
+            </div>
+            <div id="inbox-instructions-box" class="inbox-instructions" hidden>
+              <p>No he podido copiar al portapapeles. Selecciona el texto y c&oacute;pialo a mano:</p>
+              <textarea id="inbox-instructions-text" rows="10" readonly></textarea>
+            </div>
+
+            <details id="inbox-paste-panel" class="inbox-paste">
+              <summary>Pegar respuesta de la IA</summary>
+              <textarea id="inbox-paste-text" rows="8" placeholder="Pega aqu&iacute; el bloque JSON (o la respuesta entera: ya busco yo el JSON)&hellip;"></textarea>
+              <div class="inbox-paste-row">
+                <button id="inbox-paste-submit" class="primary-action" type="button">A&ntilde;adir a la bandeja</button>
+                <span id="inbox-paste-status" class="inbox-paste-status" role="status" aria-live="polite"></span>
+              </div>
+            </details>
+
+            <div id="inbox-bulk" class="inbox-bulk" hidden>
+              <button id="inbox-accept-ready" class="primary-action" type="button">Aceptar las listas</button>
+              <button id="inbox-discard-all" class="ghost-action inbox-discard" type="button">Descartar todas</button>
+            </div>
+
+            <div id="inbox-list" class="inbox-list"></div>
+            <p id="inbox-empty" class="empty-state">La bandeja est&aacute; vac&iacute;a.</p>
+          </section>
+        </section>
 
         <section class="view" id="analysis-view" data-view="analysis" data-mode="month" aria-labelledby="analysis-title">
           <header class="topbar">
@@ -1431,7 +1486,7 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-06-01 22:20:55";
+      window.__FG_BUILD__ = "2026-09-26 18:08:28";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
@@ -1512,6 +1567,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-05-05-1422"></script>
+    <script type="module" src="app.js?v=2026-09-26-1808"></script>
   </body>
 </html>
