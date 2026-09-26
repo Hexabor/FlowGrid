@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-09-26",
     commit: "dev@HEAD",
+    title: "Adiós a las versiones viejas pegadas en el navegador",
+    changes: [
+      "Tras cada actualización, algunos navegadores (sobre todo en el móvil) seguían usando partes antiguas de la app durante horas, y había que forzar la recarga o borrar la caché para ver lo nuevo.",
+      "La causa era una regla de caché que no se aplicaba a los archivos de código. Ahora el navegador comprueba siempre si hay versión nueva; si no la hay, la comprobación es instantánea.",
+      "Si en tu móvil ves algo raro tras esta actualización, borra la caché de FlowGrid una última vez. A partir de ahí basta con recargar.",
+    ],
+  },
+  {
+    date: "2026-09-26",
+    commit: "dev@HEAD",
     title: "El chat ya puede proponer correcciones y borrados",
     changes: [
       "Además de proponer movimientos nuevos, el conector de FlowGrid puede proponer cambios en movimientos que ya existen (fecha, importe, concepto, establecimiento o nota) y proponer borrarlos, por ejemplo para quitar un duplicado.",

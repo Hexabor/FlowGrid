@@ -10,14 +10,12 @@
 # Aplica solo en Cloudflare Pages (flowgrid.arcdev.app y
 # dev.flowgrid.arcdev.app). GitHub Pages no soporta `_headers`.
 
-/
-  Cache-Control: no-cache
+# Una sola regla para todo el sitio. Las reglas por extensión (/*.js,
+# /*.css) no se aplicaban (comprobado con curl el 2026-09-26: app.js y
+# features/*.js salían con max-age=14400), así que los módulos llegaban
+# con la caché de 4 horas por defecto de Cloudflare y el navegador (sobre todo el móvil) seguía
+# usando código viejo tras un despliegue. Con /* todo se revalida con
+# ETag: si no cambió, es un 304 sin cuerpo.
 
-/*.html
-  Cache-Control: no-cache
-
-/*.js
-  Cache-Control: no-cache
-
-/*.css
+/*
   Cache-Control: no-cache
