@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-09-26",
     commit: "dev@HEAD",
+    title: "El chat ya puede proponer correcciones y borrados",
+    changes: [
+      "Además de proponer movimientos nuevos, el conector de FlowGrid puede proponer cambios en movimientos que ya existen (fecha, importe, concepto, establecimiento o nota) y proponer borrarlos, por ejemplo para quitar un duplicado.",
+      "Como siempre, no toca nada por su cuenta: cada cambio llega a la Bandeja con el antes y el después, y tú decides si aplicarlo o descartarlo.",
+      "La Bandeja te avisa si el movimiento ha cambiado desde que se hizo la propuesta o si hay dos propuestas sobre el mismo movimiento. En los gastos compartidos, desde el chat solo se pueden cambiar la nota y el establecimiento; el resto, desde el formulario de la app.",
+    ],
+  },
+  {
+    date: "2026-09-26",
+    commit: "dev@HEAD",
     title: "Arreglado: con más de 1.000 movimientos, la app no los cargaba todos",
     changes: [
       "La base de datos entrega como máximo un número fijo de filas por consulta (1.000). La app pedía todos tus movimientos de golpe y, si tenías más, recibía solo una parte sin avisar: los demás no aparecían en listados, totales ni análisis, aunque seguían guardados.",

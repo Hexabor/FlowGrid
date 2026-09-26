@@ -25,7 +25,7 @@
 
 import { state } from "../core/state.js";
 import { elements, openMovementModal, setView } from "../core/dom.js";
-import { saveSharedEntries } from "../core/storage.js";
+import { saveMovements, saveSharedEntries } from "../core/storage.js";
 import { SHARED_MODES } from "../core/constants.js";
 import { createId, formatDate, formatMoney, toIsoDate } from "../core/utils.js";
 import { cloudFetchInbox, cloudInsertInbox, cloudResolveInboxItem } from "../core/cloud.js";
@@ -166,7 +166,95 @@ function resolveContactMode(shared) {
 //   { kind, draft, target, issues: [{text, blocking}], lines: [], duplicates: [] }
 // `blocking` impide aceptar directamente (queda "Revisar" o descartar).
 
+// Cambio o borrado de un movimiento que ya existe (propose_changes del
+// conector). payload: { kind: "edit", action: "update" | "delete",
+// movement_id, changes?, before, reason }.
+const EDIT_LABELS = { date: "Fecha", amount: "Importe", concept: "Concepto", party: "Establecimiento", note: "Nota" };
+
+function formatEditValue(field, value) {
+  if (value == null || value === "") return "(vacío)";
+  if (field === "date") return formatDate(value);
+  if (field === "amount") return formatMoney(value);
+  return `«${value}»`;
+}
+
+function interpretEdit(item) {
+  const raw = item.payload ?? {};
+  const issues = [];
+  const block = (text) => issues.push({ text, blocking: true });
+  const warn = (text) => issues.push({ text, blocking: false });
+  const action = raw.action === "delete" ? "delete" : "update";
+  const movement = state.movements.find((m) => m.id === raw.movement_id) ?? null;
+  const result = {
+    kind: "edit",
+    action,
+    movement,
+    type: movement?.type ?? "expense",
+    date: movement?.date ?? null,
+    amount: movement?.amount ?? NaN,
+    issues,
+    raw,
+    target: null,
+    draft: null,
+    changes: {},
+    lines: [],
+  };
+  if (!movement) {
+    block("Ese movimiento ya no existe (quizá lo borraste o ya se aplicó el cambio).");
+    return result;
+  }
+
+  const changes = {};
+  for (const [field, value] of Object.entries(raw.changes ?? {})) {
+    if (!(field in EDIT_LABELS)) continue;
+    if (field === "date") {
+      const date = parseDate(value);
+      if (!date) block(`Fecha no válida: «${value}».`);
+      else changes.date = date;
+    } else if (field === "amount") {
+      const amount = roundCents(parseAmount(value));
+      if (!(amount > 0)) block(`Importe no válido: «${value}».`);
+      else changes.amount = amount;
+    } else if (field === "concept") {
+      const concept = findConcept(value, movement.type);
+      if (!concept) block(`El concepto «${value}» no existe.`);
+      else changes.concept = concept.label;
+    } else {
+      changes[field] = String(value ?? "").trim();
+    }
+  }
+  result.changes = changes;
+
+  if (action === "update" && !Object.keys(changes).length && !issues.length) block("La propuesta no cambia nada.");
+  const touchesShared = action === "delete" || ["date", "amount", "concept"].some((k) => k in changes);
+  if (movement.sharedEntryId && touchesShared) {
+    block("Es un gasto compartido: cambia la fecha, el importe, el concepto o bórralo desde el formulario de la app.");
+  }
+
+  // ¿Ha cambiado el movimiento desde que se hizo la propuesta?
+  const before = raw.before ?? {};
+  const fields = action === "delete" ? Object.keys(EDIT_LABELS) : Object.keys(changes);
+  for (const field of fields) {
+    if (!(field in before)) continue;
+    const now = movement[field] ?? "";
+    const then = before[field] ?? "";
+    const differs = field === "amount" ? Math.abs(Number(now) - Number(then)) >= 0.005 : String(now) !== String(then);
+    if (differs) warn(`${EDIT_LABELS[field]} ha cambiado desde la propuesta: ahora es ${formatEditValue(field, now)}.`);
+  }
+
+  if (action === "delete") {
+    result.lines.push("Se borrará este movimiento.");
+  } else {
+    for (const [field, value] of Object.entries(changes)) {
+      result.lines.push(`${EDIT_LABELS[field]}: ${formatEditValue(field, movement[field])} → ${formatEditValue(field, value)}`);
+    }
+  }
+  if (raw.reason) result.lines.push(`Motivo: ${raw.reason}`);
+  return result;
+}
+
 export function interpretItem(item) {
+  if (item.payload?.kind === "edit") return interpretEdit(item);
   const raw = item.payload ?? {};
   const fix = overrides.get(item.id) ?? {};
   const issues = [];
@@ -325,6 +413,15 @@ function sameMoney(a, b) {
 // mismo importe (total o tu parte), o mismo concepto con importe
 // parecido. Devuelve hasta 3, las más cercanas primero.
 export function findDuplicates(info, item) {
+  if (info.kind === "edit") {
+    // Dos propuestas pendientes sobre el mismo movimiento: avisamos en la
+    // segunda para que no se apliquen las dos sin mirar.
+    const index = state.inboxItems.findIndex((x) => x.id === item.id);
+    const earlier = state.inboxItems
+      .slice(0, Math.max(index, 0))
+      .some((x) => x.payload?.kind === "edit" && x.payload.movement_id === info.raw.movement_id);
+    return earlier ? [{ days: 0, label: "Hay otra propuesta más arriba sobre este mismo movimiento." }] : [];
+  }
   if (!info.date || !Number.isFinite(info.amount)) return [];
   const amounts = [info.amount];
   if (info.draft?.shared?.myShare != null) amounts.push(info.draft.shared.myShare);
@@ -381,6 +478,7 @@ export function findDuplicates(info, item) {
 // ---- descripción legible ------------------------------------------------
 
 function describe(info) {
+  if (info.kind === "edit") return [...info.lines];
   const lines = [];
   const d = info.draft;
   if (info.kind === "payment") {
@@ -469,6 +567,9 @@ export function renderInbox() {
 }
 
 function isReady(info) {
+  // En los cambios, cualquier aviso (p. ej. el movimiento cambió desde la
+  // propuesta) obliga a aceptar uno a uno.
+  if (info.kind === "edit" && info.issues.length) return false;
   return !info.issues.some((i) => i.blocking) && !info.duplicates.length;
 }
 
@@ -483,20 +584,25 @@ function buildCard(item, info) {
   const card = el("article", "inbox-card");
   card.dataset.itemId = item.id;
   const blocking = info.issues.some((i) => i.blocking);
-  card.dataset.state = blocking ? "blocked" : info.duplicates.length ? "duplicate" : "ready";
+  const needsLook = info.duplicates.length || (info.kind === "edit" && info.issues.length);
+  card.dataset.state = blocking ? "blocked" : needsLook ? "duplicate" : "ready";
 
   const head = el("div", "inbox-card-head");
   const title = el("div", "inbox-card-title");
-  const conceptText = info.kind === "payment"
+  const conceptText = info.kind === "edit"
+    ? `${info.action === "delete" ? "Borrar" : "Cambiar"}: ${info.movement?.concept ?? "movimiento"}`
+    : info.kind === "payment"
     ? (info.draft.advance ? "Adelanto" : "Liquidación")
     : info.draft.concept ?? info.raw.concept ?? "Sin concepto";
   title.append(el("strong", null, conceptText));
   const meta = [info.date ? formatDate(info.date) : "¿fecha?"];
-  if (info.draft?.party) meta.push(info.draft.party);
+  const party = info.kind === "edit" ? info.movement?.party : info.draft?.party;
+  if (party) meta.push(party);
   title.append(el("span", "inbox-card-meta", meta.join(" · ")));
   head.append(title);
-  const sign = info.kind === "movement" && info.type === "income" ? "+" : "";
-  const amount = el("span", `inbox-card-amount${info.type === "income" && info.kind === "movement" ? " is-income" : ""}`,
+  const showsType = info.kind === "movement" || info.kind === "edit";
+  const sign = showsType && info.type === "income" ? "+" : "";
+  const amount = el("span", `inbox-card-amount${info.type === "income" && showsType ? " is-income" : ""}`,
     Number.isFinite(info.amount) ? `${sign}${formatMoney(info.amount)}` : "¿importe?");
   head.append(amount);
   card.append(head);
@@ -521,7 +627,7 @@ function buildCard(item, info) {
 
   if (info.duplicates.length) {
     const box = el("div", "inbox-card-dupes");
-    box.append(el("p", "inbox-card-dupes-title", "¿Ya lo tienes? Se parece a:"));
+    box.append(el("p", "inbox-card-dupes-title", info.kind === "edit" ? "Ojo:" : "¿Ya lo tienes? Se parece a:"));
     const ul = el("ul");
     for (const d of info.duplicates) ul.append(el("li", null, d.label));
     box.append(ul);
@@ -529,7 +635,8 @@ function buildCard(item, info) {
   }
 
   const actions = el("div", "inbox-card-actions");
-  const accept = el("button", "primary-action", info.duplicates.length ? "Aceptar igualmente" : "Aceptar");
+  const baseLabel = info.kind === "edit" ? (info.action === "delete" ? "Borrar" : "Aplicar cambio") : "Aceptar";
+  const accept = el("button", "primary-action", !blocking && needsLook ? `${baseLabel} igualmente` : baseLabel);
   accept.type = "button";
   accept.dataset.inboxAction = "accept";
   accept.disabled = blocking || busy;
@@ -689,7 +796,43 @@ function submitRecurringForm() {
 // Crea los datos reales de una propuesta. Devuelve el `result` a guardar
 // en la fila de la bandeja, o null si quedó pendiente de corregir en un
 // formulario visible.
+// Aplica un cambio o borrado propuesto sobre un movimiento existente.
+// Mismo camino que el resto de la app: tocar state + saveMovements, que
+// sincroniza con la nube.
+function commitEdit(info) {
+  const movement = info.movement;
+  if (info.action === "delete") {
+    state.movements = state.movements.filter((m) => m.id !== movement.id);
+    saveMovements();
+    renderMovements();
+    renderAnalysis();
+    return { deletedMovementId: movement.id };
+  }
+  const changes = { ...info.changes };
+  if (changes.concept) {
+    changes.category = movement.type === "income"
+      ? "ingreso"
+      : state.settings.concepts.find((c) => c.label === changes.concept)?.category ?? movement.category;
+  }
+  Object.assign(movement, changes);
+  saveMovements();
+  // La nota de un gasto compartido vive también en su entrada de
+  // Compartidos: la mantenemos en sincronía.
+  if ("note" in changes && movement.sharedEntryId) {
+    const entry = state.sharedEntries.find((e) => e.id === movement.sharedEntryId);
+    if (entry) {
+      entry.note = changes.note;
+      saveSharedEntries();
+      renderSharedView();
+    }
+  }
+  renderMovements();
+  renderAnalysis();
+  return { movementId: movement.id, changes };
+}
+
 async function commitItem(item, info) {
+  if (info.kind === "edit") return commitEdit(info);
   const draft = info.draft;
   if (info.kind === "payment") {
     const entry = buildSharedPaymentEntry({

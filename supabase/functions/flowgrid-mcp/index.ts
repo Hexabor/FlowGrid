@@ -390,7 +390,7 @@ const tools: Tool[] = [
       }
       const limit = Math.min(Number(a.limit) || 200, 1000);
       const rows = await db.get(
-        `movements?${f.join("&")}&select=date,type,concept,category,amount,party,note,shared_entry_id,recurring_template_id&order=date.desc&limit=${limit}`
+        `movements?${f.join("&")}&select=id,date,type,concept,category,amount,party,note,shared_entry_id,recurring_template_id&order=date.desc,id.desc&limit=${limit}`
       );
       const sum = (t: string) => round2(rows.filter((r) => r.type === t).reduce((s, r) => s + Number(r.amount), 0));
       return {
@@ -399,6 +399,7 @@ const tools: Tool[] = [
         total_expense: sum("expense"),
         total_income: sum("income"),
         movements: rows.map((r) => ({
+          id: r.id,
           date: r.date,
           type: r.type,
           concept: r.concept,
@@ -690,12 +691,104 @@ const tools: Tool[] = [
       };
     },
   },
+  {
+    name: "propose_changes",
+    title: "Proponer cambios o borrados de movimientos",
+    description:
+      "Propone corregir o borrar movimientos que ya existen (los ids salen de search_movements). NO cambia nada directamente: cada propuesta llega a la bandeja de FlowGrid y el usuario la aprueba en la app. Campos editables: date, amount, concept, party, note. En movimientos vinculados a un gasto compartido solo se pueden cambiar party y note, y no se pueden borrar desde aquí. Enseña antes al usuario qué vas a cambiar y pide confirmación.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        items: {
+          type: "array",
+          minItems: 1,
+          maxItems: 100,
+          items: {
+            type: "object",
+            properties: {
+              action: { type: "string", enum: ["update", "delete"] },
+              movement_id: { type: "string", description: "id del movimiento (de search_movements)." },
+              changes: {
+                type: "object",
+                description: "Solo en update: campos nuevos.",
+                properties: {
+                  date: dateProp("Nueva fecha"),
+                  amount: { type: "number" },
+                  concept: { type: "string", description: "Concepto del catálogo." },
+                  party: { type: "string" },
+                  note: { type: "string" },
+                },
+              },
+              reason: { type: "string", description: "Por qué se propone (se muestra al usuario)." },
+            },
+            required: ["action", "movement_id"],
+          },
+        },
+      },
+      required: ["items"],
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    run: async (a, db) => {
+      const items: any[] = Array.isArray(a.items) ? a.items : [];
+      if (!items.length) throw new Error("No hay cambios que proponer.");
+      const cat = await loadCatalog(db);
+      const ids = [...new Set(items.map((i) => String(i.movement_id ?? "")))].filter(Boolean);
+      const found = ids.length
+        ? await db.getAll(`movements?owner_id=eq.${db.user.id}&id=in.(${ids.map((id) => `"${encodeURIComponent(id)}"`).join(",")})&select=id,date,type,concept,amount,party,note,shared_entry_id`)
+        : [];
+      const EDITABLE = ["date", "amount", "concept", "party", "note"];
+      const accepted: any[] = [];
+      const rejected: any[] = [];
+      for (const item of items) {
+        const m = found.find((x) => x.id === item.movement_id);
+        const action = item.action === "delete" ? "delete" : "update";
+        if (!m) {
+          rejected.push({ movement_id: item.movement_id, error: "No existe ningún movimiento tuyo con ese id." });
+          continue;
+        }
+        const changes: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(item.changes ?? {})) if (EDITABLE.includes(k)) changes[k] = v;
+        const problems: string[] = [];
+        if (action === "update" && !Object.keys(changes).length) problems.push("No hay campos que cambiar.");
+        if (m.shared_entry_id && (action === "delete" || ["date", "amount", "concept"].some((k) => k in changes))) {
+          problems.push("Es un gasto compartido: fecha, importe, concepto o borrado se cambian desde la app (Compartidos).");
+        }
+        if ("date" in changes && !isIsoDate(changes.date)) problems.push(`Fecha no válida: ${changes.date}`);
+        if ("amount" in changes && !(Number(changes.amount) > 0)) problems.push(`Importe no válido: ${changes.amount}`);
+        if ("concept" in changes) {
+          const valid = cat.concepts.filter((c) => (m.type === "income" ? incomeConcept(c) : c.category !== "ingreso"));
+          if (!valid.some((c) => norm(c.label) === norm(changes.concept))) problems.push(`El concepto «${changes.concept}» no existe.`);
+        }
+        if (problems.length) {
+          rejected.push({ movement_id: m.id, error: problems.join(" ") });
+          continue;
+        }
+        const before = { date: m.date, amount: Number(m.amount), concept: m.concept, party: m.party ?? "", note: m.note ?? "" };
+        accepted.push({ kind: "edit", action, movement_id: m.id, changes: action === "update" ? changes : undefined, before, type: m.type, reason: item.reason ?? "" });
+      }
+      if (accepted.length) {
+        const batchId = crypto.randomUUID();
+        await db.insert(
+          "inbox_items",
+          accepted.map((payload) => ({ id: crypto.randomUUID(), owner_id: db.user.id, batch_id: batchId, source: "mcp", payload }))
+        );
+      }
+      return {
+        proposed: accepted.length,
+        rejected,
+        message: accepted.length
+          ? "Cambios enviados a la bandeja. El usuario debe aprobarlos en FlowGrid → Movimientos → Bandeja."
+          : "No se ha enviado nada.",
+      };
+    },
+  },
 ];
 
 const INSTRUCTIONS = `Eres el asistente de FlowGrid, la app de finanzas personales del usuario. Hablas en español.
 - Al empezar, llama a get_catalog: usa SIEMPRE sus conceptos, contactos y grupos tal cual. "concept" es un concepto del catálogo; las descripciones van en "note".
 - Para apuntar gastos: extrae los movimientos, llama a find_possible_duplicates y enseña una tabla de revisión con las columnas Fecha · Importe · Concepto · Establecimiento · Nota · Con quién y reparto · Se repite. Si hay posibles duplicados, pregúntalo. Solo cuando el usuario confirme, llama a propose_movements.
-- propose_movements no guarda nada definitivo: di al usuario que revise y acepte las propuestas en FlowGrid → Movimientos → Bandeja.
+- Para corregir o borrar movimientos existentes: búscalos con search_movements (te da su id), enseña al usuario qué cambiarías (antes → después) y, cuando confirme, usa propose_changes.
+- propose_movements y propose_changes no guardan nada definitivo: di al usuario que revise y acepte las propuestas en FlowGrid → Movimientos → Bandeja.
 - Para consultas (¿tengo todo al día?, ¿cuánto gasto en…?, patrones, cosas que sobran o faltan) usa search_movements, summarize_movements, check_regular_expenses, list_recurring_templates y list_shared_entries.
 - Importes en euros; fechas AAAA-MM-DD; la fecha de hoy la da get_catalog.`;
 
