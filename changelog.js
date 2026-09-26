@@ -2,6 +2,17 @@ window.FlowGridChangelog = [
   {
     date: "2026-09-26",
     commit: "dev@HEAD",
+    title: "Arreglado: con más de 1.000 movimientos, la app no los cargaba todos",
+    changes: [
+      "La base de datos entrega como máximo un número fijo de filas por consulta (1.000). La app pedía todos tus movimientos de golpe y, si tenías más, recibía solo una parte sin avisar: los demás no aparecían en listados, totales ni análisis, aunque seguían guardados.",
+      "Ahora la app los pide por páginas hasta tenerlos todos. Lo mismo para compartidos, contactos, plantillas periódicas y grupos.",
+      "Consecuencia: puede que veas movimientos que llevaban tiempo sin salir, y alguno repetido si en su día lo volviste a apuntar al no verlo. No se ha perdido nada.",
+      "El conector para chats también lee ahora todos tus datos en resúmenes, revisión de gastos regulares y búsqueda de duplicados.",
+    ],
+  },
+  {
+    date: "2026-09-26",
+    commit: "dev@HEAD",
     title: "Conector de FlowGrid para ChatGPT y Claude",
     changes: [
       "Puedes conectar FlowGrid como conector (MCP) en ChatGPT o Claude. La primera vez te sale una pantalla de FlowGrid para permitir el acceso; a partir de ahí, el chat trabaja con tus datos sin copiar y pegar.",

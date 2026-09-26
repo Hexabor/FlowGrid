@@ -31,7 +31,6 @@ const SUPABASE_ANON_KEY = (globalThis as any).Deno?.env.get("SUPABASE_ANON_KEY")
 
 const SERVER_INFO = { name: "flowgrid", title: "FlowGrid", version: "1.0.0" };
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
-const ROW_LIMIT = 50000;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -116,6 +115,20 @@ class Db {
     return await res.json();
   }
 
+  // Lectura completa por páginas: PostgREST corta cada respuesta en el
+  // "Max rows" del proyecto (1000 por defecto) aunque pidas más.
+  async getAll(path: string): Promise<any[]> {
+    const sep = path.includes("?") ? "&" : "?";
+    const order = /(^|[?&])order=/.test(path) ? "" : "&order=id.asc";
+    const rows: any[] = [];
+    for (;;) {
+      const chunk = await this.get(`${path}${sep}offset=${rows.length}${order}`);
+      if (!chunk.length) break;
+      rows.push(...chunk);
+    }
+    return rows;
+  }
+
   async insert(table: string, rows: unknown[]): Promise<void> {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
       method: "POST",
@@ -131,9 +144,9 @@ async function loadCatalog(db: Db) {
   const uid = db.user.id;
   const [settings, contacts, groups, members] = await Promise.all([
     db.get(`settings?owner_id=eq.${uid}&select=categories,concepts`),
-    db.get(`contacts?owner_id=eq.${uid}&select=id,name,auth_user_id&limit=${ROW_LIMIT}`),
-    db.get(`groups?select=id,name,owner_id&limit=${ROW_LIMIT}`),
-    db.get(`group_members?select=id,group_id,auth_user_id,display_name,inviter_contact_id,left_at&limit=${ROW_LIMIT}`),
+    db.getAll(`contacts?owner_id=eq.${uid}&select=id,name,auth_user_id`),
+    db.getAll(`groups?select=id,name,owner_id`),
+    db.getAll(`group_members?select=id,group_id,auth_user_id,display_name,inviter_contact_id,left_at`),
   ]);
   const concepts: { label: string; category: string }[] = settings[0]?.concepts ?? [];
   const categories: { value: string; label: string }[] = settings[0]?.categories ?? [];
@@ -418,8 +431,8 @@ const tools: Tool[] = [
     run: async (a, db) => {
       if (!isIsoDate(a.from) || !isIsoDate(a.to)) throw new Error("from y to deben ser fechas AAAA-MM-DD.");
       const typeFilter = a.type ? `&type=eq.${encodeURIComponent(a.type)}` : "";
-      const rows = await db.get(
-        `movements?owner_id=eq.${db.user.id}&date=gte.${a.from}&date=lte.${a.to}${typeFilter}&select=date,type,concept,category,amount,party&limit=${ROW_LIMIT}`
+      const rows = await db.getAll(
+        `movements?owner_id=eq.${db.user.id}&date=gte.${a.from}&date=lte.${a.to}${typeFilter}&select=date,type,concept,category,amount,party`
       );
       const by = a.group_by ?? "month";
       const key = (r: any) => (by === "month" ? r.date.slice(0, 7) : by === "party" ? r.party || "(sin establecimiento)" : r[by]);
@@ -444,7 +457,7 @@ const tools: Tool[] = [
     annotations: READ_ONLY,
     run: async (_a, db) => {
       const cat = await loadCatalog(db);
-      const rows = await db.get(`recurring_templates?owner_id=eq.${db.user.id}&select=*&limit=${ROW_LIMIT}`);
+      const rows = await db.getAll(`recurring_templates?owner_id=eq.${db.user.id}&select=*`);
       return rows.map((t) => ({
         concept: t.concept,
         type: t.type,
@@ -482,8 +495,8 @@ const tools: Tool[] = [
       const today = todayMadrid();
       const from = addDays(today, -Math.round(months * 30.5));
       const [rows, templates] = await Promise.all([
-        db.get(`movements?owner_id=eq.${db.user.id}&date=gte.${from}&select=date,type,concept,amount,party,recurring_template_id&limit=${ROW_LIMIT}`),
-        db.get(`recurring_templates?owner_id=eq.${db.user.id}&select=concept,party,amount,is_active,periodicity&limit=${ROW_LIMIT}`),
+        db.getAll(`movements?owner_id=eq.${db.user.id}&date=gte.${from}&select=date,type,concept,amount,party,recurring_template_id`),
+        db.getAll(`recurring_templates?owner_id=eq.${db.user.id}&select=concept,party,amount,is_active,periodicity`),
       ]);
       const buckets = new Map<string, any[]>();
       for (const r of rows) {
@@ -538,7 +551,7 @@ const tools: Tool[] = [
     annotations: READ_ONLY,
     run: async (a, db) => {
       const cat = await loadCatalog(db);
-      const all = await db.get(`shared_entries?select=*&order=date.desc&limit=${ROW_LIMIT}`);
+      const all = await db.getAll(`shared_entries?select=*&order=date.desc,id.desc`);
       const balances = new Map<string, number>();
       const entries = all.map((raw) => {
         const e = sharedAsMine(raw, cat);
@@ -601,9 +614,9 @@ const tools: Tool[] = [
       const from = addDays(dates[0], -3);
       const to = addDays(dates[dates.length - 1], 3);
       const [movs, shared, inbox] = await Promise.all([
-        db.get(`movements?owner_id=eq.${db.user.id}&date=gte.${from}&date=lte.${to}&select=date,type,concept,amount,party&limit=${ROW_LIMIT}`),
-        db.get(`shared_entries?date=gte.${from}&date=lte.${to}&select=date,type,concept,total&limit=${ROW_LIMIT}`),
-        db.get(`inbox_items?owner_id=eq.${db.user.id}&status=eq.pending&select=payload,created_at&limit=${ROW_LIMIT}`),
+        db.getAll(`movements?owner_id=eq.${db.user.id}&date=gte.${from}&date=lte.${to}&select=date,type,concept,amount,party`),
+        db.getAll(`shared_entries?date=gte.${from}&date=lte.${to}&select=date,type,concept,total`),
+        db.getAll(`inbox_items?owner_id=eq.${db.user.id}&status=eq.pending&select=payload,created_at`),
       ]);
       const results = items.map((item) => {
         const amount = Number(item.amount);
@@ -638,7 +651,7 @@ const tools: Tool[] = [
     inputSchema: { type: "object", properties: {} },
     annotations: READ_ONLY,
     run: async (_a, db) => {
-      const rows = await db.get(`inbox_items?owner_id=eq.${db.user.id}&status=eq.pending&select=id,payload,source,created_at&order=created_at.asc&limit=${ROW_LIMIT}`);
+      const rows = await db.getAll(`inbox_items?owner_id=eq.${db.user.id}&status=eq.pending&select=id,payload,source,created_at&order=created_at.asc,id.asc`);
       return { pending: rows.length, items: rows.map((r) => ({ id: r.id, source: r.source, created_at: r.created_at, ...r.payload })) };
     },
   },
