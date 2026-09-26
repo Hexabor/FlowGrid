@@ -164,6 +164,10 @@ function sharedToCloud(e, ownerId) {
     my_share: e.myShare ?? 0,
     their_share: e.theirShare ?? 0,
     source_movement_id: e.sourceMovementId ?? null,
+    // Adelanto: pago anticipado por un gasto que aún no ha ocurrido.
+    // Solo cambia la etiqueta en la UI; el saldo lo trata como cualquier
+    // otro pago. Ver migrate-12-shared-entry-advance.sql.
+    advance: e.advance ?? false,
     settled_at: e.settledAt ?? null,
     // Liquidación granular por miembro en gastos de grupo: { member_id:
     // timestamp }. NULL en entradas 1↔1 o en grupos sin partes
@@ -192,6 +196,7 @@ function sharedFromCloud(row) {
     myShare: Number(row.my_share),
     theirShare: Number(row.their_share),
     sourceMovementId: row.source_movement_id ?? null,
+    advance: row.advance ?? false,
     settledAt: row.settled_at ?? null,
     settledMembers: row.settled_members ?? null,
     groupId: row.group_id ?? null,
@@ -428,6 +433,7 @@ export async function cloudPushSettings() {
       owner_id: ownerId,
       categories: state.settings.categories,
       concepts: state.settings.concepts,
+      notify_shared_email: state.settings.notifySharedEmail ?? false,
     }],
     "owner_id"
   );
@@ -446,6 +452,64 @@ export async function cloudPushAll() {
     cloudPushGroupMembers(),
     cloudPushSettings(),
   ]);
+}
+
+// ---- inbox (bandeja de propuestas) ----
+//
+// La bandeja NO entra en el sync por foto completa: se lee aparte y cada
+// fila se actualiza individualmente (aceptar / descartar). Así las filas
+// que escribe un conector externo no se pierden con el push de un
+// dispositivo desactualizado. Ver migrate-14-inbox.sql.
+
+function inboxFromCloud(row) {
+  return {
+    id: row.id,
+    batchId: row.batch_id ?? null,
+    source: row.source,
+    payload: row.payload ?? {},
+    status: row.status,
+    result: row.result ?? null,
+    createdAt: row.created_at,
+    resolvedAt: row.resolved_at ?? null,
+  };
+}
+
+export async function cloudFetchInbox() {
+  const ownerId = await getUserId();
+  if (!ownerId) return [];
+  const rows = await restGetAll(
+    `inbox_items?owner_id=eq.${ownerId}&status=eq.pending&select=*&order=created_at.asc,id.asc`
+  );
+  return rows.map(inboxFromCloud);
+}
+
+export async function cloudInsertInbox(items) {
+  const ownerId = await getUserId();
+  if (!ownerId || !items.length) return;
+  await restUpsert(
+    "inbox_items",
+    items.map((item) => ({
+      id: item.id,
+      owner_id: ownerId,
+      batch_id: item.batchId ?? null,
+      source: item.source ?? "paste",
+      payload: item.payload,
+      status: "pending",
+    }))
+  );
+}
+
+export async function cloudResolveInboxItem(id, status, result = null) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/inbox_items?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({ status, result, resolved_at: new Date().toISOString() }),
+  });
+  if (!res.ok) throw new Error(`resolve inbox ${id} failed: ${res.status} ${await res.text()}`);
 }
 
 // ---- hydrate (cloud is authoritative; first login pushes local seed up) ----
@@ -531,8 +595,9 @@ export async function cloudHydrate() {
     ? {
         categories: settingsRow.categories?.length ? settingsRow.categories : defaultCategories,
         concepts: settingsRow.concepts?.length ? settingsRow.concepts : defaultConcepts,
+        notifySharedEmail: settingsRow.notify_shared_email ?? false,
       }
-    : { categories: defaultCategories, concepts: defaultConcepts };
+    : { categories: defaultCategories, concepts: defaultConcepts, notifySharedEmail: false };
 
   // One-shot migration (2026-05-01): "Recuperados" moved from category
   // "extra" to "ingreso". Idempotent; runs only on accounts that still have
@@ -699,15 +764,16 @@ function readLocalArray(key) {
 
 function readLocalSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
-  if (!raw) return { categories: defaultCategories, concepts: defaultConcepts };
+  if (!raw) return { categories: defaultCategories, concepts: defaultConcepts, notifySharedEmail: false };
   try {
     const parsed = JSON.parse(raw);
     return {
       categories: parsed.categories?.length ? parsed.categories : defaultCategories,
       concepts: parsed.concepts?.length ? parsed.concepts : defaultConcepts,
+      notifySharedEmail: parsed.notifySharedEmail ?? false,
     };
   } catch {
-    return { categories: defaultCategories, concepts: defaultConcepts };
+    return { categories: defaultCategories, concepts: defaultConcepts, notifySharedEmail: false };
   }
 }
 

@@ -7,6 +7,79 @@ window.FlowGridChangelog = [
       "La base de datos entrega como máximo un número fijo de filas por consulta (1.000). La app pedía todos tus movimientos de golpe y, si tenías más, recibía solo una parte sin avisar: los demás no aparecían en listados, totales ni análisis, aunque seguían guardados.",
       "Ahora la app los pide por páginas hasta tenerlos todos. Lo mismo para compartidos, contactos, plantillas periódicas y grupos.",
       "Consecuencia: puede que veas movimientos que llevaban tiempo sin salir, y alguno repetido si en su día lo volviste a apuntar al no verlo. No se ha perdido nada.",
+      "El conector para chats también lee ahora todos tus datos en resúmenes, revisión de gastos regulares y búsqueda de duplicados.",
+    ],
+  },
+  {
+    date: "2026-09-26",
+    commit: "dev@HEAD",
+    title: "Conector de FlowGrid para ChatGPT y Claude",
+    changes: [
+      "Puedes conectar FlowGrid como conector (MCP) en ChatGPT o Claude. La primera vez te sale una pantalla de FlowGrid para permitir el acceso; a partir de ahí, el chat trabaja con tus datos sin copiar y pegar.",
+      "El chat puede consultar tus movimientos, resúmenes por mes, categoría o concepto, plantillas periódicas, gastos compartidos y saldos. También detecta gastos regulares que llevas tiempo sin apuntar y avisa de posibles duplicados antes de proponer nada.",
+      "Cuando le cuentas gastos, los deja como propuestas en tu Bandeja. No puede guardar, cambiar ni borrar nada por su cuenta: cada propuesta la sigues aprobando tú en la app.",
+    ],
+  },
+  {
+    date: "2026-09-26",
+    commit: "dev@HEAD",
+    title: "Bandeja: apunta tus gastos hablando con una IA",
+    changes: [
+      "Nueva Bandeja (botón en Movimientos y aviso en el Inicio cuando hay algo pendiente). Aquí llegan los movimientos que te prepara un chat como ChatGPT o Claude, y no se guarda nada hasta que lo aceptas.",
+      "\"Copiar instrucciones para la IA\" genera un texto con tus conceptos, contactos y grupos reales. Pégalo en el chat (o en las instrucciones de un proyecto), cuéntale tus gastos a tu manera y te devolverá un bloque que pegas en \"Pegar respuesta de la IA\".",
+      "Admite gastos e ingresos normales, compartidos con un contacto o con un grupo (incluido \"lo pagué yo todo\" o \"me lo pagó él\"), gastos periódicos, liquidaciones y adelantos.",
+      "Cada propuesta te dice exactamente qué se va a crear. Si se parece a algo que ya tienes (misma fecha aproximada e importe o concepto), te lo marca como posible duplicado. Si la IA escribe un concepto o un contacto que no existe, lo eliges ahí mismo.",
+      "\"Aceptar las listas\" mete de golpe todas las que no tienen dudas. Las demás se aceptan una a una o se abren con \"Revisar\" en el formulario de siempre. Requiere aplicar la migración 14 en Supabase.",
+      "Las instrucciones para la IA piden una tabla de revisión con las mismas columnas que los datos que se suben (fecha, importe, concepto, establecimiento, nota, con quién y si se repite), y dejan claro que el concepto es siempre uno de los tuyos: las descripciones van en la nota. Si ya las habías copiado, vuelve a copiarlas.",
+    ],
+  },
+  {
+    date: "2026-06-01",
+    commit: "dev@HEAD",
+    title: "Avisos por email cuando un contacto te añade un gasto compartido",
+    changes: [
+      "Nueva pestaña Configuración → Avisos con un interruptor para recibir un email cada vez que un contacto vinculado te añade un gasto compartido (1↔1 o de grupo). Está DESACTIVADO por defecto: no recibes nada salvo que lo actives tú.",
+      "El correo incluye el concepto, el total, tu parte y el saldo que queda con esa persona. Si ese saldo ya estaba cubierto por un adelanto tuyo, el email lo indica — así ves de un vistazo que no tienes que pagar nada todavía.",
+      "Solo funciona con contactos vinculados (que tengan cuenta y hayáis aceptado la invitación). El aviso lo controla quien lo RECIBE, no quien crea el gasto.",
+      "Requiere aplicar la migración 13 en Supabase y desplegar la nueva Edge Function de avisos.",
+    ],
+  },
+  {
+    date: "2026-06-01",
+    commit: "dev@HEAD",
+    title: "El tema \"Lavanda\" pasa a llamarse \"Rosa palo\"",
+    changes: [
+      "El tema visual que hasta ahora se llamaba \"Lavanda\" se renombra a \"Rosa palo\": el color real (acento rosa empolvado sobre fondo rosa muy claro) nunca fue lavanda. Es solo el nombre — los colores no cambian.",
+      "Si ya tenías el tema elegido, se conserva automáticamente: la app migra el valor antiguo al nuevo sin que tengas que volver a seleccionarlo.",
+    ],
+  },
+  {
+    date: "2026-06-01",
+    commit: "dev@HEAD",
+    title: "Adelantos: registrar pagos por gastos que aún no han ocurrido",
+    changes: [
+      "Nuevo botón \"Registrar adelanto\" en el panel de Saldos de Compartidos. Sirve cuando alguien te paga (o tú le pagas) por adelantado un gasto compartido que todavía no ha sucedido: una cena del mes que viene, un viaje, etc. A diferencia de \"Liquidar saldo\", el adelanto se puede registrar aunque no haya saldo previo con ese contacto.",
+      "El adelanto se descuenta solo: cuando más adelante registras el gasto real, su importe se neto contra lo ya adelantado, sin tener que cuadrar nada a mano. Ejemplo: te adelantan 50 € para una cena; al registrar la cena (80 €, partes iguales) el saldo queda en los 10 € que sobran.",
+      "Para distinguirlo de una deuda real, el adelanto aparece etiquetado como \"Adelanto de …\" (con el concepto del gasto previsto) en el historial, y la tarjeta del contacto muestra el aviso \"incluye adelantos por gastos futuros\".",
+      "El modal de pago ahora tiene una casilla \"Es un adelanto por un gasto futuro\" que, al marcarla, pide el concepto del gasto previsto y la dirección (te paga el contacto / pagas tú). Requiere aplicar la migración 12 en Supabase.",
+    ],
+  },
+  {
+    date: "2026-05-12",
+    commit: "dev@HEAD",
+    title: "Periódicos: filtro Individuales / Compartidas y nombre del grupo en la tarjeta",
+    changes: [
+      "Sobre la lista de plantillas periódicas hay ahora un filtro segmentado con tres opciones: \"Todas\" (default), \"Individuales\" y \"Compartidas\". El contador del topbar refleja el filtro activo (\"X de Y plantillas\"). El filtro vive en memoria mientras dura la sesión y se resetea al recargar.",
+      "Las plantillas que apuntan a un grupo ahora muestran su destino en la columna Compartido igual que las 1↔1: \"Con grupo YouTube · 6 miembros · partes iguales\" (o \"reparto desigual\" si la plantilla heredó porcentajes de un gasto desigual o el grupo tiene default uneven). Antes este texto estaba en blanco y solo se veía el nombre del grupo abriendo a editar la plantilla.",
+    ],
+  },
+  {
+    date: "2026-05-12",
+    commit: "dev@HEAD",
+    title: "Invitar contacto: aviso visible al enviar o reenviar",
+    changes: [
+      "El botón \"Invitar\" / \"Reinvitar\" en Configuración → Contactos ahora muestra un toast en la parte inferior cuando la invitación sale: \"Invitación enviada a …\" (verde) o \"Invitación reenviada a …\". Antes el único cambio era el texto del botón pasando de \"Invitar\" a \"Reinvitar\", muy fácil de pasar por alto en móvil.",
+      "Si el contacto todavía no tiene email guardado o si Supabase rechaza el envío (rate-limit, etc.), también sale un toast en rojo con el motivo en vez del alert nativo del navegador.",
     ],
   },
   {

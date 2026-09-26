@@ -17,6 +17,7 @@ import {
 import { buildSplits, getMyMemberInGroup } from "./groups.js";
 import { getUserIdSync } from "../core/supabase.js";
 import { recordSharedEntryEdit } from "./edit-log.js";
+import { notifyNewSharedExpense } from "./notify.js";
 import { renderAnalysis } from "./analysis.js";
 import { openConvertFromMovement, openConvertFromSharedEntry } from "./recurring.js";
 import { setMovementDate } from "../ui/datepicker.js";
@@ -1191,12 +1192,30 @@ elements.form.addEventListener("submit", async (event) => {
   saveMovements();
   saveSharedEntries();
 
+  // Aviso síncrono (antes de cualquier await) de que el formulario ha
+  // guardado. Lo escucha la bandeja (features/inbox.js) para marcar la
+  // propuesta como aceptada cuando el alta vino de ella.
+  document.dispatchEvent(new CustomEvent("fg:movement-form-saved", {
+    detail: {
+      movementId: skipMovement ? null : movement.id,
+      sharedEntryId: sharedEntry?.id ?? null,
+    },
+  }));
+
   // Audit log: every save that touches a shared entry — creation,
   // edit, or movement-with-share edit — leaves a row. Awaited so the
   // history modal opened right after a save sees the new row instead
   // of racing with the in-flight insert.
   if (sharedEntry) {
     await recordSharedEntryEdit(oldSharedEntry, sharedEntry, formData.get("editComment"));
+  }
+
+  // Aviso por email al otro lado SOLO en creación real de un gasto
+  // compartido (no en edición, y este handler no corre para recurrentes).
+  // El destinatario debe tener el opt-in activado; la Edge Function lo
+  // comprueba. Fire-and-forget: no bloquea el cierre del formulario.
+  if (sharedEntry && !wasEditing) {
+    notifyNewSharedExpense(sharedEntry);
   }
 
   renderMovements();
@@ -1207,4 +1226,8 @@ elements.form.addEventListener("submit", async (event) => {
 
   resetMovementForm(movement);
   closeMovementModal();
+  // Fin real del guardado (tras los await). La bandeja espera a este
+  // aviso antes de rellenar el formulario con la siguiente propuesta,
+  // para que este reset no pise sus valores.
+  document.dispatchEvent(new CustomEvent("fg:movement-form-settled"));
 });

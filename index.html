@@ -34,7 +34,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2026-05-02-2144">
     <link id="app-manifest" rel="manifest" href="manifest.webmanifest?v=2026-05-02-2144">
     <meta name="theme-color" content="#0f766e">
-    <link rel="stylesheet" href="styles.css?v=2026-09-26-2032">
+    <link rel="stylesheet" href="styles.css?v=2026-09-26-2111">
     <style>
       /* Critical inline CSS for the mobile type-toggle. Inlined so it loads
          atomically with the HTML and can't be defeated by a stale styles.css
@@ -214,6 +214,15 @@
               </span>
             </button>
 
+            <button id="home-inbox-banner" class="home-inbox-banner" type="button" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-6l-2 3h-4l-2-3H2"></path>
+                <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+              </svg>
+              <span id="home-inbox-banner-text">Tienes propuestas esperando en la bandeja.</span>
+              <strong>Revisar</strong>
+            </button>
+
             <div class="module-groups">
               <section class="module-group">
                 <div class="home-modules-layout">
@@ -330,6 +339,10 @@
                 <h2 id="movement-count">0 movimientos</h2>
                 <div class="ledger-actions">
                   <button id="reset-search-top" class="filter-clear-button filter-clear-button--top" data-role="reset" type="button" aria-label="Limpiar filtros" hidden>x</button>
+                  <button id="open-inbox" class="ghost-action inbox-open-button" type="button" data-view-target="inbox" title="Bandeja de propuestas de IA">
+                    Bandeja
+                    <span id="inbox-open-count" class="inbox-count-badge" hidden></span>
+                  </button>
                   <button id="open-filter" class="primary-action ledger-filter-toggle" type="button" aria-expanded="false" aria-controls="filter-bar">Filtrar</button>
                   <button id="open-movement-modal" class="primary-action" type="button">Nuevo movimiento</button>
                 </div>
@@ -503,6 +516,48 @@
           </div>
         </div>
 
+        <section class="view" id="inbox-view" data-view="inbox" aria-labelledby="inbox-title">
+          <header class="topbar">
+            <div>
+              <h1 id="inbox-title">Bandeja</h1>
+            </div>
+            <p id="inbox-count" class="period">0 propuestas</p>
+          </header>
+
+          <section class="panel">
+            <p class="inbox-blurb">
+              Aqu&iacute; llegan los movimientos que te prepara una IA. Nada se guarda hasta que lo aceptas.
+              Si una propuesta se parece a algo que ya tienes, te lo marco para que no lo metas dos veces.
+            </p>
+
+            <div class="inbox-tools">
+              <button id="inbox-copy-instructions" class="ghost-action" type="button">Copiar instrucciones para la IA</button>
+              <button type="button" class="ghost-action" data-view-target="movements">Volver a movimientos</button>
+            </div>
+            <div id="inbox-instructions-box" class="inbox-instructions" hidden>
+              <p>No he podido copiar al portapapeles. Selecciona el texto y c&oacute;pialo a mano:</p>
+              <textarea id="inbox-instructions-text" rows="10" readonly></textarea>
+            </div>
+
+            <details id="inbox-paste-panel" class="inbox-paste">
+              <summary>Pegar respuesta de la IA</summary>
+              <textarea id="inbox-paste-text" rows="8" placeholder="Pega aqu&iacute; el bloque JSON (o la respuesta entera: ya busco yo el JSON)&hellip;"></textarea>
+              <div class="inbox-paste-row">
+                <button id="inbox-paste-submit" class="primary-action" type="button">A&ntilde;adir a la bandeja</button>
+                <span id="inbox-paste-status" class="inbox-paste-status" role="status" aria-live="polite"></span>
+              </div>
+            </details>
+
+            <div id="inbox-bulk" class="inbox-bulk" hidden>
+              <button id="inbox-accept-ready" class="primary-action" type="button">Aceptar las listas</button>
+              <button id="inbox-discard-all" class="ghost-action inbox-discard" type="button">Descartar todas</button>
+            </div>
+
+            <div id="inbox-list" class="inbox-list"></div>
+            <p id="inbox-empty" class="empty-state">La bandeja est&aacute; vac&iacute;a.</p>
+          </section>
+        </section>
+
         <section class="view" id="analysis-view" data-view="analysis" data-mode="month" aria-labelledby="analysis-title">
           <header class="topbar">
             <div>
@@ -610,6 +665,12 @@
               Editar el importe solo afecta a generaciones futuras; los movimientos pasados no se modifican.
               Si pausas una plantilla, deja de generar nuevos movimientos hasta que la reactives, y al hacerlo arranca desde la pr&oacute;xima ocurrencia (no recupera los meses de la pausa).
             </p>
+
+            <div id="recurring-filter" class="recurring-filter" role="group" aria-label="Filtrar plantillas">
+              <button type="button" class="recurring-filter-btn is-active" data-filter="all">Todas</button>
+              <button type="button" class="recurring-filter-btn" data-filter="individual">Individuales</button>
+              <button type="button" class="recurring-filter-btn" data-filter="shared">Compartidas</button>
+            </div>
 
             <div id="recurring-list" class="recurring-list"></div>
             <p id="recurring-empty" class="empty-state" hidden>
@@ -780,7 +841,10 @@
           <section class="panel">
             <div class="section-heading">
               <h2>Saldos</h2>
-              <span id="shared-contacts-count"></span>
+              <div class="section-heading-aside">
+                <span id="shared-contacts-count"></span>
+                <button id="register-advance" class="ghost-action" type="button">Registrar adelanto</button>
+              </div>
             </div>
             <div class="shared-mobile-picker-row">
               <button id="shared-mobile-back-to-all" class="shared-mobile-back" type="button" hidden>
@@ -826,9 +890,24 @@
             </div>
 
             <form id="payment-form" class="movement-form">
+              <label class="field-wide toggle-field">
+                <input id="payment-advance" name="advance" type="checkbox">
+                <span>Es un adelanto por un gasto futuro</span>
+              </label>
               <label>
                 <span>Contacto</span>
                 <select id="payment-contact" name="contactId" required></select>
+              </label>
+              <label id="payment-direction-field" hidden>
+                <span>&iquest;Qui&eacute;n adelanta?</span>
+                <select id="payment-direction" name="direction">
+                  <option value="them">Te paga el contacto</option>
+                  <option value="me">Pagas t&uacute;</option>
+                </select>
+              </label>
+              <label id="payment-concept-field" class="field-wide" hidden>
+                <span>&iquest;Para qu&eacute; es? <small class="label-hint">(gasto previsto)</small></span>
+                <input id="payment-concept" name="concept" type="text" autocomplete="off" placeholder="Ej. Cena de cumplea&ntilde;os">
               </label>
               <label>
                 <span>Importe</span>
@@ -843,7 +922,7 @@
                 <span>Nota</span>
                 <input id="payment-note" name="note" type="text" autocomplete="off">
               </label>
-              <button class="primary-action" type="submit">Liquidar</button>
+              <button id="payment-submit" class="primary-action" type="submit">Liquidar</button>
             </form>
           </div>
         </div>
@@ -919,6 +998,7 @@
 
           <div class="settings-tabs" aria-label="Secciones de configuracion">
             <button class="settings-tab is-active" type="button" data-settings-target="concepts">Conceptos y categorias</button>
+            <button class="settings-tab" type="button" data-settings-target="avisos">Avisos</button>
             <button class="settings-tab" type="button" data-settings-target="theme">Tema</button>
             <button class="settings-tab" type="button" data-settings-target="csv">CSV</button>
             <button class="settings-tab" type="button" data-settings-target="backup">Backup JS</button>
@@ -982,6 +1062,21 @@
           </section>
 
 
+          <section class="settings-panel" data-settings-panel="avisos">
+            <section class="panel">
+              <div class="section-heading">
+                <h2>Avisos por email</h2>
+              </div>
+              <p>Decide si quieres recibir un correo cuando alguien te a&ntilde;ade un gasto compartido. Est&aacute; desactivado por defecto; t&uacute; eliges.</p>
+              <label class="toggle-field">
+                <input id="notify-shared-email" type="checkbox">
+                <span>Av&iacute;same por email cuando un contacto me a&ntilde;ada un gasto compartido</span>
+              </label>
+              <p class="callout-hint">El correo incluye el concepto, tu parte y el saldo que queda con esa persona &mdash; as&iacute; ves de un vistazo si el gasto ya estaba cubierto por un adelanto. Solo funciona con contactos vinculados (que tengan cuenta y hay&aacute;is aceptado la invitaci&oacute;n).</p>
+              <p id="notify-shared-status" class="feedback-status" role="status" aria-live="polite"></p>
+            </section>
+          </section>
+
           <section class="settings-panel" data-settings-panel="theme">
             <section class="panel">
               <div class="section-heading">
@@ -994,10 +1089,10 @@
                   <span>Cl&aacute;sico</span>
                   <small>Verde teal sobre fondo gris suave.</small>
                 </button>
-                <button class="theme-option" type="button" data-theme-value="lavanda">
-                  <span class="theme-swatch theme-swatch--lavanda" aria-hidden="true"></span>
-                  <span>Lavanda</span>
-                  <small>Rosa pastel sobre fondo lavanda muy claro.</small>
+                <button class="theme-option" type="button" data-theme-value="rosa-palo">
+                  <span class="theme-swatch theme-swatch--rosa-palo" aria-hidden="true"></span>
+                  <span>Rosa palo</span>
+                  <small>Rosa empolvado sobre fondo rosa muy claro.</small>
                 </button>
               </div>
             </section>
@@ -1391,22 +1486,23 @@
       // clock at commit time, with real seconds so a stale cache is obvious).
       // If the corner label still shows the old value after a hard reload,
       // Pages hasn't propagated yet.
-      window.__FG_BUILD__ = "2026-09-26 20:32:46";
+      window.__FG_BUILD__ = "2026-09-26 21:11:56";
       (function () {
         const el = document.getElementById("app-version");
         if (el) el.textContent = window.__FG_BUILD__;
       })();
 
-      // Aplicar el tema (classic / lavanda) ANTES de que el browser pinte
-      // cualquier cosa, para evitar el flash del tema clásico en una
-      // sesión donde el usuario eligió lavanda. Persistencia en
-      // localStorage. El módulo features/theme.js lee también esta
-      // misma key al cargar y mantiene el selector sincronizado.
+      // Aplicar el tema (classic / rosa-palo) ANTES de que el browser
+      // pinte cualquier cosa, para evitar el flash del tema clásico en
+      // una sesión donde el usuario eligió rosa palo. Persistencia en
+      // localStorage. "lavanda" es el nombre antiguo (erróneo) del mismo
+      // tema; lo aceptamos aquí para no fallar antes de que el módulo
+      // features/theme.js migre la key.
       (function () {
         try {
           const theme = localStorage.getItem("flowgrid.theme.v1");
-          if (theme === "lavanda") {
-            document.documentElement.dataset.theme = "lavanda";
+          if (theme === "rosa-palo" || theme === "lavanda") {
+            document.documentElement.dataset.theme = "rosa-palo";
           }
         } catch (_) {
           // localStorage unavailable; stay on classic.
@@ -1471,6 +1567,6 @@
         };
       })();
     </script>
-    <script type="module" src="app.js?v=2026-09-26-2032"></script>
+    <script type="module" src="app.js?v=2026-09-26-2111"></script>
   </body>
 </html>

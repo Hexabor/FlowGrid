@@ -134,6 +134,15 @@ export function entryDescription(entry) {
 
   const contactName = getContactName(entry.contactId);
   if (entry.type === "payment") {
+    if (entry.advance) {
+      // El concepto guarda el gasto futuro que cubre el adelanto.
+      const purpose = entry.concept && entry.concept !== "Adelanto"
+        ? ` · ${entry.concept}`
+        : "";
+      return entry.paidBy === "me"
+        ? `Adelanto a ${contactName}${purpose}`
+        : `Adelanto de ${contactName}${purpose}`;
+    }
     return entry.paidBy === "me"
       ? `Pago a ${contactName}`
       : `${contactName} te paga`;
@@ -193,19 +202,22 @@ export function buildSharedExpenseEntry({ contactId, total, modeKey, myShare, th
   };
 }
 
-export function buildSharedPaymentEntry({ contactId, total, paidBy, date, note }) {
+export function buildSharedPaymentEntry({ contactId, total, paidBy, date, note, advance = false, concept }) {
   return {
     id: createId(),
     type: "payment",
     contactId,
     date,
-    concept: "Liquidacion",
+    // Un adelanto guarda como concepto el gasto futuro que cubre; una
+    // liquidación normal mantiene la etiqueta fija "Liquidacion".
+    concept: advance ? (concept || "Adelanto") : "Liquidacion",
     note: note || "",
     total,
     paidBy,
     splitMode: "payment",
     myShare: 0,
     theirShare: 0,
+    advance,
     sourceMovementId: null,
     createdAt: new Date().toISOString(),
   };
@@ -612,6 +624,16 @@ export function openSharedEntryEdit(entry) {
   openMovementModal();
 }
 
+// Muestra u oculta los campos propios del modo adelanto (concepto +
+// dirección) según el checkbox, y ajusta el texto del botón/título. Se
+// llama al abrir el modal y cada vez que el usuario marca/desmarca.
+export function syncPaymentAdvanceFields() {
+  const isAdvance = elements.paymentAdvance.checked;
+  elements.paymentDirectionField.hidden = !isAdvance;
+  elements.paymentConceptField.hidden = !isAdvance;
+  elements.paymentSubmit.textContent = isAdvance ? "Registrar adelanto" : "Liquidar";
+}
+
 export function openLiquidateModal(contactId) {
   const balance = getSharedBalance(contactId);
   if (Math.abs(balance) < 0.005) {
@@ -625,6 +647,9 @@ export function openLiquidateModal(contactId) {
     .map((contact) => `<option value="${contact.id}">${contact.name}</option>`)
     .join("");
   elements.paymentContact.value = contactId;
+  elements.paymentContact.disabled = false;
+  elements.paymentAdvance.checked = false;
+  syncPaymentAdvanceFields();
   elements.paymentAmount.value = Math.abs(balance).toFixed(2);
   setPaymentDate(new Date());
 
@@ -636,6 +661,37 @@ export function openLiquidateModal(contactId) {
   elements.paymentAmount.select();
 }
 
+// Abre el modal directamente en modo adelanto. A diferencia de liquidar,
+// no exige saldo previo: el adelanto puede registrarse con saldo 0 (te
+// pagan por un gasto que aún no ha ocurrido). El contacto es libremente
+// seleccionable; si se pasa uno (p. ej. desde el filtro activo) queda
+// preseleccionado.
+export function openAdvanceModal(contactId = null) {
+  if (!state.contacts.length) {
+    return;
+  }
+
+  elements.paymentModal.hidden = false;
+  elements.paymentForm.reset();
+  elements.paymentContact.innerHTML = state.contacts
+    .map((contact) => `<option value="${contact.id}">${contact.name}</option>`)
+    .join("");
+  if (contactId) {
+    elements.paymentContact.value = contactId;
+  }
+  elements.paymentContact.disabled = false;
+  elements.paymentAdvance.checked = true;
+  elements.paymentDirection.value = "them";
+  syncPaymentAdvanceFields();
+  elements.paymentAmount.value = "";
+  setPaymentDate(new Date());
+
+  elements.paymentTitle.textContent = "Registrar adelanto";
+  elements.paymentFeedback.textContent =
+    "Pago anticipado por un gasto que aún no ha ocurrido. Se descontará solo cuando registres ese gasto.";
+  elements.paymentConcept.focus();
+}
+
 export function closePaymentModal() {
   elements.paymentModal.hidden = true;
 }
@@ -644,6 +700,21 @@ export function renderSharedView() {
   renderSharedBalances();
   renderSharedFilterOptions();
   renderSharedEntries();
+}
+
+// True si el contacto tiene algún adelanto vivo en juego. Sirve para
+// marcar su card: parte del saldo es un pago anticipado por un gasto
+// futuro, no una deuda real. El cálculo del saldo no cambia.
+function contactHasAdvances(contactId) {
+  return state.sharedEntries
+    .map(entryAsMyPerspective)
+    .some(
+      (entry) =>
+        entry.contactId === contactId &&
+        entry.type === "payment" &&
+        entry.advance &&
+        !entry.settledAt
+    );
 }
 
 function renderMobileBalanceSummary(contactsWithActivity) {
@@ -705,6 +776,13 @@ function renderMobileBalanceSummary(contactsWithActivity) {
       amount.textContent = formatMoney(Math.abs(balance));
 
       row.append(name, direction, amount);
+      if (contactHasAdvances(contact.id)) {
+        row.classList.add("has-advances");
+        const advanceTag = document.createElement("span");
+        advanceTag.className = "balance-summary-advance-tag";
+        advanceTag.textContent = "incluye adelantos";
+        row.append(advanceTag);
+      }
       list.append(row);
     });
 
@@ -719,6 +797,8 @@ function renderSharedBalances() {
 
   elements.sharedContactsCount.textContent = `${contactsWithActivity.length} contactos activos`;
   elements.sharedBalances.innerHTML = "";
+  // El adelanto necesita al menos un contacto al que asociarlo.
+  elements.registerAdvance.hidden = !state.contacts.length;
 
   if (!state.contacts.length) {
     elements.sharedBalances.innerHTML =
@@ -807,6 +887,15 @@ function renderSharedBalances() {
       // la leyenda del panel ya transmiten la dirección.
       header.append(name, value);
 
+      card.append(header);
+
+      if (contactHasAdvances(contact.id)) {
+        const advanceTag = document.createElement("span");
+        advanceTag.className = "balance-advance-tag";
+        advanceTag.textContent = "incluye adelantos por gastos futuros";
+        card.append(advanceTag);
+      }
+
       actions.className = "balance-actions";
 
       const viewButton = document.createElement("button");
@@ -830,7 +919,7 @@ function renderSharedBalances() {
 
       actions.append(viewButton, settleButton);
 
-      card.append(header, actions);
+      card.append(actions);
       fragment.append(card);
     });
 
@@ -1391,6 +1480,18 @@ elements.sharedBalances.addEventListener("click", (event) => {
 
 elements.closePaymentModal.addEventListener("click", closePaymentModal);
 
+elements.registerAdvance.addEventListener("click", () => {
+  if (!state.contacts.length) {
+    return;
+  }
+  // Si el usuario está filtrando por un contacto concreto, lo
+  // preseleccionamos en el modal por comodidad.
+  const filter = parseSharedFilter(state.sharedFilterContactId);
+  openAdvanceModal(filter.kind === "contact" ? filter.id : null);
+});
+
+elements.paymentAdvance.addEventListener("change", syncPaymentAdvanceFields);
+
 elements.paymentModal.addEventListener("click", (event) => {
   if (event.target === elements.paymentModal) {
     closePaymentModal();
@@ -1400,6 +1501,7 @@ elements.paymentModal.addEventListener("click", (event) => {
 elements.paymentForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
+  const isAdvance = elements.paymentAdvance.checked;
   const contactId = elements.paymentContact.value;
   const amount = Number(elements.paymentAmount.value);
   const date = elements.paymentDate.value;
@@ -1410,18 +1512,30 @@ elements.paymentForm.addEventListener("submit", (event) => {
     return;
   }
 
-  const balance = getSharedBalance(contactId);
-  if (Math.abs(balance) < 0.005) {
-    elements.paymentFeedback.textContent = "No hay saldo con este contacto.";
-    return;
+  let paidBy;
+  let concept;
+  if (isAdvance) {
+    // Adelanto: no exigimos saldo previo (puede ser 0). La dirección la
+    // marca el usuario, ya que no hay saldo del que deducirla.
+    paidBy = elements.paymentDirection.value === "me" ? "me" : "them";
+    concept = elements.paymentConcept.value.trim();
+  } else {
+    const balance = getSharedBalance(contactId);
+    if (Math.abs(balance) < 0.005) {
+      elements.paymentFeedback.textContent = "No hay saldo con este contacto.";
+      return;
+    }
+    paidBy = balance > 0 ? "them" : "me";
   }
 
   const entry = buildSharedPaymentEntry({
     contactId,
     total: amount,
-    paidBy: balance > 0 ? "them" : "me",
+    paidBy,
     date,
     note,
+    advance: isAdvance,
+    concept,
   });
 
   state.sharedEntries = [entry, ...state.sharedEntries];

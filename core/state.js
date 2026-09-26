@@ -1,11 +1,14 @@
 export const state = {
   movements: [],
-  settings: { categories: [], concepts: [] },
+  settings: { categories: [], concepts: [], notifySharedEmail: false },
   contacts: [],
   sharedEntries: [],
   recurringTemplates: [],
   groups: [],
   groupMembers: [],
+  // Propuestas pendientes de la bandeja (IA). Solo viven en la nube; no
+  // se persisten en localStorage. Ver features/inbox.js.
+  inboxItems: [],
   datePickerMonth: new Date(),
   editingMovementId: null,
   pendingCsvMovements: [],

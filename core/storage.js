@@ -45,6 +45,7 @@ function loadSettings() {
     return {
       categories: defaultCategories,
       concepts: defaultConcepts,
+      notifySharedEmail: false,
     };
   }
 
@@ -53,11 +54,13 @@ function loadSettings() {
     return {
       categories: parsed.categories?.length ? parsed.categories : defaultCategories,
       concepts: parsed.concepts?.length ? parsed.concepts : defaultConcepts,
+      notifySharedEmail: parsed.notifySharedEmail ?? false,
     };
   } catch {
     return {
       categories: defaultCategories,
       concepts: defaultConcepts,
+      notifySharedEmail: false,
     };
   }
 }
