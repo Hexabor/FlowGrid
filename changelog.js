@@ -2,6 +2,16 @@ window.FlowGridChangelog = [
   {
     date: "2026-09-26",
     commit: "dev@HEAD",
+    title: "Conector de FlowGrid para ChatGPT y Claude",
+    changes: [
+      "Puedes conectar FlowGrid como conector (MCP) en ChatGPT o Claude. La primera vez te sale una pantalla de FlowGrid para permitir el acceso; a partir de ahí, el chat trabaja con tus datos sin copiar y pegar.",
+      "El chat puede consultar tus movimientos, resúmenes por mes, categoría o concepto, plantillas periódicas, gastos compartidos y saldos. También detecta gastos regulares que llevas tiempo sin apuntar y avisa de posibles duplicados antes de proponer nada.",
+      "Cuando le cuentas gastos, los deja como propuestas en tu Bandeja. No puede guardar, cambiar ni borrar nada por su cuenta: cada propuesta la sigues aprobando tú en la app.",
+    ],
+  },
+  {
+    date: "2026-09-26",
+    commit: "dev@HEAD",
     title: "Bandeja: apunta tus gastos hablando con una IA",
     changes: [
       "Nueva Bandeja (botón en Movimientos y aviso en el Inicio cuando hay algo pendiente). Aquí llegan los movimientos que te prepara un chat como ChatGPT o Claude, y no se guarda nada hasta que lo aceptas.",
