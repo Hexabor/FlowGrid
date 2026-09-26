@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es-ES">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autorizar acceso · FlowGrid</title>
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../icons/favicon-32x32.png">
+    <link rel="stylesheet" href="../../styles.css">
+    <!--
+      Pantalla de consentimiento del servidor OAuth 2.1 de Supabase Auth.
+      Cuando un chat (ChatGPT, Claude…) quiere conectarse al conector MCP
+      de FlowGrid (supabase/functions/flowgrid-mcp), Supabase redirige aquí
+      con ?authorization_id=… El usuario, con su sesión de FlowGrid, ve
+      qué aplicación pide acceso y lo permite o lo deniega. Supabase
+      devuelve entonces la URL a la que volver (con el código o el error).
+
+      Configuración en el dashboard (Authentication → OAuth Server):
+      ruta de autorización = /oauth/consent/ (relativa a la Site URL).
+    -->
+    <style>
+      body { display: grid; min-height: 100vh; place-items: center; margin: 0; padding: 16px; background: var(--bg); }
+      .consent-card { width: 100%; max-width: 440px; padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+      .consent-card h1 { margin: 12px 0 8px; font-size: 1.4rem; }
+      .consent-card p { color: var(--text); line-height: 1.45; }
+      .consent-card ul { margin: 8px 0 16px; padding-left: 20px; line-height: 1.5; }
+      .consent-muted { color: var(--muted) !important; font-size: 0.88rem; }
+      .consent-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+      .consent-client { padding: 10px 12px; background: var(--surface-soft); border-radius: 8px; }
+      .consent-error { color: var(--red) !important; font-weight: 700; }
+      .consent-form { display: grid; gap: 10px; }
+      .consent-form input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+      .auth-brand { display: flex; align-items: center; gap: 10px; }
+      .auth-brand .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; color: #ffffff; background: var(--nav); border-radius: 8px; font-weight: 800; font-size: 0.85rem; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <main class="consent-card">
+      <div class="auth-brand">
+        <span class="brand-mark">FG</span>
+        <strong>FlowGrid</strong>
+      </div>
+
+      <section id="consent-loading">
+        <p>Cargando&hellip;</p>
+      </section>
+
+      <section id="consent-login" hidden>
+        <h1>Entra en FlowGrid para continuar</h1>
+        <p>Una aplicaci&oacute;n quiere conectarse a tu cuenta. Primero necesito saber que eres t&uacute;.</p>
+        <form id="consent-login-form" class="consent-form">
+          <input id="consent-email" type="email" autocomplete="email" placeholder="tu@correo.com" required>
+          <button class="primary-action" type="submit">Enviarme el enlace de acceso</button>
+        </form>
+        <p id="consent-login-status" class="consent-muted" role="status"></p>
+      </section>
+
+      <section id="consent-ask" hidden>
+        <h1>&iquest;Permitir el acceso?</h1>
+        <p class="consent-client"><strong id="consent-client-name">Una aplicaci&oacute;n</strong> quiere conectarse a tu FlowGrid (<span id="consent-user-email"></span>).</p>
+        <p>Podr&aacute;:</p>
+        <ul>
+          <li>Consultar tus movimientos, periódicos, compartidos y saldos.</li>
+          <li>Dejar propuestas de movimientos en tu <strong>Bandeja</strong>.</li>
+        </ul>
+        <p>No podr&aacute; guardar, cambiar ni borrar nada por su cuenta: cada propuesta la apruebas t&uacute; en la app.</p>
+        <p class="consent-muted">Volver&aacute;s a: <span id="consent-redirect"></span>. Permite el acceso solo si acabas de conectar FlowGrid desde ChatGPT, Claude u otro chat tuyo.</p>
+        <div class="consent-actions">
+          <button id="consent-approve" class="primary-action" type="button">Permitir</button>
+          <button id="consent-deny" class="ghost-action" type="button">Denegar</button>
+        </div>
+      </section>
+
+      <section id="consent-message" hidden>
+        <p id="consent-message-text"></p>
+      </section>
+    </main>
+
+    <script type="module">
+      import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../../core/config.js";
+      import { onAuthChange, signInWithMagicLink } from "../../core/supabase.js";
+
+      const $ = (id) => document.getElementById(id);
+      const authorizationId = new URLSearchParams(location.search).get("authorization_id");
+      let accessToken = null;
+      let started = false;
+
+      function show(section) {
+        for (const id of ["consent-loading", "consent-login", "consent-ask", "consent-message"]) {
+          $(id).hidden = id !== section;
+        }
+      }
+
+      function message(text, isError = false) {
+        $("consent-message-text").textContent = text;
+        $("consent-message-text").classList.toggle("consent-error", isError);
+        show("consent-message");
+      }
+
+      // Llamadas directas a la API de Supabase Auth (mismo enfoque que
+      // core/cloud.js: fetch en vez de supabase-js para el plano de datos).
+      async function authApi(path, options = {}) {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
+          ...options,
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+            ...(options.headers ?? {}),
+          },
+        });
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+        if (!res.ok) throw new Error(data.msg || data.message || data.error_description || `Error ${res.status}`);
+        return data;
+      }
+
+      async function loadRequest() {
+        if (started) return;
+        started = true;
+        try {
+          const details = await authApi(`/oauth/authorizations/${encodeURIComponent(authorizationId)}`);
+          if (details.redirect_url) {
+            // Ya lo habías autorizado antes: volvemos directamente al chat.
+            message("Ya habías dado permiso. Volviendo a la aplicación…");
+            location.assign(details.redirect_url);
+            return;
+          }
+          $("consent-client-name").textContent = details.client?.name || details.client?.client_name || "Una aplicación";
+          $("consent-user-email").textContent = details.user?.email ?? "";
+          try {
+            $("consent-redirect").textContent = new URL(details.redirect_uri).host;
+          } catch {
+            $("consent-redirect").textContent = details.redirect_uri ?? "?";
+          }
+          show("consent-ask");
+        } catch (error) {
+          message(`No he podido cargar la solicitud: ${error.message}. Vuelve al chat e inténtalo de nuevo.`, true);
+        }
+      }
+
+      async function decide(action) {
+        $("consent-approve").disabled = true;
+        $("consent-deny").disabled = true;
+        try {
+          const result = await authApi(`/oauth/authorizations/${encodeURIComponent(authorizationId)}/consent`, {
+            method: "POST",
+            body: JSON.stringify({ action }),
+          });
+          message(action === "approve" ? "Acceso permitido. Volviendo a la aplicación…" : "Acceso denegado. Volviendo a la aplicación…");
+          if (result.redirect_url) location.assign(result.redirect_url);
+        } catch (error) {
+          message(`No se pudo completar: ${error.message}`, true);
+        }
+      }
+
+      $("consent-approve").addEventListener("click", () => decide("approve"));
+      $("consent-deny").addEventListener("click", () => decide("deny"));
+
+      $("consent-login-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const status = $("consent-login-status");
+        status.textContent = "Enviando…";
+        try {
+          await signInWithMagicLink($("consent-email").value.trim());
+          status.textContent = "Te he enviado un enlace. Ábrelo en ESTE navegador y volverás aquí para dar el permiso.";
+        } catch (error) {
+          status.textContent = `No se pudo enviar: ${error.message}`;
+        }
+      });
+
+      if (!authorizationId) {
+        message("Falta el identificador de la solicitud. Esta página solo se usa al conectar FlowGrid desde un chat.", true);
+      } else {
+        onAuthChange((session) => {
+          if (session) {
+            accessToken = session.access_token;
+            loadRequest();
+          } else if (!started) {
+            show("consent-login");
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
