@@ -566,13 +566,16 @@ export function openSharedEntryEdit(entry) {
   const myUid = getUserIdSync();
   const isPartnerEntry = entry.ownerId && myUid && entry.ownerId !== myUid;
 
-  if (entry.sourceMovementId && !isPartnerEntry) {
+  // Si la entrada apunta a un movimiento que ya no existe (compartido
+  // huérfano), no hay movimiento que editar: se edita la propia entrada
+  // por la rama de abajo, y al guardar el formulario vuelve a crear mi
+  // parte como movimiento nuevo vinculado a ella.
+  const movement = entry.sourceMovementId && !isPartnerEntry
+    ? state.movements.find((candidate) => candidate.id === entry.sourceMovementId)
+    : null;
+
+  if (movement) {
     // Original flow: my own entry → edit via the linked movement.
-    const movement = state.movements.find((candidate) => candidate.id === entry.sourceMovementId);
-    if (!movement) {
-      alert("Movimiento asociado no encontrado.");
-      return;
-    }
     state.editingMovementId = movement.id;
     state.editingSharedEntryId = null;
     state.editingPartnerEntry = false;

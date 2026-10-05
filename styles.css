@@ -5321,6 +5321,38 @@ body.is-locked .shell {
   background: var(--red);
 }
 
+/* ==== Aviso de cambios sin subir (ui/sync-status.js) ==== */
+.fg-sync-pill {
+  position: fixed;
+  left: 50%;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  z-index: 80;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
+  background: var(--red);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 8px 24px rgba(23, 32, 38, 0.22);
+  cursor: pointer;
+}
+
+.fg-sync-pill[hidden] {
+  display: none;
+}
+
+.fg-sync-pill:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
 /* ==== Bandeja de propuestas de IA (features/inbox.js) ==== */
 .inbox-open-button {
   display: inline-flex;

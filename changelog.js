@@ -1,5 +1,17 @@
 window.FlowGridChangelog = [
   {
+    date: "2026-10-05",
+    commit: "dev@HEAD",
+    title: "Arreglado: gastos que desaparecían al recargar",
+    changes: [
+      "A veces, al añadir un gasto compartido, tu parte aparecía en Movimientos pero desaparecía al recargar, aunque el gasto seguía en Compartidos. Otras veces se perdía todo. Pasaba sobre todo con mala conexión o al aprobar muchas propuestas de la Bandeja seguidas.",
+      "La causa: cada vez que guardabas algo, la app volvía a subir la lista completa de movimientos y borraba de la nube todo lo que no estuviera en esa lista. Si una copia antigua de la app guardaba algo, o si la subida fallaba, se perdían datos sin ningún aviso.",
+      "Ahora solo se sube lo que cambia. Si no hay conexión, los cambios se quedan guardados en el dispositivo, se reintentan solos y no se pierden aunque recargues. Mientras haya cambios sin subir verás un aviso rojo arriba; púlsalo para reintentar.",
+      "Al aprobar varias propuestas seguidas, la Bandeja espera a que la nube confirme cada una antes de pasar a la siguiente. Si se corta la conexión, se detiene y te avisa.",
+      "Los gastos compartidos que se habían quedado sin tu parte ya se pueden editar: al guardar, tu parte vuelve a aparecer en Movimientos.",
+    ],
+  },
+  {
     date: "2026-09-26",
     commit: "dev@HEAD",
     title: "Adiós a las versiones viejas pegadas en el navegador",

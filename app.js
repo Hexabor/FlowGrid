@@ -10,12 +10,13 @@ import { generatePendingRecurrences, closeRecurringModal, startRecurringSchedule
 import { closeGroupModal } from "./features/groups-view.js";
 import { closeConfirmModal } from "./ui/confirm.js";
 import { onAuthChange } from "./core/supabase.js";
-import { cloudHydrate } from "./core/cloud.js";
+import { cloudHydrate, flushOutbox, resetSyncBaseline } from "./core/cloud.js";
 import { showAuthGate, hideAuthGate, refreshSessionBadge } from "./ui/auth-gate.js";
 import "./features/csv.js";
 import "./features/backup.js";
 import "./features/feedback.js";
 import "./features/theme.js";
+import "./ui/sync-status.js";
 import { loadInbox } from "./features/inbox.js";
 
 let appBooted = false;
@@ -30,6 +31,11 @@ async function bootApp() {
     console.error("[cloud hydrate]", error);
   }
   initState();
+  // Punto de partida para detectar cambios: lo que hay ahora en memoria.
+  // Si cloudHydrate falló (sin red), es la copia del móvil, y la cola de
+  // cambios pendientes de la sesión anterior se sube en cuanto se pueda.
+  resetSyncBaseline();
+  flushOutbox();
   // Materialise any pending occurrences from the user's recurring
   // templates BEFORE the first render, so the freshly generated
   // movements show up in the list straight away. Idempotent.

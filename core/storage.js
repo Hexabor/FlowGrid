@@ -12,16 +12,7 @@ import {
   defaultConcepts,
   seedMovements,
 } from "./constants.js";
-import {
-  cloudPushMovements,
-  cloudPushSettings,
-  cloudPushContacts,
-  cloudPushSharedEntries,
-  cloudPushRecurringTemplates,
-  cloudPushGroups,
-  cloudPushGroupMembers,
-  pushInBackground,
-} from "./cloud.js";
+import { trackChanges, flushOutbox } from "./cloud.js";
 
 function loadMovements() {
   const stored = localStorage.getItem(MOVEMENTS_KEY);
@@ -151,37 +142,44 @@ export function initState() {
   state.groupMembers = loadGroupMembers();
 }
 
+// Cada save*() guarda en el móvil, apunta en la cola lo que ha cambiado
+// en esa tabla y lanza la subida (ver la cola en core/cloud.js).
+function sync(table) {
+  trackChanges(table);
+  flushOutbox();
+}
+
 export function saveMovements() {
   localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(state.movements));
-  pushInBackground(cloudPushMovements);
+  sync("movements");
 }
 
 export function saveSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
-  pushInBackground(cloudPushSettings);
+  sync("settings");
 }
 
 export function saveContacts() {
   localStorage.setItem(CONTACTS_KEY, JSON.stringify(state.contacts));
-  pushInBackground(cloudPushContacts);
+  sync("contacts");
 }
 
 export function saveSharedEntries() {
   localStorage.setItem(SHARED_KEY, JSON.stringify(state.sharedEntries));
-  pushInBackground(cloudPushSharedEntries);
+  sync("shared_entries");
 }
 
 export function saveRecurringTemplates() {
   localStorage.setItem(RECURRING_TEMPLATES_KEY, JSON.stringify(state.recurringTemplates));
-  pushInBackground(cloudPushRecurringTemplates);
+  sync("recurring_templates");
 }
 
 export function saveGroups() {
   localStorage.setItem(GROUPS_KEY, JSON.stringify(state.groups));
-  pushInBackground(cloudPushGroups);
+  sync("groups");
 }
 
 export function saveGroupMembers() {
   localStorage.setItem(GROUP_MEMBERS_KEY, JSON.stringify(state.groupMembers));
-  pushInBackground(cloudPushGroupMembers);
+  sync("group_members");
 }

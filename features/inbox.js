@@ -28,7 +28,7 @@ import { elements, openMovementModal, setView } from "../core/dom.js";
 import { saveMovements, saveSharedEntries } from "../core/storage.js";
 import { SHARED_MODES } from "../core/constants.js";
 import { createId, formatDate, formatMoney, toIsoDate } from "../core/utils.js";
-import { cloudFetchInbox, cloudInsertInbox, cloudResolveInboxItem } from "../core/cloud.js";
+import { cloudFetchInbox, cloudInsertInbox, cloudResolveInboxItem, flushOutbox } from "../core/cloud.js";
 import {
   getAllMovements,
   getConceptsForType,
@@ -891,20 +891,36 @@ async function acceptItems(items) {
   busy = true;
   renderInbox();
   let accepted = 0;
+  let offline = false;
   try {
     for (const item of items) {
       const info = interpretItem(item);
       if (info.issues.some((i) => i.blocking)) continue;
       const result = await commitItem(item, info);
       if (!result) break; // quedó abierto un formulario para corregir
+      // Una propuesta cada vez, y solo cuando la nube tiene sus datos.
+      // Si la subida falla, lo aprobado ya está a salvo en la cola del
+      // móvil (se reintenta solo), pero paramos para no seguir
+      // acumulando cambios sin confirmar.
+      const synced = await flushOutbox();
       await markResolved(item.id, "accepted", result);
       accepted += 1;
+      if (!synced) {
+        offline = true;
+        break;
+      }
     }
   } finally {
     busy = false;
     renderInbox();
   }
-  if (accepted) {
+  if (offline) {
+    showToast(
+      "No hay conexión con la nube. Lo aprobado está guardado en el móvil y se subirá solo; aprueba el resto más tarde.",
+      "error",
+      8000
+    );
+  } else if (accepted) {
     showToast(accepted === 1 ? "Propuesta añadida." : `${accepted} propuestas añadidas.`, "success");
   }
 }

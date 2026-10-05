@@ -5,7 +5,7 @@
 // because that side worked fine; only the data plane is bypassed.
 
 import { state } from "./state.js";
-import { getUserId, getAccessToken } from "./supabase.js";
+import { getUserId, getUserIdSync, getAccessToken } from "./supabase.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 import {
   MOVEMENTS_KEY,
@@ -15,6 +15,7 @@ import {
   RECURRING_TEMPLATES_KEY,
   GROUPS_KEY,
   GROUP_MEMBERS_KEY,
+  OUTBOX_KEY,
   defaultCategories,
   defaultConcepts,
   seedMovements,
@@ -255,6 +256,10 @@ function groupMemberFromCloud(row) {
 
 // ---- raw REST helpers ----
 
+// Tope de espera para escrituras. Un fetch colgado (red de tren, móvil
+// que se duerme) dejaría la cola bloqueada para siempre.
+const WRITE_TIMEOUT_MS = 30000;
+
 function authHeaders() {
   const token = getAccessToken();
   return {
@@ -274,9 +279,9 @@ async function restGet(path) {
 // Lectura completa por páginas. PostgREST corta cada respuesta en el
 // "Max rows" del proyecto (1000 por defecto en Supabase) sin avisar: un
 // GET con limit=50000 devuelve solo 1000 filas. Con más de 1000
-// movimientos, la app cargaba una parte y el resto quedaba invisible
-// (y fuera de la diff-delete del push). Pedimos páginas con orden
-// estable hasta que una llega vacía; así funciona con cualquier tope.
+// movimientos, la app cargaba una parte y el resto quedaba invisible.
+// Pedimos páginas con orden estable hasta que una llega vacía; así
+// funciona con cualquier tope.
 async function restGetAll(path) {
   const sep = path.includes("?") ? "&" : "?";
   const order = /(^|[?&])order=/.test(path) ? "" : "&order=id.asc";
@@ -289,169 +294,381 @@ async function restGetAll(path) {
   return rows;
 }
 
+// fetch de escritura con timeout. Los errores HTTP llevan `status` para
+// que la cola distinga un rechazo definitivo (4xx) de un fallo pasajero.
+async function restWrite(url, options, label) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), WRITE_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    if (!res.ok) {
+      const error = new Error(`${label} failed: ${res.status} ${await res.text()}`);
+      error.status = res.status;
+      throw error;
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function restUpsert(table, rows, conflictColumn = "id") {
   if (!rows.length) return;
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?on_conflict=${conflictColumn}`, {
-    method: "POST",
-    headers: {
-      ...authHeaders(),
-      "Content-Type": "application/json",
-      Prefer: "resolution=merge-duplicates,return=minimal",
+  await restWrite(
+    `${SUPABASE_URL}/rest/v1/${table}?on_conflict=${conflictColumn}`,
+    {
+      method: "POST",
+      headers: {
+        ...authHeaders(),
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(rows),
     },
-    body: JSON.stringify(rows),
-  });
-  if (!res.ok) throw new Error(`upsert ${table} failed: ${res.status} ${await res.text()}`);
+    `upsert ${table}`
+  );
 }
 
 async function restDelete(table, ids) {
   if (!ids.length) return;
   const inList = ids.map((id) => `"${encodeURIComponent(id)}"`).join(",");
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=in.(${inList})`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error(`delete ${table} failed: ${res.status} ${await res.text()}`);
+  await restWrite(
+    `${SUPABASE_URL}/rest/v1/${table}?id=in.(${inList})`,
+    { method: "DELETE", headers: authHeaders() },
+    `delete ${table}`
+  );
 }
 
-// ---- push (full-snapshot diff: delete extras + upsert all) ----
+// ---- push: cola de cambios pendientes ----
+//
+// Antes cada guardado subía la tabla entera y borraba en la nube todo lo
+// que no estuviera en la copia local. Con varias subidas en vuelo
+// (aprobar propuestas seguidas, red lenta) una copia vieja llegaba tarde
+// y borraba filas recién creadas; si la subida fallaba, nadie se
+// enteraba, y la siguiente recarga tiraba lo local. Así se quedaron
+// gastos compartidos sin su movimiento y movimientos perdidos.
+//
+// Ahora cada save*() compara el estado con la última versión conocida
+// (baseline) y apunta en una cola, guardada en localStorage, solo lo que
+// ha cambiado: filas nuevas o modificadas (upsert) y filas que han
+// desaparecido (delete). La cola se sube de una vez en una, en orden,
+// y si falla se reintenta. cloudHydrate vuelve a aplicar la cola encima
+// de lo que llega de la nube, de modo que recargar no pierde nada.
+// Una copia desactualizada de la app ya no puede borrar filas que no
+// conoce: solo borra las que ella misma ha visto desaparecer.
 
 const ROW_LIMIT = 50000;
+const UPSERT_CHUNK = 500;
+const DELETE_CHUNK = 100;
+const REJECTED_KEY = `${OUTBOX_KEY}.rejected`;
 
-async function syncTable(table, ownerId, localRows, toCloud) {
-  const existing = await restGetAll(`${table}?owner_id=eq.${ownerId}&select=id`);
-  const localIds = new Set(localRows.map((r) => r.id));
-  const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
-  await restDelete(table, toDelete);
-  if (localRows.length) {
-    await restUpsert(table, localRows.map((r) => toCloud(r, ownerId)));
-  }
+function isMine(row) {
+  const me = getUserIdSync();
+  return !me || (row.ownerId ?? me) === me;
 }
 
-export async function cloudPushMovements() {
-  const ownerId = await getUserId();
-  if (!ownerId) return;
-  await syncTable("movements", ownerId, state.movements, movementToCloud);
-}
-
-export async function cloudPushContacts() {
-  const ownerId = await getUserId();
-  if (!ownerId) return;
-  await syncTable("contacts", ownerId, state.contacts, contactToCloud);
-}
-
-export async function cloudPushSharedEntries() {
-  const ownerId = await getUserId();
-  if (!ownerId) return;
-
-  // Diff-delete is scoped to MY entries: the cloud GET filters owner_id =
-  // me, so partner-owned entries (visible to me via RLS) are excluded
-  // from the deletion candidate set and can't be wiped by my push when
-  // they sit normally in my local state. localIds here is restricted to
-  // my-owned entries too, so the diff stays apples-to-apples.
-  const myEntries = state.sharedEntries.filter(
-    (e) => (e.ownerId ?? ownerId) === ownerId
-  );
-  const existing = await restGetAll(
-    `shared_entries?owner_id=eq.${ownerId}&select=id`
-  );
-  const localIds = new Set(myEntries.map((e) => e.id));
-  const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
-  await restDelete("shared_entries", toDelete);
-
-  // Upsert ALL local entries (mine + linked-partner edits). The mapper
-  // preserves each entry's original owner_id; the RLS WITH CHECK clause
-  // accepts both the owner case and the linked-partner case, so partner
-  // edits get persisted under the partner's owner_id intact.
-  if (state.sharedEntries.length) {
-    await restUpsert(
-      "shared_entries",
-      state.sharedEntries.map((e) => sharedToCloud(e, ownerId))
-    );
-  }
-}
-
-export async function cloudPushRecurringTemplates() {
-  const ownerId = await getUserId();
-  if (!ownerId) return;
-  await syncTable("recurring_templates", ownerId, state.recurringTemplates, recurringTemplateToCloud);
-}
-
-// Solo empujamos los grupos donde YO soy el owner (admin). Los grupos
-// ajenos en los que soy miembro vienen del hydrate pero no los sincroniza
-// mi cliente: los gestiona su propio admin. La función filtra el state
-// local por ownerId === me antes de hacer la diff-delete.
-export async function cloudPushGroups() {
-  const ownerId = await getUserId();
-  if (!ownerId) return;
-  const myGroups = state.groups.filter(
-    (g) => (g.ownerId ?? ownerId) === ownerId
-  );
-  await syncTable("groups", ownerId, myGroups, groupToCloud);
-}
-
-// group_members tiene una asimetría: solo el admin del grupo puede
-// añadir/quitar miembros (RLS lo refleja). El cliente del admin empuja
-// todos los miembros de SUS grupos. Los miembros ajenos solo pueden
-// modificar su propia fila (UPDATE de left_at para abandonar) — eso lo
-// hacen vía un REST call directo, no por sync masivo.
-export async function cloudPushGroupMembers() {
-  const ownerId = await getUserId();
-  if (!ownerId) return;
-  const myGroupIds = new Set(
-    state.groups
-      .filter((g) => (g.ownerId ?? ownerId) === ownerId)
-      .map((g) => g.id)
-  );
-  const myMembers = state.groupMembers.filter((m) => myGroupIds.has(m.groupId));
-
-  // Diff-delete restringida a los miembros de mis grupos para no tocar
-  // los miembros de grupos ajenos (RLS los protege igualmente, pero un
-  // ?id=in.(...) con ids ajenos generaría errores ruidosos).
-  if (!myGroupIds.size) {
-    return;
-  }
-  const groupIdsParam = [...myGroupIds]
-    .map((id) => `"${encodeURIComponent(id)}"`)
-    .join(",");
-  const existing = await restGetAll(
-    `group_members?group_id=in.(${groupIdsParam})&select=id`
-  );
-  const localIds = new Set(myMembers.map((m) => m.id));
-  const toDelete = existing.map((r) => r.id).filter((id) => !localIds.has(id));
-  await restDelete("group_members", toDelete);
-  if (myMembers.length) {
-    await restUpsert("group_members", myMembers.map(groupMemberToCloud));
-  }
-}
-
-export async function cloudPushSettings() {
-  const ownerId = await getUserId();
-  if (!ownerId) return;
-  await restUpsert(
-    "settings",
-    [{
+// Orden de las claves = orden de subida: los grupos van antes que lo que
+// apunta a ellos por group_id. Los borrados se hacen en orden inverso.
+const SYNC_TABLES = {
+  // Solo los grupos de los que soy admin; los ajenos los gestiona su admin.
+  groups: {
+    stateKey: "groups",
+    rows: () => state.groups.filter(isMine),
+    toCloud: groupToCloud,
+  },
+  // Solo los miembros de mis grupos (RLS no deja tocar los demás).
+  group_members: {
+    stateKey: "groupMembers",
+    rows: () => {
+      const mine = new Set(state.groups.filter(isMine).map((g) => g.id));
+      return state.groupMembers.filter((m) => mine.has(m.groupId));
+    },
+    toCloud: (m) => groupMemberToCloud(m),
+  },
+  contacts: {
+    stateKey: "contacts",
+    rows: () => state.contacts,
+    toCloud: contactToCloud,
+  },
+  movements: {
+    stateKey: "movements",
+    rows: () => state.movements,
+    toCloud: movementToCloud,
+  },
+  // Se suben también las entradas de un contacto vinculado que yo edito
+  // (el mapper conserva su owner_id y RLS lo admite), pero solo se
+  // borran las mías.
+  shared_entries: {
+    stateKey: "sharedEntries",
+    rows: () => state.sharedEntries,
+    toCloud: sharedToCloud,
+    canDelete: isMine,
+  },
+  recurring_templates: {
+    stateKey: "recurringTemplates",
+    rows: () => state.recurringTemplates,
+    toCloud: recurringTemplateToCloud,
+  },
+  // Una sola fila por usuario; se identifica por owner_id.
+  settings: {
+    rows: () => [{ id: "settings", ...state.settings }],
+    toCloud: (s, ownerId) => ({
       owner_id: ownerId,
-      categories: state.settings.categories,
-      concepts: state.settings.concepts,
-      notify_shared_email: state.settings.notifySharedEmail ?? false,
-    }],
-    "owner_id"
-  );
+      categories: s.categories,
+      concepts: s.concepts,
+      notify_shared_email: s.notifySharedEmail ?? false,
+    }),
+    conflict: "owner_id",
+  },
+};
+const TABLE_ORDER = Object.keys(SYNC_TABLES);
+
+// tabla → Map(id → JSON de la fila tal como la conocíamos).
+const baseline = new Map();
+// `${tabla}:${id}` → { table, op: "upsert" | "delete", id, row, seq }.
+// Un cambio posterior sobre la misma fila sustituye al anterior.
+let outbox = new Map();
+let outboxOwner = null;
+let seq = 0;
+
+function snapshotTable(table) {
+  const map = new Map();
+  for (const row of SYNC_TABLES[table].rows()) map.set(row.id, JSON.stringify(row));
+  return map;
 }
 
-export async function cloudPushAll() {
-  // Orden importante: groups antes que group_members (FK constraint),
-  // y groups antes que recurring_templates / shared_entries para que
-  // sus group_id tengan referencia válida en el cloud.
-  await cloudPushGroups();
-  await Promise.all([
-    cloudPushMovements(),
-    cloudPushContacts(),
-    cloudPushSharedEntries(),
-    cloudPushRecurringTemplates(),
-    cloudPushGroupMembers(),
-    cloudPushSettings(),
-  ]);
+// Fija la versión conocida de cada tabla sin apuntar nada en la cola.
+export function resetSyncBaseline() {
+  for (const table of TABLE_ORDER) baseline.set(table, snapshotTable(table));
+}
+
+function ensureOutboxLoaded() {
+  const me = getUserIdSync();
+  if (!me || outboxOwner === me) return;
+  outboxOwner = me;
+  outbox = new Map();
+  try {
+    const stored = JSON.parse(localStorage.getItem(OUTBOX_KEY) ?? "null");
+    if (stored && stored.ownerId !== me) {
+      console.warn("[sync] cola de otra cuenta descartada", stored.ops?.length ?? 0);
+    } else if (Array.isArray(stored?.ops)) {
+      for (const op of stored.ops) outbox.set(`${op.table}:${op.id}`, { ...op, seq: ++seq });
+    }
+  } catch (error) {
+    console.error("[sync] cola ilegible", error);
+  }
+}
+
+function persistOutbox() {
+  try {
+    localStorage.setItem(
+      OUTBOX_KEY,
+      JSON.stringify({ ownerId: outboxOwner, ops: [...outbox.values()] })
+    );
+  } catch (error) {
+    console.error("[sync] no se pudo guardar la cola", error);
+  }
+}
+
+// Apunta en la cola lo que ha cambiado en `table` desde la última vez.
+export function trackChanges(table) {
+  ensureOutboxLoaded();
+  const cfg = SYNC_TABLES[table];
+  const prev = baseline.get(table) ?? new Map();
+  const next = snapshotTable(table);
+  for (const [id, json] of next) {
+    if (prev.get(id) === json) continue;
+    outbox.set(`${table}:${id}`, { table, op: "upsert", id, row: JSON.parse(json), seq: ++seq });
+  }
+  for (const [id, json] of prev) {
+    if (next.has(id)) continue;
+    if (cfg.canDelete && !cfg.canDelete(JSON.parse(json))) continue;
+    outbox.set(`${table}:${id}`, { table, op: "delete", id, row: null, seq: ++seq });
+  }
+  baseline.set(table, next);
+  persistOutbox();
+  emitStatus();
+}
+
+function trackAllChanges() {
+  for (const table of TABLE_ORDER) trackChanges(table);
+}
+
+// Aplica la cola encima del estado recién bajado de la nube, para que lo
+// que aún no ha subido siga ahí tras recargar.
+function applyOutboxToState() {
+  for (const op of outbox.values()) {
+    if (op.table === "settings") {
+      if (op.op === "upsert") {
+        const { id: _id, ...settings } = op.row;
+        state.settings = settings;
+      }
+      continue;
+    }
+    const key = SYNC_TABLES[op.table].stateKey;
+    const rows = state[key];
+    const index = rows.findIndex((r) => r.id === op.id);
+    if (op.op === "delete") {
+      if (index >= 0) state[key] = rows.filter((r) => r.id !== op.id);
+    } else if (index >= 0) {
+      state[key] = rows.map((r) => (r.id === op.id ? op.row : r));
+    } else {
+      state[key] = [op.row, ...rows];
+    }
+  }
+}
+
+// ---- subida de la cola ----
+
+let flushPromise = null;
+let retryTimer = null;
+let retryDelay = 0;
+let lastError = null;
+let rejectedCount = 0;
+const statusListeners = new Set();
+
+export function getSyncStatus() {
+  return { pending: outbox.size, error: lastError, rejected: rejectedCount };
+}
+
+export function onSyncStatus(callback) {
+  statusListeners.add(callback);
+  callback(getSyncStatus());
+}
+
+function emitStatus() {
+  const status = getSyncStatus();
+  statusListeners.forEach((callback) => callback(status));
+}
+
+// 4xx que no se arreglan reintentando: la nube rechaza esa fila
+// (restricción, RLS). 401 (sesión caducada), 408 y 429 sí son pasajeros.
+function isPermanent(error) {
+  const status = error?.status;
+  return status >= 400 && status < 500 && ![401, 408, 429].includes(status);
+}
+
+// Quita de la cola las operaciones subidas, salvo que la fila haya vuelto
+// a cambiar mientras tanto (entonces queda la versión nueva pendiente).
+function settle(done) {
+  for (const op of done) {
+    const key = `${op.table}:${op.id}`;
+    if (outbox.get(key)?.seq === op.seq) outbox.delete(key);
+  }
+  persistOutbox();
+  emitStatus();
+}
+
+// Una fila que la nube rechaza siempre no puede bloquear la cola entera
+// (eso dejaría sin subir todo lo demás). La apartamos en localStorage
+// para poder recuperarla a mano y seguimos.
+function reject(op, error) {
+  console.error("[sync] fila rechazada por la nube", op, error);
+  try {
+    const list = JSON.parse(localStorage.getItem(REJECTED_KEY) ?? "[]");
+    list.push({ ...op, error: String(error?.message ?? error), at: new Date().toISOString() });
+    localStorage.setItem(REJECTED_KEY, JSON.stringify(list));
+  } catch {
+    // localStorage lleno o inaccesible: queda al menos en consola.
+  }
+  rejectedCount += 1;
+  settle([op]);
+}
+
+async function runChunk(chunk, send) {
+  try {
+    await send(chunk);
+    settle(chunk);
+  } catch (error) {
+    if (!isPermanent(error)) throw error;
+    if (chunk.length === 1) {
+      reject(chunk[0], error);
+      return;
+    }
+    // Buscar la fila culpable subiendo de una en una.
+    for (const op of chunk) await runChunk([op], send);
+  }
+}
+
+async function flushOnce() {
+  const ownerId = await getUserId();
+  if (!ownerId) throw new Error("Sin sesión: no se puede subir a la nube.");
+  const ops = [...outbox.values()];
+
+  for (const table of TABLE_ORDER) {
+    const cfg = SYNC_TABLES[table];
+    const upserts = ops.filter((op) => op.table === table && op.op === "upsert");
+    for (let i = 0; i < upserts.length; i += UPSERT_CHUNK) {
+      await runChunk(upserts.slice(i, i + UPSERT_CHUNK), (chunk) =>
+        restUpsert(table, chunk.map((op) => cfg.toCloud(op.row, ownerId)), cfg.conflict)
+      );
+    }
+  }
+  for (const table of [...TABLE_ORDER].reverse()) {
+    const deletes = ops.filter((op) => op.table === table && op.op === "delete");
+    for (let i = 0; i < deletes.length; i += DELETE_CHUNK) {
+      await runChunk(deletes.slice(i, i + DELETE_CHUNK), (chunk) =>
+        restDelete(table, chunk.map((op) => op.id))
+      );
+    }
+  }
+}
+
+function scheduleRetry() {
+  if (retryTimer) return;
+  retryDelay = Math.min(retryDelay ? retryDelay * 2 : 5000, 60000);
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
+    flushOutbox();
+  }, retryDelay);
+}
+
+// Sube la cola. Una sola subida a la vez: si ya hay una en marcha,
+// devuelve esa (que sigue hasta vaciar también lo que llegue después).
+// Resuelve a true cuando la cola queda vacía y a false si algo falló;
+// en ese caso se reintenta sola más tarde. Nunca lanza.
+export function flushOutbox() {
+  if (flushPromise) return flushPromise;
+  ensureOutboxLoaded();
+  // El reset va en .finally() y no dentro de la función async: con la
+  // cola vacía esta termina sin llegar a esperar nada, y un reset hecho
+  // dentro correría antes de la asignación y dejaría flushPromise
+  // apuntando para siempre a una subida ya acabada.
+  flushPromise = drainOutbox().finally(() => {
+    flushPromise = null;
+    emitStatus();
+    // Algo apuntado justo al terminar: otra vuelta.
+    if (outbox.size && !lastError) flushOutbox();
+  });
+  return flushPromise;
+}
+
+async function drainOutbox() {
+  try {
+    while (outbox.size) await flushOnce();
+    lastError = null;
+    retryDelay = 0;
+    return true;
+  } catch (error) {
+    console.error("[sync]", error);
+    lastError = error;
+    scheduleRetry();
+    return false;
+  }
+}
+
+export function retrySyncNow() {
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+  return flushOutbox();
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => retrySyncNow());
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && outbox.size) retrySyncNow();
+  });
 }
 
 // ---- inbox (bandeja de propuestas) ----
@@ -580,7 +797,11 @@ export async function cloudHydrate() {
     writeLocal(GROUP_MEMBERS_KEY, state.groupMembers);
     writeLocal(SETTINGS_KEY, state.settings);
 
-    await cloudPushAll();
+    // Baseline vacía: todo lo local entra en la cola como fila nueva.
+    ensureOutboxLoaded();
+    baseline.clear();
+    trackAllChanges();
+    await flushOutbox();
     return;
   }
 
@@ -599,15 +820,19 @@ export async function cloudHydrate() {
       }
     : { categories: defaultCategories, concepts: defaultConcepts, notifySharedEmail: false };
 
+  // Lo que acaba de llegar es lo que la nube ya tiene. Encima se aplica
+  // la cola de cambios que aún no han subido (de esta sesión o de una
+  // anterior que se cerró sin conexión), para no perderlos al recargar.
+  ensureOutboxLoaded();
+  resetSyncBaseline();
+  applyOutboxToState();
+
   // One-shot migration (2026-05-01): "Recuperados" moved from category
   // "extra" to "ingreso". Idempotent; runs only on accounts that still have
   // the old mapping.
-  let settingsMigrated = false;
-  let movementsMigrated = false;
   for (const concept of state.settings.concepts) {
     if (concept.label === "Recuperados" && concept.category === "extra") {
       concept.category = "ingreso";
-      settingsMigrated = true;
     }
   }
 
@@ -615,17 +840,17 @@ export async function cloudHydrate() {
   // (e.g. "Cafeteria/pub" + "Cafetería/pub"). The variant with the most
   // associated movements wins; the loser's movements are re-pointed to
   // the winner and the loser concept is removed from the catalogue.
-  const conceptMerge = mergeAccentDuplicates(state.settings.concepts, state.movements);
-  if (conceptMerge.changed) {
-    settingsMigrated = true;
-    if (conceptMerge.movementsTouched) movementsMigrated = true;
-  }
+  mergeAccentDuplicates(state.settings.concepts, state.movements);
 
   // Defensa: asegurar que soy miembro activo de todos los grupos que
   // tengo en propiedad (admin). Cubre el caso legacy de grupos creados
   // antes de que el auto-add del creador estuviera bien cableado, o
   // grupos donde mi member row se perdió en algún sync.
-  const groupMembersTouched = ensureOwnerIsMemberOfOwnGroups(ownerId);
+  ensureOwnerIsMemberOfOwnGroups(ownerId);
+
+  // Las migraciones de arriba (y la cola reaplicada) entran en la cola
+  // como cualquier otro cambio.
+  trackAllChanges();
 
   writeLocal(MOVEMENTS_KEY, state.movements);
   writeLocal(CONTACTS_KEY, state.contacts);
@@ -635,15 +860,8 @@ export async function cloudHydrate() {
   writeLocal(GROUP_MEMBERS_KEY, state.groupMembers);
   writeLocal(SETTINGS_KEY, state.settings);
 
-  if (settingsMigrated) {
-    await cloudPushSettings();
-  }
-  if (movementsMigrated) {
-    await cloudPushMovements();
-  }
-  if (groupMembersTouched) {
-    await cloudPushGroupMembers();
-  }
+  // En segundo plano: el arranque no espera a la red para pintar.
+  flushOutbox();
 }
 
 // Si soy el owner_id de un grupo pero no aparezco como group_member
@@ -779,12 +997,4 @@ function readLocalSettings() {
 
 function writeLocal(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
-}
-
-// ---- background push (fire-and-forget, errors logged) ----
-
-export function pushInBackground(fn) {
-  Promise.resolve()
-    .then(fn)
-    .catch((err) => console.error("[cloud sync]", err));
 }

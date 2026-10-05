@@ -22,7 +22,7 @@ import { saveContacts, saveSettings } from "../core/storage.js";
 import { createId } from "../core/utils.js";
 import { signInWithMagicLink, getUserId, getAccessToken, getUser } from "../core/supabase.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../core/config.js";
-import { cloudHydrate, cloudPushContacts } from "../core/cloud.js";
+import { cloudHydrate, flushOutbox } from "../core/cloud.js";
 import { renderSharedView } from "./shared.js";
 import { renderContacts } from "./contacts.js";
 import { renderMovements, syncMovementSelects } from "./movements.js";
@@ -166,10 +166,8 @@ async function backfillOwnerEmailOnOwnContacts() {
   // about to read on the partner side, the owner_email is in the cloud
   // before the partner's reciprocal lookup queries it.
   saveContacts();
-  try {
-    await cloudPushContacts();
-  } catch (error) {
-    console.warn("[invitations] owner_email push failed:", error);
+  if (!(await flushOutbox())) {
+    console.warn("[invitations] owner_email push failed; queued for retry");
   }
 }
 

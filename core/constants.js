@@ -7,6 +7,8 @@ export const CONTACTS_KEY = "flowgrid.contacts.v1";
 export const RECURRING_TEMPLATES_KEY = "flowgrid.recurring.v1";
 export const GROUPS_KEY = "flowgrid.groups.v1";
 export const GROUP_MEMBERS_KEY = "flowgrid.group-members.v1";
+// Cola de cambios pendientes de subir a la nube (ver core/cloud.js).
+export const OUTBOX_KEY = "flowgrid.outbox.v1";
 // Legacy key kept only for one-time migration on first boot after the
 // person→contact rename. Safe to remove once all clients have migrated.
 export const LEGACY_PEOPLE_KEY = "flowgrid.people.v1";
